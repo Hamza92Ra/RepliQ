@@ -1,6 +1,9 @@
 import { sendWhatsAppText, markAsRead } from "../lib/whatsapp.js";
 import { generateReply } from "../lib/ai.js";
 
+const FALLBACK_REPLY =
+  "Désolé, j'ai eu un petit souci technique 🙏 Un membre de l'équipe RepliQ va vous répondre rapidement.";
+
 export default async function handler(req, res) {
   // --- 1. Webhook verification (Meta calls this once, with GET, when you save the webhook URL) ---
   if (req.method === "GET") {
@@ -44,7 +47,16 @@ export default async function handler(req, res) {
 
       await markAsRead(phoneNumberId, message.id);
 
-      const reply = await generateReply(text);
+      // Never let an AI-side failure (rate limit, bad request, model error, etc.)
+      // result in the customer getting total silence — always send *something* back.
+      let reply;
+      try {
+        reply = await generateReply(text);
+      } catch (aiErr) {
+        console.error("generateReply failed, using fallback:", aiErr);
+        reply = FALLBACK_REPLY;
+      }
+
       await sendWhatsAppText(phoneNumberId, from, reply);
 
       return res.status(200).send("EVENT_RECEIVED");
