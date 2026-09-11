@@ -440,13 +440,20 @@
             const text = input.value.trim();
             if (!text) return;
 
+            const activeConversation = conversations.find(c => c.phone === activePhone);
+
             const btn = document.getElementById("replyBtn");
             btn.disabled = true;
             try {
                 const res = await fetch("/api/conversation?key=" + encodeURIComponent(SECRET), {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ phone: activePhone, action: "reply", message: text })
+                    body: JSON.stringify({
+                        phone: activePhone,
+                        phoneNumberId: activeConversation?.phoneNumberId || "",
+                        action: "reply",
+                        message: text
+                    })
                 });
                 const data = await res.json();
                 if (!res.ok) {
