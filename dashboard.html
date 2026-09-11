@@ -457,7 +457,7 @@
                 });
                 const data = await res.json();
                 if (!res.ok) {
-                    toast("Erreur : " + (data.error || res.status));
+                    toast("Erreur : " + (data.details || data.error || res.status));
                     return;
                 }
                 input.value = "";

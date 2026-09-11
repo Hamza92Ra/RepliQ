@@ -122,7 +122,12 @@ async function handleAdminAction(req, res) {
         console.error("Admin action failed:", err);
         const status = Number(err?.status);
         const error = err?.message || "Action failed";
-        return res.status(status >= 400 && status < 600 ? 502 : 500).json({
+        const responseStatus = err?.code === 131030
+            ? 400
+            : status >= 400 && status < 600
+                ? 502
+                : 500;
+        return res.status(responseStatus).json({
             error: "WhatsApp message could not be sent",
             details: error,
         });
