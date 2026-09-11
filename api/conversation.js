@@ -11,6 +11,8 @@ import {
     saveMessage,
     getHistory,
     getConversationMode,
+    setConversationMode,
+    getConversationOwner,
     getBusinessConfig,
     claimMessage,
 } from "../lib/db.js";
@@ -23,6 +25,8 @@ const VOICE_FAIL_REPLY =
 
 const UNSUPPORTED_REPLY =
     "Merci pour votre message ! Je sais lire les messages texte et vocaux 🙏 Pour les images et documents, un membre de l'équipe va vous répondre directement.";
+
+const VALID_MODES = new Set(["bot", "human", "completed"]);
 
 // In-memory fallback only used if Redis is briefly unreachable — Redis
 // (claimMessage) is the real dedup, because Meta retries deliveries and
@@ -46,6 +50,54 @@ function describeInbound(message) {
     return `[${message.type || "message"}]`;
 }
 
+/**
+ * Handles admin actions sent from dashboard.html:
+ *   POST /api/conversation?key=DASHBOARD_SECRET
+ *   body: { phone, action: "human"|"bot"|"completed"|"reply", message? }
+ * This is a completely different request shape from Meta's webhook payload
+ * (which has no "phone"/"action" fields and no ?key=), so it's safe to
+ * branch on that before touching any webhook logic.
+ */
+async function handleAdminAction(req, res) {
+    const key = req.query.key;
+    if (!process.env.DASHBOARD_SECRET || key !== process.env.DASHBOARD_SECRET) {
+        return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const { phone, action, message } = req.body;
+    if (!phone || !action) {
+        return res.status(400).json({ error: "Missing phone or action" });
+    }
+
+    try {
+        if (VALID_MODES.has(action)) {
+            await setConversationMode(phone, action);
+            return res.status(200).json({ ok: true, mode: action });
+        }
+
+        if (action === "reply") {
+            const text = (message || "").trim();
+            if (!text) {
+                return res.status(400).json({ error: "Missing message" });
+            }
+            const phoneNumberId = await getConversationOwner(phone);
+            if (!phoneNumberId) {
+                return res
+                    .status(400)
+                    .json({ error: "Unknown conversation (no owning business number)" });
+            }
+            await sendWhatsAppText(phoneNumberId, phone, text);
+            await saveMessage(phone, "assistant", text, phoneNumberId);
+            return res.status(200).json({ ok: true });
+        }
+
+        return res.status(400).json({ error: `Unknown action: ${action}` });
+    } catch (err) {
+        console.error("Admin action failed:", err);
+        return res.status(500).json({ error: "Action failed" });
+    }
+}
+
 export default async function handler(req, res) {
     // --- 1. Webhook verification (Meta calls this once, with GET, when you save the webhook URL) ---
     if (req.method === "GET") {
@@ -60,8 +112,17 @@ export default async function handler(req, res) {
         return res.status(403).send("Forbidden");
     }
 
-    // --- 2. Incoming messages (Meta calls this with POST every time a message arrives) ---
     if (req.method === "POST") {
+        // --- Dashboard admin actions (Prendre en charge / Rendre au bot /
+        // Terminer / manual reply) arrive here with a { phone, action } body,
+        // never with "entry" (that's Meta's webhook shape). Branch on that
+        // first so these get real JSON responses instead of falling into the
+        // webhook's "EVENT_RECEIVED" ack path. ---
+        if (req.body && typeof req.body === "object" && req.body.action && req.body.phone) {
+            return handleAdminAction(req, res);
+        }
+
+        // --- 2. Incoming messages (Meta calls this with POST every time a message arrives) ---
         try {
             const entry = req.body?.entry?.[0];
             const change = entry?.changes?.[0];
