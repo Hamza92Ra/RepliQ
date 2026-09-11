@@ -94,7 +94,13 @@ async function handleAdminAction(req, res) {
                 console.error("Owner backfill failed:", e)
             );
             await sendWhatsAppText(phoneNumberId, phone, text);
-            await saveMessage(phone, "assistant", text, phoneNumberId);
+            // Save with role "agent" (NOT "assistant") so the takeover stays
+            // visible in the dashboard and, crucially, so the bot can tell —
+            // when the conversation is handed back to it — that a human spoke
+            // in the middle of the thread. getHistory() in lib/db.js folds
+            // this into a marked assistant turn for the AI, keeping the whole
+            // exchange as ONE continuous conversation under the same number.
+            await saveMessage(phone, "agent", text, phoneNumberId);
             return res.status(200).json({ ok: true });
         }
 

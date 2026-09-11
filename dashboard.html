@@ -198,10 +198,26 @@
             margin-left: auto;
         }
 
+        /* Human agent takeover: same right-hand side as bot messages (same
+           WhatsApp thread, same number) but visually distinct so the admin
+           always knows WHO spoke — the bot or a real conseiller. */
+        .bubble.agent {
+            background: #4a3d17;
+            border: 1px solid #8a6d1f;
+            margin-left: auto;
+        }
+
         .bubble-time {
             font-size: 10px;
             color: #888;
             margin-top: 4px;
+        }
+
+        .bubble-role {
+            font-size: 10px;
+            font-weight: 700;
+            color: #f0d77b;
+            margin-bottom: 3px;
         }
 
         .composer {
@@ -255,6 +271,7 @@
             z-index: 10;
         }
     </style>
+    <base target="_blank">
     <base target="_blank">
 </head>
 
@@ -368,9 +385,19 @@
                 thread.innerHTML = '<div class="empty">Pas encore de messages.</div>';
                 return;
             }
+            // Distinguish the three roles visually: client (left), bot
+            // (green, right), and human conseiller (amber, right) who took
+            // over the SAME conversation from the dashboard.
+            const ROLE_META = {
+                user: { cls: "user", label: "" },
+                assistant: { cls: "assistant", label: "" },
+                agent: { cls: "agent", label: "👤 Conseiller" },
+            };
             thread.innerHTML = convo.messages.map(m => {
+                const meta = ROLE_META[m.role] || ROLE_META.assistant;
                 const time = m.ts ? new Date(m.ts).toLocaleString("fr-FR") : "";
-                return `<div class="bubble ${m.role === 'user' ? 'user' : 'assistant'}">
+                return `<div class="bubble ${meta.cls}">
+        ${meta.label ? `<div class="bubble-role">${meta.label}</div>` : ""}
         ${m.content.replace(/</g, "&lt;")}
         <div class="bubble-time">${time}</div>
       </div>`;
