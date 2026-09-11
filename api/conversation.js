@@ -65,7 +65,7 @@ async function handleAdminAction(req, res) {
         return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { phone, action, message } = req.body;
+    const { phone, phoneNumberId: requestedPhoneNumberId, action, message } = req.body;
     if (!phone || !action) {
         return res.status(400).json({ error: "Missing phone or action" });
     }
@@ -81,7 +81,13 @@ async function handleAdminAction(req, res) {
             if (!text) {
                 return res.status(400).json({ error: "Missing message" });
             }
-            const phoneNumberId = await getConversationOwner(phone);
+            // Prefer the owner saved for this conversation. For older
+            // conversations that predate owner tracking, the dashboard sends
+            // the owner returned with that conversation so replies still use
+            // the correct WhatsApp Business number instead of a global
+            // fallback number.
+            const phoneNumberId =
+                requestedPhoneNumberId || (await getConversationOwner(phone));
             if (!phoneNumberId) {
                 return res
                     .status(400)
