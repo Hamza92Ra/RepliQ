@@ -84,6 +84,9 @@
         .convo-phone {
             font-weight: 600;
             font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .convo-preview {
@@ -93,6 +96,29 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+        }
+
+        .badge {
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 10px;
+            text-transform: uppercase;
+        }
+
+        .badge.bot {
+            background: #1f5c3c;
+            color: #7bf0ae;
+        }
+
+        .badge.human {
+            background: #5c4a1f;
+            color: #f0d77b;
+        }
+
+        .badge.completed {
+            background: #3a3d45;
+            color: #9aa0ab;
         }
 
         .main {
@@ -108,6 +134,42 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .header-actions button {
+            padding: 8px 14px;
+            border-radius: 6px;
+            border: 1px solid #333;
+            background: #232a35;
+            color: #e8e8e8;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .header-actions button:hover {
+            background: #2c3440;
+        }
+
+        .header-actions button.danger {
+            border-color: #5c2b2b;
+            background: #3a1f1f;
+        }
+
+        .header-actions button.danger:hover {
+            background: #4d2828;
+        }
+
+        .header-actions button.primary {
+            border-color: #1f5c3c;
+            background: #163826;
         }
 
         .thread {
@@ -142,12 +204,58 @@
             margin-top: 4px;
         }
 
+        .composer {
+            display: flex;
+            gap: 8px;
+            padding: 12px 20px;
+            border-top: 1px solid #2a2d35;
+        }
+
+        .composer input {
+            flex: 1;
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            background: #171a21;
+            color: #e8e8e8;
+            font-size: 14px;
+        }
+
+        .composer button {
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            background: #25d366;
+            color: #041b0e;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .composer button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         .empty {
             margin: auto;
             color: #666;
             text-align: center;
         }
+
+        #toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #232a35;
+            border: 1px solid #333;
+            padding: 12px 18px;
+            border-radius: 8px;
+            font-size: 13px;
+            display: none;
+            z-index: 10;
+        }
     </style>
+    <base target="_blank">
 </head>
 
 <body>
@@ -163,20 +271,37 @@
         <div class="sidebar" id="sidebar"></div>
         <div class="main">
             <div class="header">
-                <strong id="activePhone">Sélectionnez une conversation</strong>
-                <button class="refresh-btn" style="width:auto;padding:8px 16px;" onclick="loadConversations()">🔄
-                    Actualiser</button>
+                <div>
+                    <strong id="activePhone">Sélectionnez une conversation</strong>
+                    <span id="modeBadge" class="badge bot" style="display:none;"></span>
+                </div>
+                <div class="header-actions" id="headerActions" style="display:none;">
+                    <button class="primary" onclick="setMode('human')">👤 Prendre en charge</button>
+                    <button onclick="setMode('bot')">🤖 Rendre au bot</button>
+                    <button class="danger" onclick="setMode('complete')">✅ Terminer la conversation</button>
+                    <button class="refresh-btn" style="width:auto;padding:8px 16px;" onclick="loadConversations()">🔄
+                        Actualiser</button>
+                </div>
             </div>
             <div class="thread" id="thread">
                 <div class="empty">Aucune conversation sélectionnée</div>
             </div>
+            <div class="composer" id="composer" style="display:none;">
+                <input type="text" id="replyInput" placeholder="Répondre au client en tant que conseiller…"
+                    onkeydown="if(event.key==='Enter')sendReply()" />
+                <button id="replyBtn" onclick="sendReply()">Envoyer</button>
+            </div>
         </div>
     </div>
+
+    <div id="toast"></div>
 
     <script>
         let SECRET = localStorage.getItem("repliq_dashboard_key") || "";
         let conversations = [];
         let activePhone = null;
+
+        const MODE_LABELS = { bot: "Bot", human: "Humain", completed: "Terminée" };
 
         function tryLogin() {
             SECRET = document.getElementById("secretInput").value;
@@ -203,6 +328,11 @@
             }
         }
 
+        function modeBadgeHtml(mode) {
+            const m = mode || "bot";
+            return `<span class="badge ${m}">${MODE_LABELS[m] || m}</span>`;
+        }
+
         function renderSidebar() {
             const sidebar = document.getElementById("sidebar");
             if (conversations.length === 0) {
@@ -213,7 +343,7 @@
                 const last = c.messages[c.messages.length - 1];
                 const preview = last ? last.content : "";
                 return `<div class="convo-item ${c.phone === activePhone ? 'active' : ''}" onclick="renderThread('${c.phone}')">
-        <div class="convo-phone">+${c.phone}</div>
+        <div class="convo-phone">+${c.phone} ${modeBadgeHtml(c.mode)}</div>
         <div class="convo-preview">${preview.replace(/</g, "&lt;")}</div>
       </div>`;
             }).join("");
@@ -222,7 +352,17 @@
         function renderThread(phone) {
             activePhone = phone;
             document.getElementById("activePhone").textContent = "+" + phone;
+
             const convo = conversations.find(c => c.phone === phone);
+            const badge = document.getElementById("modeBadge");
+            const mode = convo?.mode || "bot";
+            badge.textContent = MODE_LABELS[mode] || mode;
+            badge.className = "badge " + mode;
+            badge.style.display = "inline-block";
+
+            document.getElementById("headerActions").style.display = "flex";
+            document.getElementById("composer").style.display = "flex";
+
             const thread = document.getElementById("thread");
             if (!convo || convo.messages.length === 0) {
                 thread.innerHTML = '<div class="empty">Pas encore de messages.</div>';
@@ -237,6 +377,72 @@
             }).join("");
             thread.scrollTop = thread.scrollHeight;
             renderSidebar();
+        }
+
+        async function setMode(action) {
+            if (!activePhone) return;
+            const labels = {
+                human: "prendre en charge cette conversation",
+                bot: "rendre cette conversation au bot",
+                complete: "terminer cette conversation (le bot se taira)"
+            };
+            if (!confirm(`Voulez-vous vraiment ${labels[action]} ?`)) return;
+
+            try {
+                const res = await fetch("/api/conversation?key=" + encodeURIComponent(SECRET), {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ phone: activePhone, action })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    toast("Erreur : " + (data.error || res.status));
+                    return;
+                }
+                toast("Conversation mise à jour ✅");
+                await loadConversations();
+            } catch (err) {
+                console.error(err);
+                toast("Erreur de connexion.");
+            }
+        }
+
+        async function sendReply() {
+            if (!activePhone) return;
+            const input = document.getElementById("replyInput");
+            const text = input.value.trim();
+            if (!text) return;
+
+            const btn = document.getElementById("replyBtn");
+            btn.disabled = true;
+            try {
+                const res = await fetch("/api/conversation?key=" + encodeURIComponent(SECRET), {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ phone: activePhone, action: "reply", message: text })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    toast("Erreur : " + (data.error || res.status));
+                    return;
+                }
+                input.value = "";
+                await loadConversations();
+            } catch (err) {
+                console.error(err);
+                toast("Erreur de connexion.");
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        let toastTimer = null;
+        function toast(msg) {
+            const el = document.getElementById("toast");
+            el.textContent = msg;
+            el.style.display = "block";
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => { el.style.display = "none"; }, 3000);
         }
 
         // Auto-login if a key was saved before.
