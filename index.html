@@ -1,0 +1,1958 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RepliQ — Votre WhatsApp, automatisé intelligemment</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --ink: #0B1512;
+            --ink-soft: #122019;
+            --card-dark: #15251F;
+            --card-dark-2: #1B2E27;
+            --mint-pale: #EAF2EC;
+            --mint-paler: #F5F8F5;
+            --emerald: #2FBE82;
+            --emerald-deep: #1F9C69;
+            --emerald-bright: #48E0A0;
+            --amber: #E2A63B;
+            --amber-soft: #F1C877;
+            --text-light: #F3F6F2;
+            --text-dim: #9FB3AA;
+            --text-dark: #132019;
+            --text-dark-dim: #57685F;
+            --line: rgba(243, 246, 242, 0.12);
+            --line-dark: rgba(19, 32, 25, 0.13);
+            --radius-s: 10px;
+            --radius-m: 16px;
+            --radius-l: 28px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background: var(--ink);
+            color: var(--text-light);
+            font-family: 'Manrope', sans-serif;
+            font-size: 16px;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+        }
+
+        h1,
+        h2,
+        h3,
+        h4 {
+            font-family: 'Sora', sans-serif;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            color: var(--text-light);
+        }
+
+        .mono {
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        img,
+        svg {
+            display: block;
+        }
+
+        .wrap {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 0 32px;
+        }
+
+        section {
+            position: relative;
+        }
+
+        ::selection {
+            background: var(--emerald);
+            color: var(--ink);
+        }
+
+        :focus-visible {
+            outline: 2px solid var(--amber);
+            outline-offset: 3px;
+            border-radius: 4px;
+        }
+
+        /* ---------- NAV ---------- */
+        .nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            padding: 20px 0;
+            transition: background .35s ease, padding .35s ease, border-color .35s ease;
+            border-bottom: 1px solid transparent;
+        }
+
+        .nav.scrolled {
+            background: rgba(11, 21, 18, 0.88);
+            backdrop-filter: blur(14px);
+            padding: 14px 0;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .nav .wrap {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            font-family: 'Sora';
+            font-weight: 700;
+            font-size: 19px;
+            color: var(--text-light);
+        }
+
+        .logo-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: var(--emerald-bright);
+            box-shadow: 0 0 0 4px rgba(72, 224, 160, 0.18);
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 34px;
+            font-size: 14.5px;
+            color: var(--text-dim);
+        }
+
+        .nav-links a {
+            transition: color .2s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--text-light);
+        }
+
+        .nav-cta {
+            background: var(--emerald);
+            color: var(--ink);
+            font-weight: 700;
+            font-size: 14px;
+            padding: 10px 20px;
+            border-radius: 100px;
+            font-family: 'Sora';
+            transition: transform .2s ease, background .2s ease;
+            white-space: nowrap;
+        }
+
+        .nav-cta:hover {
+            background: var(--emerald-bright);
+            transform: translateY(-1px);
+        }
+
+        .nav-burger {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 6px;
+        }
+
+        .nav-burger span {
+            width: 22px;
+            height: 2px;
+            background: var(--text-light);
+        }
+
+        .mobile-menu {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 99;
+            background: var(--ink);
+            padding: 100px 32px 40px;
+            flex-direction: column;
+            gap: 26px;
+            font-size: 20px;
+            font-family: 'Sora';
+            font-weight: 600;
+        }
+
+        .mobile-menu.open {
+            display: flex;
+        }
+
+        /* ---------- HERO ---------- */
+        .hero {
+            padding: 168px 0 110px;
+            background:
+                radial-gradient(600px 380px at 85% -10%, rgba(47, 190, 130, 0.20), transparent 65%),
+                radial-gradient(500px 340px at 5% 15%, rgba(226, 166, 59, 0.10), transparent 65%);
+        }
+
+        .hero .wrap {
+            display: grid;
+            grid-template-columns: 1.05fr 0.95fr;
+            gap: 64px;
+            align-items: center;
+        }
+
+        .eyebrow-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--card-dark);
+            border: 1px solid var(--line);
+            padding: 7px 14px 7px 8px;
+            border-radius: 100px;
+            font-size: 13px;
+            color: var(--text-dim);
+            margin-bottom: 26px;
+        }
+
+        .eyebrow-tag .pip {
+            background: var(--emerald);
+            color: var(--ink);
+            font-family: 'Sora';
+            font-weight: 700;
+            font-size: 11.5px;
+            padding: 3px 9px;
+            border-radius: 100px;
+        }
+
+        .hero h1 {
+            font-size: clamp(38px, 4.6vw, 60px);
+            line-height: 1.06;
+            letter-spacing: -0.02em;
+        }
+
+        .hero h1 .accent {
+            color: var(--emerald-bright);
+        }
+
+        .hero-sub {
+            margin-top: 24px;
+            font-size: 18px;
+            color: var(--text-dim);
+            max-width: 480px;
+            line-height: 1.65;
+        }
+
+        .hero-cta-row {
+            display: flex;
+            align-items: center;
+            gap: 22px;
+            margin-top: 38px;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary {
+            background: var(--emerald);
+            color: var(--ink);
+            font-family: 'Sora';
+            font-weight: 700;
+            font-size: 15.5px;
+            padding: 15px 26px;
+            border-radius: 100px;
+            border: none;
+            cursor: pointer;
+            transition: transform .2s ease, background .2s ease, box-shadow .2s ease;
+            box-shadow: 0 10px 30px -10px rgba(47, 190, 130, 0.55);
+        }
+
+        .btn-primary:hover {
+            background: var(--emerald-bright);
+            transform: translateY(-2px);
+        }
+
+        .btn-ghost-link {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-light);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid var(--line);
+            padding-bottom: 2px;
+            transition: border-color .2s ease;
+        }
+
+        .btn-ghost-link:hover {
+            border-color: var(--text-light);
+        }
+
+        .hero-microcopy {
+            margin-top: 20px;
+            font-size: 13.5px;
+            color: var(--text-dim);
+        }
+
+        .hero-microcopy .mono {
+            color: var(--amber-soft);
+        }
+
+        /* phone mock */
+        .phone-stage {
+            display: flex;
+            justify-content: center;
+        }
+
+        .phone {
+            width: 320px;
+            background: linear-gradient(180deg, #0E1D18, #0A1310);
+            border-radius: 38px;
+            border: 1px solid var(--line);
+            padding: 14px;
+            box-shadow: 0 40px 80px -30px rgba(0, 0, 0, 0.65);
+        }
+
+        .phone-screen {
+            background: #0C1B15;
+            border-radius: 26px;
+            overflow: hidden;
+            height: 520px;
+            display: flex;
+            flex-direction: column;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 22px 22px;
+        }
+
+        .phone-bar {
+            padding: 16px 18px 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid var(--line);
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .phone-bar .avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--emerald), var(--amber));
+            flex-shrink: 0;
+        }
+
+        .phone-bar .who {
+            font-family: 'Sora';
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .phone-bar .status {
+            font-size: 11.5px;
+            color: var(--emerald-bright);
+        }
+
+        .chat-area {
+            flex: 1;
+            padding: 16px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            overflow: hidden;
+        }
+
+        .bubble {
+            max-width: 80%;
+            padding: 10px 13px;
+            border-radius: 14px;
+            font-size: 13.5px;
+            line-height: 1.45;
+            opacity: 0;
+            transform: translateY(8px);
+            animation: bubbleIn 12s infinite;
+        }
+
+        .bubble.in {
+            background: #1C2E27;
+            color: var(--text-light);
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+
+        .bubble.out {
+            background: var(--emerald-deep);
+            color: #EFFFF6;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        .bubble .tick {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.65);
+            display: block;
+            text-align: right;
+            margin-top: 3px;
+        }
+
+        .b1 {
+            animation-delay: 0.2s;
+        }
+
+        .b2 {
+            animation-delay: 1.6s;
+        }
+
+        .b3 {
+            animation-delay: 3.0s;
+        }
+
+        .b4 {
+            animation-delay: 5.6s;
+        }
+
+        .b5 {
+            animation-delay: 7.4s;
+        }
+
+        .typing {
+            align-self: flex-start;
+            background: #1C2E27;
+            padding: 10px 14px;
+            border-radius: 14px;
+            border-bottom-left-radius: 4px;
+            display: flex;
+            gap: 4px;
+            opacity: 0;
+            animation: typingPulse 12s infinite;
+            animation-delay: 4.4s;
+        }
+
+        .typing span {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--text-dim);
+            animation: dotBounce 1s infinite ease-in-out;
+        }
+
+        .typing span:nth-child(2) {
+            animation-delay: 0.15s;
+        }
+
+        .typing span:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+
+        @keyframes dotBounce {
+
+            0%,
+            60%,
+            100% {
+                transform: translateY(0);
+                opacity: 0.5;
+            }
+
+            30% {
+                transform: translateY(-3px);
+                opacity: 1;
+            }
+        }
+
+        @keyframes bubbleIn {
+            0% {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+
+            4% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            90% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            96% {
+                opacity: 0;
+            }
+
+            100% {
+                opacity: 0;
+            }
+        }
+
+        @keyframes typingPulse {
+            0% {
+                opacity: 0;
+            }
+
+            36% {
+                opacity: 0;
+            }
+
+            40% {
+                opacity: 1;
+            }
+
+            48% {
+                opacity: 1;
+            }
+
+            52% {
+                opacity: 0;
+            }
+
+            100% {
+                opacity: 0;
+            }
+        }
+
+        .phone-footer {
+            padding: 12px 16px;
+            border-top: 1px solid var(--line);
+            font-size: 11px;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .phone-footer .live-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--emerald-bright);
+            display: inline-block;
+            margin-right: 6px;
+            box-shadow: 0 0 0 3px rgba(72, 224, 160, 0.2);
+        }
+
+        /* ---------- TRUST / BUSINESS TYPES ---------- */
+        .trust {
+            padding: 50px 0;
+            border-top: 1px solid var(--line);
+            border-bottom: 1px solid var(--line);
+        }
+
+        .trust .wrap {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 22px;
+        }
+
+        .trust-label {
+            font-size: 13px;
+            color: var(--text-dim);
+            font-family: 'IBM Plex Mono';
+            white-space: nowrap;
+        }
+
+        .trust-list {
+            display: flex;
+            gap: 34px;
+            flex-wrap: wrap;
+            font-family: 'Sora';
+            font-weight: 600;
+            font-size: 15px;
+            color: var(--text-dim);
+        }
+
+        .trust-list span {
+            transition: color .2s ease;
+        }
+
+        .trust-list span:hover {
+            color: var(--text-light);
+        }
+
+        /* ---------- INSIGHT (light section) ---------- */
+        .insight {
+            background: var(--mint-pale);
+            color: var(--text-dark);
+            padding: 120px 0;
+        }
+
+        .insight .wrap {
+            display: grid;
+            grid-template-columns: 0.9fr 1.1fr;
+            gap: 70px;
+            align-items: start;
+        }
+
+        .insight h2 {
+            color: var(--text-dark);
+            font-size: clamp(30px, 3.4vw, 42px);
+            line-height: 1.15;
+            letter-spacing: -0.015em;
+        }
+
+        .insight-lead {
+            font-size: 15.5px;
+            color: var(--text-dark-dim);
+            margin-top: 20px;
+            max-width: 340px;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1px;
+            background: var(--line-dark);
+            border: 1px solid var(--line-dark);
+            border-radius: var(--radius-m);
+            overflow: hidden;
+        }
+
+        .stat-cell {
+            background: var(--mint-paler);
+            padding: 30px 26px;
+        }
+
+        .stat-num {
+            font-family: 'Sora';
+            font-weight: 800;
+            font-size: clamp(28px, 3vw, 38px);
+            color: var(--text-dark);
+        }
+
+        .stat-num .unit {
+            font-size: 0.5em;
+            font-weight: 700;
+            color: var(--emerald-deep);
+            font-family: 'IBM Plex Mono';
+        }
+
+        .stat-desc {
+            font-size: 13.5px;
+            color: var(--text-dark-dim);
+            margin-top: 8px;
+            line-height: 1.5;
+        }
+
+        /* ---------- HOW IT WORKS ---------- */
+        .how {
+            padding: 130px 0;
+        }
+
+        .section-head {
+            max-width: 560px;
+            margin-bottom: 64px;
+        }
+
+        .section-tag {
+            font-family: 'IBM Plex Mono';
+            font-size: 12.5px;
+            color: var(--amber-soft);
+            margin-bottom: 14px;
+            display: block;
+        }
+
+        .section-head h2 {
+            font-size: clamp(30px, 3.4vw, 42px);
+            line-height: 1.15;
+            letter-spacing: -0.015em;
+        }
+
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1px;
+            background: var(--line);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-l);
+            overflow: hidden;
+        }
+
+        .step {
+            background: var(--ink-soft);
+            padding: 40px 34px;
+            position: relative;
+        }
+
+        .step-num {
+            font-family: 'IBM Plex Mono';
+            font-size: 13px;
+            color: var(--emerald-bright);
+            margin-bottom: 26px;
+            display: block;
+        }
+
+        .step h3 {
+            font-size: 20px;
+            margin-bottom: 12px;
+        }
+
+        .step p {
+            font-size: 14.5px;
+            color: var(--text-dim);
+            line-height: 1.6;
+        }
+
+        /* ---------- FEATURES ---------- */
+        .features {
+            padding: 0 0 130px;
+        }
+
+        .feat-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px;
+        }
+
+        .feat-card {
+            background: var(--card-dark);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-m);
+            padding: 30px 26px;
+            transition: border-color .25s ease, transform .25s ease;
+        }
+
+        .feat-card:hover {
+            border-color: rgba(47, 190, 130, 0.4);
+            transform: translateY(-3px);
+        }
+
+        .feat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 11px;
+            background: rgba(47, 190, 130, 0.13);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .feat-card h3 {
+            font-size: 16.5px;
+            margin-bottom: 10px;
+        }
+
+        .feat-card p {
+            font-size: 13.8px;
+            color: var(--text-dim);
+            line-height: 1.55;
+        }
+
+        /* ---------- DASHBOARD PREVIEW ---------- */
+        .dash {
+            padding: 0 0 130px;
+        }
+
+        .dash-panel {
+            background: var(--card-dark);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-l);
+            padding: 46px;
+            display: grid;
+            grid-template-columns: 0.85fr 1.15fr;
+            gap: 52px;
+            align-items: center;
+        }
+
+        .dash-copy h2 {
+            font-size: clamp(26px, 2.8vw, 34px);
+            margin-bottom: 16px;
+            line-height: 1.2;
+        }
+
+        .dash-copy p {
+            color: var(--text-dim);
+            font-size: 15px;
+            margin-bottom: 24px;
+            max-width: 400px;
+        }
+
+        .dash-list {
+            display: flex;
+            flex-direction: column;
+            gap: 11px;
+        }
+
+        .dash-list li {
+            list-style: none;
+            display: flex;
+            gap: 10px;
+            font-size: 14px;
+            color: var(--text-light);
+        }
+
+        .dash-list li::before {
+            content: "✓";
+            color: var(--emerald-bright);
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .dash-mock {
+            background: var(--ink);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-m);
+            padding: 22px;
+            font-family: 'IBM Plex Mono';
+        }
+
+        .dash-mock-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 4px;
+            border-bottom: 1px solid var(--line);
+            font-size: 12.5px;
+        }
+
+        .dash-mock-row:last-child {
+            border-bottom: none;
+        }
+
+        .dash-mock-row .name {
+            color: var(--text-light);
+            font-family: 'Manrope';
+            font-weight: 600;
+            font-size: 13.5px;
+        }
+
+        .pill {
+            padding: 3px 10px;
+            border-radius: 100px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .pill.confirmed {
+            background: rgba(47, 190, 130, 0.18);
+            color: var(--emerald-bright);
+        }
+
+        .pill.pending {
+            background: rgba(226, 166, 59, 0.18);
+            color: var(--amber-soft);
+        }
+
+        .pill.delivered {
+            background: rgba(159, 179, 170, 0.18);
+            color: var(--text-dim);
+        }
+
+        .dash-stats-row {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .dash-stats-row .cell {
+            flex: 1;
+            background: var(--card-dark-2);
+            border-radius: 10px;
+            padding: 14px;
+            text-align: center;
+        }
+
+        .dash-stats-row .cell .n {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--emerald-bright);
+        }
+
+        .dash-stats-row .cell .l {
+            font-size: 10.5px;
+            color: var(--text-dim);
+            font-family: 'Manrope';
+            margin-top: 2px;
+        }
+
+        /* ---------- PRICING ---------- */
+        .pricing {
+            background: var(--mint-pale);
+            color: var(--text-dark);
+            padding: 130px 0;
+        }
+
+        .pricing .section-head h2 {
+            color: var(--text-dark);
+        }
+
+        .pricing .section-head p {
+            color: var(--text-dark-dim);
+        }
+
+        .trial-banner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+            flex-wrap: wrap;
+            background: linear-gradient(120deg, #16352A, #0E241C);
+            color: var(--text-light);
+            border-radius: var(--radius-m);
+            padding: 26px 32px;
+            margin-bottom: 54px;
+            border: 1px solid rgba(72, 224, 160, 0.25);
+        }
+
+        .trial-banner .t-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .trial-banner .t-badge {
+            background: var(--amber);
+            color: var(--ink);
+            font-family: 'Sora';
+            font-weight: 800;
+            font-size: 12px;
+            padding: 6px 12px;
+            border-radius: 8px;
+            white-space: nowrap;
+        }
+
+        .trial-banner h4 {
+            font-size: 17px;
+            margin-bottom: 3px;
+        }
+
+        .trial-banner p {
+            font-size: 13.5px;
+            color: var(--text-dim);
+        }
+
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 52px;
+        }
+
+        .toggle-wrap {
+            display: inline-flex;
+            background: var(--mint-paler);
+            border: 1px solid var(--line-dark);
+            border-radius: 100px;
+            padding: 4px;
+            position: relative;
+        }
+
+        .toggle-btn {
+            font-family: 'Sora';
+            font-weight: 600;
+            font-size: 13.5px;
+            padding: 10px 22px;
+            border-radius: 100px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            color: var(--text-dark-dim);
+            position: relative;
+            z-index: 1;
+            transition: color .3s ease;
+        }
+
+        .toggle-btn.active {
+            color: var(--ink);
+        }
+
+        .toggle-thumb {
+            position: absolute;
+            top: 4px;
+            bottom: 4px;
+            left: 4px;
+            width: calc(50% - 4px);
+            background: var(--emerald);
+            border-radius: 100px;
+            transition: transform .32s cubic-bezier(.65, 0, .35, 1);
+            z-index: 0;
+        }
+
+        .toggle-wrap.monthly .toggle-thumb {
+            transform: translateX(100%);
+        }
+
+        .price-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .price-card {
+            background: var(--mint-paler);
+            border: 1px solid var(--line-dark);
+            border-radius: var(--radius-l);
+            padding: 36px 30px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .price-card.featured {
+            background: var(--ink);
+            border-color: var(--emerald-deep);
+        }
+
+        .price-card.featured * {
+            color: var(--text-light);
+        }
+
+        .price-card.featured .price-desc {
+            color: var(--text-dim);
+        }
+
+        .featured-tag {
+            position: absolute;
+            top: -13px;
+            left: 30px;
+            background: var(--amber);
+            color: var(--ink);
+            font-family: 'Sora';
+            font-weight: 800;
+            font-size: 11.5px;
+            padding: 5px 12px;
+            border-radius: 100px;
+        }
+
+        .price-name {
+            font-family: 'Sora';
+            font-weight: 700;
+            font-size: 20px;
+            margin-bottom: 8px;
+        }
+
+        .price-desc {
+            font-size: 13.5px;
+            color: var(--text-dark-dim);
+            margin-bottom: 24px;
+            min-height: 38px;
+        }
+
+        .price-amount {
+            font-family: 'IBM Plex Mono';
+            font-weight: 600;
+            font-size: 34px;
+            margin-bottom: 2px;
+        }
+
+        .price-amount .unit {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-dark-dim);
+        }
+
+        .price-card.featured .price-amount .unit {
+            color: var(--text-dim);
+        }
+
+        .price-note {
+            font-size: 12px;
+            color: var(--text-dark-dim);
+            margin-bottom: 26px;
+        }
+
+        .price-card.featured .price-note {
+            color: var(--text-dim);
+        }
+
+        .price-features {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 30px;
+            flex: 1;
+        }
+
+        .price-features li {
+            list-style: none;
+            display: flex;
+            gap: 9px;
+            font-size: 13.5px;
+            line-height: 1.45;
+        }
+
+        .price-features li::before {
+            content: "✓";
+            color: var(--emerald-deep);
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .price-card.featured .price-features li::before {
+            color: var(--emerald-bright);
+        }
+
+        .price-cta {
+            text-align: center;
+            padding: 13px;
+            border-radius: 100px;
+            font-family: 'Sora';
+            font-weight: 700;
+            font-size: 14px;
+            background: var(--ink);
+            color: var(--text-light);
+            transition: background .2s ease, transform .2s ease;
+        }
+
+        .price-card.featured .price-cta {
+            background: var(--emerald);
+            color: var(--ink);
+        }
+
+        .price-cta:hover {
+            transform: translateY(-2px);
+            background: #243B32;
+        }
+
+        .price-card.featured .price-cta:hover {
+            background: var(--emerald-bright);
+        }
+
+        .hide {
+            display: none !important;
+        }
+
+        /* addons + maintenance */
+        .addons-wrap {
+            margin-top: 70px;
+            display: grid;
+            grid-template-columns: 1.3fr 1fr;
+            gap: 20px;
+        }
+
+        .addons-box,
+        .maint-box {
+            background: var(--mint-paler);
+            border: 1px solid var(--line-dark);
+            border-radius: var(--radius-m);
+            padding: 32px;
+        }
+
+        .addons-box h3,
+        .maint-box h3 {
+            font-size: 17px;
+            color: var(--text-dark);
+            margin-bottom: 6px;
+        }
+
+        .addons-box>p,
+        .maint-box>p {
+            font-size: 13px;
+            color: var(--text-dark-dim);
+            margin-bottom: 22px;
+        }
+
+        .addon-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 11px 0;
+            border-bottom: 1px solid var(--line-dark);
+            font-size: 13.8px;
+            color: var(--text-dark);
+        }
+
+        .addon-row:last-child {
+            border-bottom: none;
+        }
+
+        .addon-row .p {
+            font-family: 'IBM Plex Mono';
+            font-weight: 600;
+            color: var(--emerald-deep);
+            font-size: 13px;
+        }
+
+        .maint-tier {
+            margin-bottom: 18px;
+        }
+
+        .maint-tier:last-child {
+            margin-bottom: 0;
+        }
+
+        .maint-tier .mt-head {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13.8px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 4px;
+            font-family: 'Sora';
+        }
+
+        .maint-tier .mt-price {
+            font-family: 'IBM Plex Mono';
+            color: var(--emerald-deep);
+            font-size: 13px;
+        }
+
+        .maint-tier p {
+            font-size: 12.5px;
+            color: var(--text-dark-dim);
+            line-height: 1.5;
+        }
+
+        .payment-terms {
+            margin-top: 26px;
+            font-size: 12.5px;
+            color: var(--text-dark-dim);
+            text-align: center;
+        }
+
+        .payment-terms .mono {
+            color: var(--text-dark);
+        }
+
+        /* ---------- FAQ ---------- */
+        .faq {
+            padding: 130px 0;
+        }
+
+        .faq-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            border-top: 1px solid var(--line);
+        }
+
+        .faq-item {
+            border-bottom: 1px solid var(--line);
+            padding: 26px 0;
+            cursor: pointer;
+        }
+
+        .faq-q {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            font-family: 'Sora';
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .faq-q .plus {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 1px solid var(--line);
+            flex-shrink: 0;
+            position: relative;
+            transition: transform .3s ease, border-color .3s ease;
+        }
+
+        .faq-q .plus::before,
+        .faq-q .plus::after {
+            content: "";
+            position: absolute;
+            background: var(--text-light);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .faq-q .plus::before {
+            width: 9px;
+            height: 1.4px;
+        }
+
+        .faq-q .plus::after {
+            width: 1.4px;
+            height: 9px;
+        }
+
+        .faq-item.open .plus {
+            transform: rotate(45deg);
+            border-color: var(--emerald);
+        }
+
+        .faq-a {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height .35s ease;
+        }
+
+        .faq-item.open .faq-a {
+            max-height: 200px;
+        }
+
+        .faq-a p {
+            padding-top: 16px;
+            font-size: 14.5px;
+            color: var(--text-dim);
+            max-width: 640px;
+            line-height: 1.6;
+        }
+
+        /* ---------- FINAL CTA ---------- */
+        .final-cta {
+            padding: 100px 0 130px;
+        }
+
+        .final-cta-box {
+            background: linear-gradient(135deg, #163627, #0C1712 60%);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-l);
+            padding: 70px 60px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .final-cta-box::before {
+            content: "";
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(47, 190, 130, 0.25), transparent 70%);
+            top: -250px;
+            right: -150px;
+        }
+
+        .final-cta-box h2 {
+            font-size: clamp(28px, 3.6vw, 42px);
+            max-width: 560px;
+            margin: 0 auto 18px;
+            line-height: 1.15;
+            position: relative;
+        }
+
+        .final-cta-box p {
+            color: var(--text-dim);
+            font-size: 15.5px;
+            margin-bottom: 34px;
+            position: relative;
+        }
+
+        .final-cta-box .hero-cta-row {
+            justify-content: center;
+            position: relative;
+        }
+
+        /* ---------- FOOTER ---------- */
+        footer {
+            border-top: 1px solid var(--line);
+            padding: 50px 0;
+        }
+
+        footer .wrap {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        footer .foot-links {
+            display: flex;
+            gap: 28px;
+            font-size: 13.5px;
+            color: var(--text-dim);
+        }
+
+        footer .foot-note {
+            font-size: 12.5px;
+            color: var(--text-dim);
+        }
+
+        /* ---------- RESPONSIVE ---------- */
+        @media (max-width:920px) {
+            .hero .wrap {
+                grid-template-columns: 1fr;
+                gap: 56px;
+            }
+
+            .phone-stage {
+                order: -1;
+            }
+
+            .phone {
+                width: 280px;
+            }
+
+            .insight .wrap {
+                grid-template-columns: 1fr;
+            }
+
+            .steps {
+                grid-template-columns: 1fr;
+            }
+
+            .feat-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .dash-panel {
+                grid-template-columns: 1fr;
+            }
+
+            .price-cards {
+                grid-template-columns: 1fr;
+            }
+
+            .addons-wrap {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .nav-burger {
+                display: flex;
+            }
+        }
+
+        @media (max-width:600px) {
+            .wrap {
+                padding: 0 20px;
+            }
+
+            .feat-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .trust .wrap {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .final-cta-box {
+                padding: 50px 26px;
+            }
+
+            .dash-stats-row {
+                flex-direction: column;
+            }
+
+            .trial-banner {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="nav" id="nav">
+        <div class="wrap">
+            <div class="logo"><span class="logo-dot"></span>RepliQ</div>
+            <div class="nav-links">
+                <a href="#comment">Comment ça marche</a>
+                <a href="#fonctionnalites">Fonctionnalités</a>
+                <a href="#tarifs">Tarifs</a>
+                <a href="#faq">FAQ</a>
+            </div>
+            <div style="display:flex; align-items:center; gap:18px;">
+                <a href="#tarifs" class="nav-cta">Essai gratuit</a>
+                <button class="nav-burger" id="burger"
+                    aria-label="Menu"><span></span><span></span><span></span></button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="mobile-menu" id="mobileMenu">
+        <a href="#comment">Comment ça marche</a>
+        <a href="#fonctionnalites">Fonctionnalités</a>
+        <a href="#tarifs">Tarifs</a>
+        <a href="#faq">FAQ</a>
+        <a href="#tarifs" class="nav-cta" style="text-align:center; margin-top:10px;">Essai gratuit</a>
+    </div>
+
+    <!-- HERO -->
+    <section class="hero">
+        <div class="wrap">
+            <div>
+                <div class="eyebrow-tag"><span class="pip">Nouveau</span> 1 mois d'essai offert sur l'abonnement</div>
+                <h1>Votre WhatsApp gère déjà tout. <span class="accent">RepliQ</span> s'en occupe pour vous.</h1>
+                <p class="hero-sub">Confirmez les commandes, envoyez les rappels et répondez aux questions fréquentes
+                    automatiquement — sans quitter WhatsApp, sans changer vos habitudes.</p>
+                <div class="hero-cta-row">
+                    <button class="btn-primary">Démarrer l'essai gratuit</button>
+                    <a href="#comment" class="btn-ghost-link">Voir comment ça marche ↓</a>
+                </div>
+                <p class="hero-microcopy">Compatible avec votre numéro WhatsApp Business actuel · <span
+                        class="mono">Darija · Français · Arabe · Anglais</span></p>
+            </div>
+            <div class="phone-stage">
+                <div class="phone">
+                    <div class="phone-screen">
+                        <div class="phone-bar">
+                            <div class="avatar"></div>
+                            <div>
+                                <div class="who">Salon Nour</div>
+                                <div class="status">Automatisé par RepliQ</div>
+                            </div>
+                        </div>
+                        <div class="chat-area">
+                            <div class="bubble in b1">Bonjour, je voudrais un RDV coiffure samedi 15h 🙏</div>
+                            <div class="bubble out b2">C'est noté ! RDV samedi à 15h. Confirmez-vous ? Répondez OUI ou
+                                NON.<span class="tick">✓✓ Lu</span></div>
+                            <div class="bubble in b3">Oui c'est bon</div>
+                            <div class="typing"><span></span><span></span><span></span></div>
+                            <div class="bubble out b4">Parfait, votre RDV est confirmé ✅ Un rappel vous sera envoyé
+                                vendredi.<span class="tick">✓✓ Lu</span></div>
+                            <div class="bubble out b5">Rappel : votre RDV est demain à 15h. À bientôt !<span
+                                    class="tick">✓✓ Envoyé</span></div>
+                        </div>
+                        <div class="phone-footer">
+                            <span><span class="live-dot"></span>Statut : confirmé</span>
+                            <span class="mono">RepliQ</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- TRUST -->
+    <section class="trust">
+        <div class="wrap">
+            <span class="trust-label">CONÇU POUR</span>
+            <div class="trust-list">
+                <span>Commerces &amp; boutiques</span>
+                <span>Cliniques &amp; cabinets</span>
+                <span>Salons &amp; instituts</span>
+                <span>Services de livraison</span>
+                <span>Artisans &amp; prestataires</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- INSIGHT -->
+    <section class="insight">
+        <div class="wrap">
+            <div>
+                <span class="section-tag">LE CONSTAT</span>
+                <h2>Vous gérez déjà toute la relation client sur WhatsApp.</h2>
+                <p class="insight-lead">Confirmations, rappels, questions répétées, suivi des statuts — tout passe déjà
+                    par là, à la main, message après message. RepliQ n'ajoute pas un outil de plus : il automatise celui
+                    que vous utilisez déjà.</p>
+            </div>
+            <div class="stat-grid">
+                <div class="stat-cell">
+                    <div class="stat-num">70<span class="unit">%</span></div>
+                    <div class="stat-desc">des échanges clients d'une PME sont des questions ou confirmations
+                        répétitives</div>
+                </div>
+                <div class="stat-cell">
+                    <div class="stat-num">0<span class="unit">chgmt</span></div>
+                    <div class="stat-desc">de plateforme : vos clients continuent d'écrire sur le même numéro WhatsApp
+                    </div>
+                </div>
+                <div class="stat-cell">
+                    <div class="stat-num">24<span class="unit">/7</span></div>
+                    <div class="stat-desc">de disponibilité pour confirmer une commande ou répondre à une question
+                        simple</div>
+                </div>
+                <div class="stat-cell">
+                    <div class="stat-num">1<span class="unit">tableau</span></div>
+                    <div class="stat-desc">de bord pour garder une vue et un contrôle total sur chaque conversation
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- HOW IT WORKS -->
+    <section class="how" id="comment">
+        <div class="wrap">
+            <div class="section-head">
+                <span class="section-tag">COMMENT ÇA MARCHE</span>
+                <h2>Trois étapes, aucun changement d'habitude.</h2>
+            </div>
+            <div class="steps">
+                <div class="step">
+                    <span class="step-num">01 — Connexion</span>
+                    <h3>Vous connectez votre numéro</h3>
+                    <p>Votre numéro WhatsApp Business actuel se connecte à RepliQ en quelques minutes, avec l'aide de
+                        notre équipe. Vos clients ne remarquent aucun changement.</p>
+                </div>
+                <div class="step">
+                    <span class="step-num">02 — Automatisation</span>
+                    <h3>RepliQ prend le relais</h3>
+                    <p>Confirmations, rappels programmés, réponses aux questions fréquentes : l'IA gère les échanges
+                        répétitifs, et transfère vers vous dès qu'une demande sort du cadre.</p>
+                </div>
+                <div class="step">
+                    <span class="step-num">03 — Pilotage</span>
+                    <h3>Vous gardez le contrôle</h3>
+                    <p>Chaque conversation, chaque statut, chaque client est visible sur votre tableau de bord. Vous
+                        pouvez reprendre la main à tout moment, en un clic.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FEATURES -->
+    <section class="features" id="fonctionnalites">
+        <div class="wrap">
+            <div class="section-head">
+                <span class="section-tag">FONCTIONNALITÉS</span>
+                <h2>Ce que RepliQ automatise pour vous.</h2>
+            </div>
+            <div class="feat-grid">
+                <div class="feat-card">
+                    <div class="feat-icon">✓</div>
+                    <h3>Confirmation de commandes &amp; RDV</h3>
+                    <p>Vos clients confirment en répondant simplement OUI ou NON, sans appel ni saisie manuelle de votre
+                        côté.</p>
+                </div>
+                <div class="feat-card">
+                    <div class="feat-icon">⏰</div>
+                    <h3>Rappels automatiques</h3>
+                    <p>Rendez-vous, livraisons, relances de paiement : programmez-les une fois, RepliQ les envoie au bon
+                        moment.</p>
+                </div>
+                <div class="feat-card">
+                    <div class="feat-icon">💬</div>
+                    <h3>Réponses IA aux questions fréquentes</h3>
+                    <p>Horaires, tarifs, disponibilités : l'IA répond naturellement, et transfère à un agent humain si
+                        la demande est complexe.</p>
+                </div>
+                <div class="feat-card">
+                    <div class="feat-icon">📊</div>
+                    <h3>Suivi des statuts</h3>
+                    <p>En attente, confirmé, annulé, livré — chaque conversation garde un statut clair, mis à jour
+                        automatiquement.</p>
+                </div>
+                <div class="feat-card">
+                    <div class="feat-icon">🌍</div>
+                    <h3>Détection multi-langue</h3>
+                    <p>Darija, français, arabe ou anglais : RepliQ détecte la langue du client et répond dans la même
+                        langue.</p>
+                </div>
+                <div class="feat-card">
+                    <div class="feat-icon">💳</div>
+                    <h3>Liens de paiement intégrés</h3>
+                    <p>Envoyez un lien de paiement directement dans la conversation WhatsApp, sans changer
+                        d'application.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- DASHBOARD -->
+    <section class="dash">
+        <div class="wrap">
+            <div class="dash-panel">
+                <div class="dash-copy">
+                    <span class="section-tag">TABLEAU DE BORD</span>
+                    <h2>Toutes vos conversations, en un seul endroit.</h2>
+                    <p>Visibilité totale sur chaque échange, chaque statut et chaque client — avec la possibilité de
+                        reprendre la main manuellement à tout moment.</p>
+                    <ul class="dash-list">
+                        <li>Vue unifiée de toutes les conversations WhatsApp</li>
+                        <li>Temps de réponse, taux de confirmation, conversions</li>
+                        <li>Fiches clients avec historique des commandes</li>
+                        <li>Accès multi-utilisateurs pour votre équipe</li>
+                    </ul>
+                </div>
+                <div class="dash-mock">
+                    <div class="dash-mock-row"><span class="name">Yasmine Bensaid</span><span
+                            class="pill confirmed">Confirmé</span></div>
+                    <div class="dash-mock-row"><span class="name">Karim El Amrani</span><span class="pill pending">En
+                            attente</span></div>
+                    <div class="dash-mock-row"><span class="name">Salma Idrissi</span><span
+                            class="pill delivered">Livré</span></div>
+                    <div class="dash-mock-row"><span class="name">Mehdi Tazi</span><span
+                            class="pill confirmed">Confirmé</span></div>
+                    <div class="dash-stats-row">
+                        <div class="cell">
+                            <div class="n">2m14s</div>
+                            <div class="l">Temps de réponse</div>
+                        </div>
+                        <div class="cell">
+                            <div class="n">91%</div>
+                            <div class="l">Taux de confirmation</div>
+                        </div>
+                        <div class="cell">
+                            <div class="n">+34%</div>
+                            <div class="l">Conversions</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- PRICING -->
+    <section class="pricing" id="tarifs">
+        <div class="wrap">
+            <div class="section-head">
+                <span class="section-tag">TARIFS</span>
+                <h2>Une formule pour chaque étape de votre croissance.</h2>
+            </div>
+
+            <div class="trial-banner">
+                <div class="t-left">
+                    <span class="t-badge">Offre de lancement</span>
+                    <div>
+                        <h4>1 mois d'essai gratuit sur l'abonnement mensuel</h4>
+                        <p>Testez RepliQ sans risque avant que l'engagement de 12 mois ne démarre.</p>
+                    </div>
+                </div>
+                <a href="#" class="btn-ghost-link">En profiter →</a>
+            </div>
+
+            <div class="toggle-row">
+                <div class="toggle-wrap" id="toggleWrap">
+                    <div class="toggle-thumb"></div>
+                    <button class="toggle-btn active" data-mode="unique">Paiement unique</button>
+                    <button class="toggle-btn" data-mode="monthly">Abonnement mensuel</button>
+                </div>
+            </div>
+
+            <div class="price-cards">
+                <!-- ESSENTIELLE -->
+                <div class="price-card">
+                    <div class="price-name">Essentielle</div>
+                    <div class="price-desc">Pour démarrer simplement l'automatisation de vos commandes et rendez-vous.
+                    </div>
+                    <div class="price-amount price-unique">12 000 <span class="unit">MAD</span></div>
+                    <div class="price-amount price-monthly hide">1 490 <span class="unit">MAD / mois</span></div>
+                    <div class="price-note price-note-monthly hide">Engagement 12 mois · 1er mois offert · hébergement
+                        inclus</div>
+                    <div class="price-note price-note-unique">Paiement unique · solution hébergée et maintenue</div>
+                    <ul class="price-features">
+                        <li>Connexion de votre numéro WhatsApp Business</li>
+                        <li>Confirmation automatique des commandes / RDV</li>
+                        <li>Rappels automatiques programmés</li>
+                        <li>Suivi des statuts (attente, confirmé, annulé, livré)</li>
+                        <li>Guide d'utilisation + formation (1h)</li>
+                    </ul>
+                    <a href="#" class="price-cta">Choisir Essentielle</a>
+                </div>
+
+                <!-- STANDARD -->
+                <div class="price-card featured">
+                    <span class="featured-tag">La plus choisie</span>
+                    <div class="price-name">Standard</div>
+                    <div class="price-desc">La formule la plus complète pour une gestion client autonome.</div>
+                    <div class="price-amount price-unique">28 000 <span class="unit">MAD</span></div>
+                    <div class="price-amount price-monthly hide">2 890 <span class="unit">MAD / mois</span></div>
+                    <div class="price-note price-note-monthly hide">Engagement 12 mois · 1er mois offert · hébergement
+                        inclus</div>
+                    <div class="price-note price-note-unique">Paiement unique · solution hébergée et maintenue</div>
+                    <ul class="price-features">
+                        <li>Tout le contenu de la formule Essentielle</li>
+                        <li>Réponses automatiques par IA aux questions fréquentes</li>
+                        <li>Transfert automatique vers un agent humain</li>
+                        <li>Tableau de bord unifié de toutes vos conversations</li>
+                        <li>Prise en main manuelle à tout moment</li>
+                        <li>Formation de l'équipe (2h)</li>
+                    </ul>
+                    <a href="#" class="price-cta">Choisir Standard</a>
+                </div>
+
+                <!-- PREMIUM -->
+                <div class="price-card">
+                    <div class="price-name">Premium</div>
+                    <div class="price-desc">Pour une gestion avancée multi-équipe avec pilotage complet.</div>
+                    <div class="price-amount price-unique">55 000 <span class="unit">MAD</span></div>
+                    <div class="price-amount price-monthly hide">4 990 <span class="unit">MAD / mois</span></div>
+                    <div class="price-note price-note-monthly hide">Engagement 12 mois · 1er mois offert · hébergement
+                        inclus</div>
+                    <div class="price-note price-note-unique">Paiement unique · solution hébergée et maintenue</div>
+                    <ul class="price-features">
+                        <li>Tout le contenu de la formule Standard</li>
+                        <li>Tableau de statistiques (réponse, confirmation, conversions)</li>
+                        <li>Accès multi-utilisateurs pour votre équipe</li>
+                        <li>Liens de paiement intégrés dans la conversation</li>
+                        <li>Détection automatique de la langue du client</li>
+                        <li>Fiches clients avec historique des commandes</li>
+                    </ul>
+                    <a href="#" class="price-cta">Choisir Premium</a>
+                </div>
+            </div>
+
+            <div class="addons-wrap">
+                <div class="addons-box">
+                    <h3>Options additionnelles</h3>
+                    <p>À ajouter individuellement à la formule Essentielle ou Standard si vous n'avez pas besoin du
+                        Premium complet.</p>
+                    <div class="addon-row"><span>Réponses automatiques par IA</span><span class="p">5 000 MAD</span>
+                    </div>
+                    <div class="addon-row"><span>Tableau de statistiques</span><span class="p">4 000 MAD</span></div>
+                    <div class="addon-row"><span>Accès multi-utilisateurs</span><span class="p">3 200 MAD</span></div>
+                    <div class="addon-row"><span>Liens de paiement intégrés</span><span class="p">3 200 MAD</span></div>
+                    <div class="addon-row"><span>Détection multi-langue</span><span class="p">2 000 MAD</span></div>
+                    <div class="addon-row"><span>Fiches clients / historique</span><span class="p">4 000 MAD</span>
+                    </div>
+                </div>
+                <div class="maint-box">
+                    <h3>Maintenance &amp; support</h3>
+                    <p>Pour les clients en paiement unique — l'abonnement mensuel inclut déjà l'hébergement et la
+                        maintenance de base.</p>
+                    <div class="maint-tier">
+                        <div class="mt-head"><span>Standard</span><span class="mt-price">690 MAD/mois</span></div>
+                        <p>Hébergement, surveillance de la connexion, correction de bugs.</p>
+                    </div>
+                    <div class="maint-tier">
+                        <div class="mt-head"><span>Avancée</span><span class="mt-price">1 490 MAD/mois</span></div>
+                        <p>Standard + ajustements des réponses IA + support prioritaire.</p>
+                    </div>
+                </div>
+            </div>
+
+            <p class="payment-terms">Paiement unique réglé en trois fois : <span class="mono">40%</span> à la signature
+                · <span class="mono">30%</span> à la validation d'une version intermédiaire · <span
+                    class="mono">30%</span> à la livraison finale.</p>
+        </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="faq" id="faq">
+        <div class="wrap">
+            <div class="section-head">
+                <span class="section-tag">QUESTIONS FRÉQUENTES</span>
+                <h2>Ce qu'il faut savoir avant de démarrer.</h2>
+            </div>
+            <div class="faq-list">
+                <div class="faq-item open">
+                    <div class="faq-q"><span>Dois-je changer de numéro ou d'application ?</span><span
+                            class="plus"></span></div>
+                    <div class="faq-a">
+                        <p>Non. RepliQ se connecte à votre numéro WhatsApp Business actuel. Vos clients continuent
+                            d'écrire exactement comme avant.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-q"><span>Comment fonctionne le mois d'essai gratuit ?</span><span
+                            class="plus"></span></div>
+                    <div class="faq-a">
+                        <p>Sur l'abonnement mensuel, le premier mois est offert. L'engagement de 12 mois démarre au
+                            deuxième mois, une fois que vous avez validé que la solution vous convient.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-q"><span>Quelle est la différence entre paiement unique et abonnement ?</span><span
+                            class="plus"></span></div>
+                    <div class="faq-a">
+                        <p>Le paiement unique correspond à une installation ferme, avec maintenance mensuelle en option.
+                            L'abonnement mensuel inclut déjà l'hébergement et la maintenance de base, avec un engagement
+                            de 12 mois.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-q"><span>Puis-je reprendre la main sur une conversation ?</span><span
+                            class="plus"></span></div>
+                    <div class="faq-a">
+                        <p>Oui, à tout moment depuis le tableau de bord. L'IA transfère automatiquement les demandes
+                            complexes, mais vous pouvez toujours intervenir vous-même.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-q"><span>Combien de temps est valable cette offre ?</span><span class="plus"></span>
+                    </div>
+                    <div class="faq-a">
+                        <p>Cette proposition tarifaire est valable 30 jours à compter de sa date d'émission.
+                            Contactez-nous pour ajuster une formule à vos besoins spécifiques.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FINAL CTA -->
+    <section class="final-cta">
+        <div class="wrap">
+            <div class="final-cta-box">
+                <h2>Laissez WhatsApp continuer à travailler pour vous — pendant que vous vous occupez du reste.</h2>
+                <p>1 mois d'essai gratuit · aucune carte requise pour démarrer la discussion</p>
+                <div class="hero-cta-row">
+                    <button class="btn-primary">Démarrer l'essai gratuit</button>
+                    <a href="#tarifs" class="btn-ghost-link">Comparer les formules ↓</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="wrap">
+            <div class="logo"><span class="logo-dot"></span>RepliQ</div>
+            <div class="foot-links">
+                <a href="#comment">Comment ça marche</a>
+                <a href="#tarifs">Tarifs</a>
+                <a href="#faq">FAQ</a>
+            </div>
+            <div class="foot-note">© 2026 RepliQ — Automatisation WhatsApp Business</div>
+        </div>
+    </footer>
+
+    <script>
+        // Nav scroll state
+        const nav = document.getElementById('nav');
+        window.addEventListener('scroll', () => {
+            nav.classList.toggle('scrolled', window.scrollY > 30);
+        });
+
+        // Mobile menu
+        const burger = document.getElementById('burger');
+        const mobileMenu = document.getElementById('mobileMenu');
+        burger.addEventListener('click', () => mobileMenu.classList.toggle('open'));
+        mobileMenu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => mobileMenu.classList.remove('open')));
+
+        // Pricing toggle
+        const toggleWrap = document.getElementById('toggleWrap');
+        const toggleBtns = toggleWrap.querySelectorAll('.toggle-btn');
+        toggleBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const mode = btn.dataset.mode;
+                toggleBtns.forEach(b => b.classList.toggle('active', b === btn));
+                toggleWrap.classList.toggle('monthly', mode === 'monthly');
+                document.querySelectorAll('.price-unique').forEach(el => el.classList.toggle('hide', mode === 'monthly'));
+                document.querySelectorAll('.price-monthly').forEach(el => el.classList.toggle('hide', mode !== 'monthly'));
+                document.querySelectorAll('.price-note-unique').forEach(el => el.classList.toggle('hide', mode === 'monthly'));
+                document.querySelectorAll('.price-note-monthly').forEach(el => el.classList.toggle('hide', mode !== 'monthly'));
+            });
+        });
+
+        // FAQ accordion
+        document.querySelectorAll('.faq-item').forEach(item => {
+            item.querySelector('.faq-q').addEventListener('click', () => {
+                const isOpen = item.classList.contains('open');
+                document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+                if (!isOpen) item.classList.add('open');
+            });
+        });
+    </script>
+
+</body>
+
+</html>
