@@ -4,6 +4,7 @@
   "private": true,
   "description": "Minimal WhatsApp Cloud API webhook + Claude-powered auto-replies, deployable on Vercel.",
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.32.1"
+    "@anthropic-ai/sdk": "^0.32.1",
+    "@vercel/functions": "^3.9.7"
   }
 }
