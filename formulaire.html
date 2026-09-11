@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Démarrer avec RepliQ</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+    <nav class="nav scrolled" id="nav">
+        <div class="wrap">
+            <a href="index.html" class="logo"><span class="logo-dot"></span>RepliQ</a>
+            <div class="nav-links">
+                <a href="index.html#comment">Comment ça marche</a>
+                <a href="index.html#fonctionnalites">Fonctionnalités</a>
+                <a href="index.html#tarifs">Tarifs</a>
+                <a href="index.html#faq">FAQ</a>
+            </div>
+            <div style="display:flex; align-items:center; gap:18px;">
+                <a href="https://wa.me/212712614398" target="_blank" rel="noopener" class="nav-cta">Nous écrire</a>
+            </div>
+        </div>
+    </nav>
+
+    <section class="form-hero">
+        <div class="wrap">
+            <div class="eyebrow-tag"><span class="pip">Étape 2/2</span> Finalisez votre demande</div>
+            <h1>Démarrez avec RepliQ.</h1>
+            <p>Remplissez vos informations, nous revenons vers vous sous 24h pour connecter votre numéro WhatsApp
+                Business et activer votre formule.</p>
+        </div>
+    </section>
+
+    <section class="form-section">
+        <div class="wrap">
+
+            <!-- FORM + SUMMARY -->
+            <div class="form-layout" id="formLayout">
+                <div class="form-card">
+                    <form id="signupForm">
+                        <div class="field-group">
+                            <div class="field-row">
+                                <div>
+                                    <label for="fullname">Nom complet</label>
+                                    <input type="text" id="fullname" name="fullname" placeholder="Votre nom et prénom"
+                                        required>
+                                </div>
+                                <div>
+                                    <label for="business">Nom de l'entreprise</label>
+                                    <input type="text" id="business" name="business" placeholder="Ex. Salon Nour"
+                                        required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="field-group">
+                            <label for="activity">Type d'activité</label>
+                            <select id="activity" name="activity" required>
+                                <option value="" disabled selected>Sélectionnez votre secteur</option>
+                                <option>Commerce / boutique</option>
+                                <option>Clinique / cabinet</option>
+                                <option>Salon / institut</option>
+                                <option>Service de livraison</option>
+                                <option>Artisan / prestataire</option>
+                                <option>Autre</option>
+                            </select>
+                        </div>
+
+                        <div class="field-group">
+                            <div class="field-row">
+                                <div>
+                                    <label for="phone">Téléphone (WhatsApp)</label>
+                                    <input type="tel" id="phone" name="phone" placeholder="+212 6 12 34 56 78" required>
+                                </div>
+                                <div>
+                                    <label for="email">Email</label>
+                                    <input type="email" id="email" name="email" placeholder="vous@entreprise.com"
+                                        required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="field-group">
+                            <label for="offer">Offre choisie</label>
+                            <select id="offer" name="offer" required>
+                                <option value="Essai gratuit">Essai gratuit (1 mois offert)</option>
+                                <option value="Essentielle">Essentielle</option>
+                                <option value="Standard">Standard</option>
+                                <option value="Premium">Premium</option>
+                            </select>
+                        </div>
+
+                        <div class="field-group">
+                            <label>Mode de paiement</label>
+                            <div class="radio-row" id="modeRow">
+                                <label class="radio-pill" data-value="unique">
+                                    <input type="radio" name="mode" value="unique">
+                                    <span>Paiement unique</span>
+                                </label>
+                                <label class="radio-pill" data-value="monthly">
+                                    <input type="radio" name="mode" value="monthly">
+                                    <span>Abonnement mensuel</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="field-group">
+                            <label for="message">Message (optionnel)</label>
+                            <textarea id="message" name="message"
+                                placeholder="Précisez un besoin particulier si nécessaire..."></textarea>
+                        </div>
+
+                        <button type="submit" class="form-submit">Envoyer ma demande</button>
+                        <p class="form-note">En envoyant ce formulaire, vous acceptez d'être contacté par RepliQ pour
+                            finaliser votre inscription.</p>
+                    </form>
+                </div>
+
+                <aside class="offer-summary">
+                    <div class="chosen-flag" id="chosenFlag"><span class="dot"></span><span id="chosenFlagText">Offre
+                            sélectionnée</span></div>
+                    <h3>Récapitulatif de votre offre</h3>
+                    <div class="offer-name" id="summaryName">Essai gratuit</div>
+                    <div class="offer-price" id="summaryPrice">0 <span class="unit">MAD — 1er mois offert</span></div>
+                    <ul id="summaryFeatures"></ul>
+                </aside>
+            </div>
+
+            <!-- RECEIPT -->
+            <div class="receipt-wrap" id="receiptWrap">
+                <div class="receipt-card">
+                    <div class="receipt-check">✓</div>
+                    <h2 id="receiptTitle">Merci, votre demande est reçue</h2>
+                    <p>Notre équipe vous contacte sous 24h via WhatsApp ou email pour finaliser votre inscription.</p>
+                    <div class="receipt-ref" id="receiptRef">RÉF. —</div>
+                    <div class="receipt-table" id="receiptTable"></div>
+                    <div class="receipt-actions">
+                        <button class="receipt-btn primary" onclick="window.print()">Télécharger le reçu (PDF)</button>
+                        <a class="receipt-btn ghost" id="waFollowUp" href="#" target="_blank" rel="noopener">Nous écrire
+                            sur WhatsApp</a>
+                        <a class="receipt-btn ghost" href="index.html">Retour à l'accueil</a>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <footer>
+        <div class="wrap">
+            <a href="index.html" class="logo"><span class="logo-dot"></span>RepliQ</a>
+            <div class="foot-links">
+                <a href="index.html#comment">Comment ça marche</a>
+                <a href="index.html#tarifs">Tarifs</a>
+                <a href="index.html#faq">FAQ</a>
+            </div>
+            <div class="foot-socials">
+                <a href="https://www.instagram.com/re.pliq?stkn=MXY1Ym5jamJjb2xnMA==" target="_blank" rel="noopener"
+                    aria-label="RepliQ sur Instagram">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                        <rect x="3" y="3" width="18" height="18" rx="5" />
+                        <circle cx="12" cy="12" r="4" />
+                        <circle cx="17.2" cy="6.8" r="1" />
+                    </svg>
+                </a>
+                <a href="https://wa.me/212712614398" target="_blank" rel="noopener" aria-label="RepliQ sur WhatsApp">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path
+                            d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.39 1.26 4.81L2 22l5.4-1.35a9.83 9.83 0 0 0 4.64 1.17h.01c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2zm0 17.9h-.01a8.05 8.05 0 0 1-4.11-1.13l-.29-.17-3.05.77.81-2.98-.19-.3a8 8 0 1 1 6.84 3.81zm4.4-5.98c-.24-.12-1.43-.7-1.65-.79-.22-.08-.38-.12-.55.12-.16.24-.63.79-.77.95-.14.16-.28.18-.52.06-.24-.12-1.02-.38-1.94-1.2-.72-.64-1.2-1.43-1.34-1.67-.14-.24-.02-.37.11-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.55-1.33-.76-1.82-.2-.48-.4-.42-.55-.42h-.47c-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.32.98 2.48c.12.16 1.7 2.6 4.13 3.64.58.25 1.03.4 1.38.51.58.18 1.11.16 1.53.1.47-.07 1.43-.58 1.63-1.15.2-.56.2-1.04.14-1.15-.06-.1-.22-.16-.46-.28z" />
+                    </svg>
+                </a>
+            </div>
+            <div class="foot-note">© 2026 RepliQ — Automatisation WhatsApp Business</div>
+        </div>
+    </footer>
+
+    <a class="wa-float" href="https://wa.me/212712614398" target="_blank" rel="noopener"
+        aria-label="Discuter sur WhatsApp">
+        <svg viewBox="0 0 24 24">
+            <path
+                d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.39 1.26 4.81L2 22l5.4-1.35a9.83 9.83 0 0 0 4.64 1.17h.01c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2zm0 17.9h-.01a8.05 8.05 0 0 1-4.11-1.13l-.29-.17-3.05.77.81-2.98-.19-.3a8 8 0 1 1 6.84 3.81zm4.4-5.98c-.24-.12-1.43-.7-1.65-.79-.22-.08-.38-.12-.55.12-.16.24-.63.79-.77.95-.14.16-.28.18-.52.06-.24-.12-1.02-.38-1.94-1.2-.72-.64-1.2-1.43-1.34-1.67-.14-.24-.02-.37.11-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.55-1.33-.76-1.82-.2-.48-.4-.42-.55-.42h-.47c-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.32.98 2.48c.12.16 1.7 2.6 4.13 3.64.58.25 1.03.4 1.38.51.58.18 1.11.16 1.53.1.47-.07 1.43-.58 1.63-1.15.2-.56.2-1.04.14-1.15-.06-.1-.22-.16-.46-.28z" />
+        </svg>
+    </a>
+
+    <script>
+        // ---- Offer data (mirrors index.html pricing) ----
+        const OFFERS = {
+            "Essai gratuit": {
+                unique: null,
+                monthly: { price: "0", unit: "MAD — 1er mois offert, puis 1 490 MAD/mois" },
+                features: [
+                    "Connexion de votre numéro WhatsApp Business",
+                    "Confirmation automatique des commandes / RDV",
+                    "Rappels automatiques programmés",
+                    "Suivi des statuts en temps réel"
+                ]
+            },
+            "Essentielle": {
+                unique: { price: "12 000", unit: "MAD — paiement unique" },
+                monthly: { price: "1 490", unit: "MAD / mois — engagement 12 mois" },
+                features: [
+                    "Connexion de votre numéro WhatsApp Business",
+                    "Confirmation automatique des commandes / RDV",
+                    "Rappels automatiques programmés",
+                    "Suivi des statuts (attente, confirmé, annulé, livré)",
+                    "Guide d'utilisation + formation (1h)"
+                ]
+            },
+            "Standard": {
+                unique: { price: "28 000", unit: "MAD — paiement unique" },
+                monthly: { price: "2 890", unit: "MAD / mois — engagement 12 mois" },
+                features: [
+                    "Tout le contenu de la formule Essentielle",
+                    "Réponses automatiques par IA aux questions fréquentes",
+                    "Transfert automatique vers un agent humain",
+                    "Tableau de bord unifié de toutes vos conversations",
+                    "Formation de l'équipe (2h)"
+                ]
+            },
+            "Premium": {
+                unique: { price: "55 000", unit: "MAD — paiement unique" },
+                monthly: { price: "4 990", unit: "MAD / mois — engagement 12 mois" },
+                features: [
+                    "Tout le contenu de la formule Standard",
+                    "Tableau de statistiques (réponse, confirmation, conversions)",
+                    "Accès multi-utilisateurs pour votre équipe",
+                    "Liens de paiement intégrés dans la conversation",
+                    "Détection automatique de la langue du client",
+                    "Fiches clients avec historique des commandes"
+                ]
+            }
+        };
+
+        const params = new URLSearchParams(window.location.search);
+        const initialOffer = params.get('offer') && OFFERS[params.get('offer')] ? params.get('offer') : 'Essai gratuit';
+        const initialMode = params.get('mode') === 'unique' ? 'unique' : 'monthly';
+
+        const offerSelect = document.getElementById('offer');
+        const modeRow = document.getElementById('modeRow');
+        const modeInputs = modeRow.querySelectorAll('input[name="mode"]');
+        const pills = modeRow.querySelectorAll('.radio-pill');
+
+        function setMode(mode) {
+            if (mode === 'unique' && OFFERS[offerSelect.value].unique === null) {
+                mode = 'monthly'; // essai gratuit has no "paiement unique"
+            }
+            modeInputs.forEach(i => i.checked = (i.value === mode));
+            pills.forEach(p => p.classList.toggle('checked', p.dataset.value === mode));
+            updateSummary();
+        }
+
+        function updateSummary() {
+            const offerName = offerSelect.value;
+            const data = OFFERS[offerName];
+            const mode = modeRow.querySelector('input[name="mode"]:checked').value;
+            const priceData = data[mode] || data.monthly;
+
+            document.getElementById('summaryName').textContent = offerName;
+            document.getElementById('summaryPrice').innerHTML = priceData.price + ' <span class="unit">' + priceData.unit + '</span>';
+            document.getElementById('chosenFlagText').textContent = 'Vous avez choisi : ' + offerName;
+
+            const list = document.getElementById('summaryFeatures');
+            list.innerHTML = '';
+            data.features.forEach(f => {
+                const li = document.createElement('li');
+                li.textContent = f;
+                list.appendChild(li);
+            });
+
+            // disable "paiement unique" pill for free trial
+            const uniquePill = modeRow.querySelector('.radio-pill[data-value="unique"]');
+            const disabled = data.unique === null;
+            uniquePill.style.opacity = disabled ? 0.4 : 1;
+            uniquePill.style.pointerEvents = disabled ? 'none' : 'auto';
+        }
+
+        offerSelect.value = initialOffer;
+        offerSelect.addEventListener('change', () => setMode(modeRow.querySelector('input[name="mode"]:checked').value));
+
+        pills.forEach(pill => {
+            pill.addEventListener('click', () => setMode(pill.dataset.value));
+        });
+
+        setMode(initialMode);
+
+        // ---- Submit -> generate receipt ----
+        document.getElementById('signupForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const fullname = document.getElementById('fullname').value.trim();
+            const business = document.getElementById('business').value.trim();
+            const activity = document.getElementById('activity').value;
+            const phone = document.getElementById('phone').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const offerName = offerSelect.value;
+            const mode = modeRow.querySelector('input[name="mode"]:checked').value;
+            const modeLabel = mode === 'unique' ? 'Paiement unique' : 'Abonnement mensuel';
+            const priceData = OFFERS[offerName][mode] || OFFERS[offerName].monthly;
+
+            const ref = 'RPLQ-' + Date.now().toString().slice(-6) + '-' + Math.floor(Math.random() * 900 + 100);
+            const today = new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
+
+            document.getElementById('receiptTitle').textContent = 'Merci ' + fullname.split(' ')[0] + ', votre demande est reçue';
+            document.getElementById('receiptRef').textContent = 'RÉF. ' + ref + '  ·  ' + today;
+
+            const table = document.getElementById('receiptTable');
+            const rows = [
+                ['Entreprise', business],
+                ["Type d'activité", activity],
+                ['Offre choisie', offerName],
+                ['Mode', modeLabel],
+                ['Tarif', priceData.price + ' ' + priceData.unit],
+                ['Téléphone', phone],
+                ['Email', email]
+            ];
+            table.innerHTML = rows.map(r => `<div class="receipt-row"><span class="k">${r[0]}</span><span class="v">${r[1]}</span></div>`).join('');
+
+            const waText = encodeURIComponent(`Bonjour RepliQ, je viens de faire une demande (réf. ${ref}) pour l'offre ${offerName}.`);
+            document.getElementById('waFollowUp').href = `https://wa.me/212712614398?text=${waText}`;
+
+            document.getElementById('formLayout').classList.add('hidden');
+            document.getElementById('receiptWrap').classList.add('show');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    </script>
+
+</body>
+
+</html>
