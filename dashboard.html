@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RepliQ — Tableau de bord</title>
+    <style>
+        :root {
+            color-scheme: dark;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: #0f1115;
+            color: #e8e8e8;
+            height: 100vh;
+            display: flex;
+        }
+
+        #login {
+            margin: auto;
+            background: #1a1d24;
+            padding: 32px;
+            border-radius: 12px;
+            text-align: center;
+            width: 300px;
+        }
+
+        #login input {
+            width: 100%;
+            padding: 10px;
+            margin: 12px 0;
+            border-radius: 6px;
+            border: 1px solid #333;
+            background: #0f1115;
+            color: white;
+        }
+
+        #login button,
+        .refresh-btn {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: none;
+            background: #25d366;
+            color: #041b0e;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        #app {
+            display: none;
+            width: 100%;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: #171a21;
+            border-right: 1px solid #2a2d35;
+            overflow-y: auto;
+            height: 100vh;
+        }
+
+        .convo-item {
+            padding: 14px 16px;
+            border-bottom: 1px solid #22252c;
+            cursor: pointer;
+        }
+
+        .convo-item:hover {
+            background: #1f232b;
+        }
+
+        .convo-item.active {
+            background: #232a35;
+        }
+
+        .convo-phone {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .convo-preview {
+            font-size: 12px;
+            color: #999;
+            margin-top: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #2a2d35;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .thread {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .bubble {
+            max-width: 65%;
+            padding: 10px 14px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            font-size: 14px;
+            line-height: 1.4;
+            white-space: pre-wrap;
+        }
+
+        .bubble.user {
+            background: #232a35;
+            margin-right: auto;
+        }
+
+        .bubble.assistant {
+            background: #1f5c3c;
+            margin-left: auto;
+        }
+
+        .bubble-time {
+            font-size: 10px;
+            color: #888;
+            margin-top: 4px;
+        }
+
+        .empty {
+            margin: auto;
+            color: #666;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="login">
+        <h2>🔒 RepliQ Dashboard</h2>
+        <input type="password" id="secretInput" placeholder="Mot de passe" />
+        <button onclick="tryLogin()">Entrer</button>
+        <p id="loginError" style="color:#e5484d;font-size:13px;"></p>
+    </div>
+
+    <div id="app">
+        <div class="sidebar" id="sidebar"></div>
+        <div class="main">
+            <div class="header">
+                <strong id="activePhone">Sélectionnez une conversation</strong>
+                <button class="refresh-btn" style="width:auto;padding:8px 16px;" onclick="loadConversations()">🔄
+                    Actualiser</button>
+            </div>
+            <div class="thread" id="thread">
+                <div class="empty">Aucune conversation sélectionnée</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let SECRET = localStorage.getItem("repliq_dashboard_key") || "";
+        let conversations = [];
+        let activePhone = null;
+
+        function tryLogin() {
+            SECRET = document.getElementById("secretInput").value;
+            loadConversations(true);
+        }
+
+        async function loadConversations(isLogin = false) {
+            try {
+                const res = await fetch("/api/dashboard?key=" + encodeURIComponent(SECRET));
+                if (res.status === 401) {
+                    document.getElementById("loginError").textContent = "Mot de passe incorrect.";
+                    return;
+                }
+                const data = await res.json();
+                conversations = data.conversations || [];
+                localStorage.setItem("repliq_dashboard_key", SECRET);
+                document.getElementById("login").style.display = "none";
+                document.getElementById("app").style.display = "flex";
+                renderSidebar();
+                if (activePhone) renderThread(activePhone);
+            } catch (err) {
+                document.getElementById("loginError").textContent = "Erreur de connexion.";
+                console.error(err);
+            }
+        }
+
+        function renderSidebar() {
+            const sidebar = document.getElementById("sidebar");
+            if (conversations.length === 0) {
+                sidebar.innerHTML = '<div class="empty" style="padding:20px;">Aucune conversation pour l\'instant.</div>';
+                return;
+            }
+            sidebar.innerHTML = conversations.map(c => {
+                const last = c.messages[c.messages.length - 1];
+                const preview = last ? last.content : "";
+                return `<div class="convo-item ${c.phone === activePhone ? 'active' : ''}" onclick="renderThread('${c.phone}')">
+        <div class="convo-phone">+${c.phone}</div>
+        <div class="convo-preview">${preview.replace(/</g, "&lt;")}</div>
+      </div>`;
+            }).join("");
+        }
+
+        function renderThread(phone) {
+            activePhone = phone;
+            document.getElementById("activePhone").textContent = "+" + phone;
+            const convo = conversations.find(c => c.phone === phone);
+            const thread = document.getElementById("thread");
+            if (!convo || convo.messages.length === 0) {
+                thread.innerHTML = '<div class="empty">Pas encore de messages.</div>';
+                return;
+            }
+            thread.innerHTML = convo.messages.map(m => {
+                const time = m.ts ? new Date(m.ts).toLocaleString("fr-FR") : "";
+                return `<div class="bubble ${m.role === 'user' ? 'user' : 'assistant'}">
+        ${m.content.replace(/</g, "&lt;")}
+        <div class="bubble-time">${time}</div>
+      </div>`;
+            }).join("");
+            thread.scrollTop = thread.scrollHeight;
+            renderSidebar();
+        }
+
+        // Auto-login if a key was saved before.
+        if (SECRET) loadConversations();
+    </script>
+
+</body>
+
+</html>
