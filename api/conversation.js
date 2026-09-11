@@ -13,6 +13,7 @@ import {
     getConversationMode,
     setConversationMode,
     getConversationOwner,
+    setConversationOwner,
     getBusinessConfig,
     claimMessage,
 } from "../lib/db.js";
@@ -86,6 +87,12 @@ async function handleAdminAction(req, res) {
                     .status(400)
                     .json({ error: "Unknown conversation (no owning business number)" });
             }
+            // Self-heal: if this came from the DEFAULT_PHONE_NUMBER_ID fallback
+            // rather than a real conv:owner:<phone> key, write it now so future
+            // lookups for this conversation hit Redis directly.
+            setConversationOwner(phone, phoneNumberId).catch((e) =>
+                console.error("Owner backfill failed:", e)
+            );
             await sendWhatsAppText(phoneNumberId, phone, text);
             await saveMessage(phone, "assistant", text, phoneNumberId);
             return res.status(200).json({ ok: true });
