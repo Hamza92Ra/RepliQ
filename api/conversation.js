@@ -12,7 +12,6 @@ import {
     getHistory,
     getConversationMode,
     setConversationMode,
-    getConversationOwner,
     setConversationOwner,
     getBusinessConfig,
     claimMessage,
@@ -81,26 +80,22 @@ async function handleAdminAction(req, res) {
             if (!text) {
                 return res.status(400).json({ error: "Missing message" });
             }
-            // Prefer the owner saved for this conversation. For older
-            // conversations that predate owner tracking, the dashboard sends
-            // the owner returned with that conversation so replies still use
-            // the correct WhatsApp Business number instead of a global
-            // fallback number.
-            const phoneNumberId = String(
-                requestedPhoneNumberId || (await getConversationOwner(phone)) || ""
-            ).trim();
+            // A dashboard reply must use the owner attached to this exact
+            // conversation. Do not silently use DEFAULT_PHONE_NUMBER_ID:
+            // that can send from the wrong WhatsApp Business number when
+            // several numbers are connected to the same deployment.
+            const phoneNumberId = String(requestedPhoneNumberId || "").trim();
             if (!phoneNumberId) {
-                return res
-                    .status(400)
-                    .json({ error: "Unknown conversation (no owning business number)" });
+                return res.status(400).json({
+                    error: "This conversation has no WhatsApp Business number assigned. Send a new customer message first so ownership can be recorded."
+                });
             }
             const recipient = String(phone).replace(/\D/g, "");
             if (!recipient) {
                 return res.status(400).json({ error: "Invalid conversation phone number" });
             }
-            // Self-heal: if this came from the DEFAULT_PHONE_NUMBER_ID fallback
-            // rather than a real conv:owner:<phone> key, write it now so future
-            // lookups for this conversation hit Redis directly.
+            // Backfill the owner key for conversations created before owner
+            // tracking was added.
             setConversationOwner(phone, phoneNumberId).catch((e) =>
                 console.error("Owner backfill failed:", e)
             );
