@@ -86,12 +86,17 @@ async function handleAdminAction(req, res) {
             // the owner returned with that conversation so replies still use
             // the correct WhatsApp Business number instead of a global
             // fallback number.
-            const phoneNumberId =
-                requestedPhoneNumberId || (await getConversationOwner(phone));
+            const phoneNumberId = String(
+                requestedPhoneNumberId || (await getConversationOwner(phone)) || ""
+            ).trim();
             if (!phoneNumberId) {
                 return res
                     .status(400)
                     .json({ error: "Unknown conversation (no owning business number)" });
+            }
+            const recipient = String(phone).replace(/\D/g, "");
+            if (!recipient) {
+                return res.status(400).json({ error: "Invalid conversation phone number" });
             }
             // Self-heal: if this came from the DEFAULT_PHONE_NUMBER_ID fallback
             // rather than a real conv:owner:<phone> key, write it now so future
@@ -99,21 +104,33 @@ async function handleAdminAction(req, res) {
             setConversationOwner(phone, phoneNumberId).catch((e) =>
                 console.error("Owner backfill failed:", e)
             );
-            await sendWhatsAppText(phoneNumberId, phone, text);
+            await sendWhatsAppText(phoneNumberId, recipient, text);
             // Save with role "agent" (NOT "assistant") so the takeover stays
             // visible in the dashboard and, crucially, so the bot can tell —
             // when the conversation is handed back to it — that a human spoke
             // in the middle of the thread. getHistory() in lib/db.js folds
             // this into a marked assistant turn for the AI, keeping the whole
             // exchange as ONE continuous conversation under the same number.
-            await saveMessage(phone, "agent", text, phoneNumberId);
+            try {
+                await saveMessage(recipient, "agent", text, phoneNumberId);
+            } catch (dbErr) {
+                // The WhatsApp message has already been delivered. Do not
+                // report a false send failure that would make the dashboard
+                // resend the same message if Redis has a transient problem.
+                console.error("Admin reply storage failed after send:", dbErr);
+            }
             return res.status(200).json({ ok: true });
         }
 
         return res.status(400).json({ error: `Unknown action: ${action}` });
     } catch (err) {
         console.error("Admin action failed:", err);
-        return res.status(500).json({ error: "Action failed" });
+        const status = Number(err?.status);
+        const error = err?.message || "Action failed";
+        return res.status(status >= 400 && status < 600 ? 502 : 500).json({
+            error: "WhatsApp message could not be sent",
+            details: error,
+        });
     }
 }
 
