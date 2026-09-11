@@ -278,7 +278,7 @@
                 <div class="header-actions" id="headerActions" style="display:none;">
                     <button class="primary" onclick="setMode('human')">👤 Prendre en charge</button>
                     <button onclick="setMode('bot')">🤖 Rendre au bot</button>
-                    <button class="danger" onclick="setMode('complete')">✅ Terminer la conversation</button>
+                    <button class="danger" onclick="setMode('completed')">✅ Terminer la conversation</button>
                     <button class="refresh-btn" style="width:auto;padding:8px 16px;" onclick="loadConversations()">🔄
                         Actualiser</button>
                 </div>
@@ -384,7 +384,7 @@
             const labels = {
                 human: "prendre en charge cette conversation",
                 bot: "rendre cette conversation au bot",
-                complete: "terminer cette conversation (le bot se taira)"
+                completed: "terminer cette conversation (le bot se taira)"
             };
             if (!confirm(`Voulez-vous vraiment ${labels[action]} ?`)) return;
 
