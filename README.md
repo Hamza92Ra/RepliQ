@@ -1,70 +1,75 @@
-﻿# RepliQ — Landing Page
+# RepliQ Bot — test webhook
 
-Landing page (site vitrine) pour **RepliQ**, une plateforme SaaS qui connecte le numéro WhatsApp Business d'une entreprise et automatise la partie répétitive de la relation client : confirmation de commandes/rendez-vous, rappels automatiques, réponses IA aux questions fréquentes et suivi des statuts — le tout piloté depuis un tableau de bord.
+Minimal WhatsApp Cloud API webhook that replies to incoming messages using Claude. No framework — just two serverless functions, ready for Vercel.
 
-RepliQ ne demande pas aux entreprises de changer d'outil : il automatise WhatsApp, la plateforme qu'elles utilisent déjà.
+## What it does
 
-## Aperçu
+1. A customer sends a WhatsApp message to your Meta test number.
+2. Meta calls `POST /api/webhook` with the message.
+3. The function calls Claude to generate a reply (business context is defined in `lib/ai.js`).
+4. The function sends the reply back via the WhatsApp Cloud API.
 
-Page unique en français, pensée pour les PME (commerces, cliniques, salons, services de livraison, artisans), avec :
+## 1. Deploy to Vercel
 
-- Un hero avec une simulation animée de conversation WhatsApp
-- Une section « constat » expliquant l'insight produit
-- Un déroulé « comment ça marche » en 3 étapes
-- Une grille de fonctionnalités
-- Un aperçu du tableau de bord
-- Une section tarifs avec bascule **Paiement unique / Abonnement mensuel**, formules Essentielle / Standard / Premium, options additionnelles et plans de maintenance
-- Une bannière d'offre de lancement (1 mois d'essai gratuit)
-- Une FAQ et un CTA final
-
-## Stack
-
-- HTML5 + CSS3 (variables CSS, grid/flexbox) — aucun framework
-- JavaScript vanilla (aucune dépendance) pour :
-  - le menu mobile
-  - la bascule des tarifs (paiement unique / mensuel)
-  - l'accordéon FAQ
-  - l'état de la barre de navigation au scroll
-- Polices via Google Fonts : `Sora`, `Manrope`, `IBM Plex Mono`
-
-Tout le code (HTML, CSS, JS) est contenu dans un seul fichier : `repliq-landing.html`.
-
-## Structure du projet
-
-```
-.
-├── repliq-landing.html   # Page complète (structure + styles + scripts)
-└── README.md
+```bash
+npm install -g vercel   # if you don't have it
+cd repliq-bot
+vercel
 ```
 
-## Utilisation en local
+Follow the prompts (link or create a project). Once deployed, Vercel gives you a URL like:
 
-Aucune installation n'est nécessaire.
+```
+https://repliq-bot.vercel.app
+```
 
-1. Cloner le dépôt :
-   ```bash
-   git clone https://github.com/Hamza92Ra/index.git
-   cd repliq-landing
-   ```
-2. Ouvrir `repliq-landing.html` directement dans un navigateur, ou lancer un petit serveur local :
-   ```bash
-   python3 -m http.server 8000
-   ```
-   puis visiter `http://localhost:8000/repliq-landing.html`.
+Your webhook URL will be:
 
-## Déploiement
+```
+https://repliq-bot.vercel.app/api/webhook
+```
 
-Le fichier étant statique, il peut être déployé tel quel sur n'importe quel hébergeur de site statique :
+## 2. Set environment variables
 
-- **GitHub Pages** : activer Pages sur le dépôt (branche `main`, dossier racine), puis renommer `repliq-landing.html` en `index.html` à la racine (ou configurer Pages pour pointer vers ce fichier).
-- **Netlify / Vercel** : glisser-déposer le dossier ou connecter le dépôt, aucune configuration de build requise.
+In the Vercel dashboard → your project → **Settings → Environment Variables**, add the four variables from `.env.example`:
 
-## Personnalisation
+| Variable | Where to find it |
+|---|---|
+| `WHATSAPP_TOKEN` | Meta App Dashboard → WhatsApp → API Setup (temporary token, ~24h) |
+| `WHATSAPP_PHONE_NUMBER_ID` | Same page, labeled "Phone number ID" |
+| `VERIFY_TOKEN` | Any string you make up yourself, e.g. `repliq-test-2026` |
+| `ANTHROPIC_API_KEY` | console.anthropic.com → API Keys |
 
-- **Couleurs / typographies** : variables définies dans le bloc `:root` en haut du fichier (`--ink`, `--emerald`, `--amber`, etc.).
-- **Tarifs et options** : contenu HTML dans la section `#tarifs` — les montants sont statiques et à mettre à jour manuellement si l'offre change.
-- **Liens des boutons** (CTA, "Choisir une formule", etc.) : actuellement des ancres `#` à remplacer par vos liens réels (formulaire de contact, Calendly, WhatsApp, etc.).
+Redeploy after adding them (`vercel --prod`, or just push again) so they take effect.
 
-## Licence
+## 3. Point Meta at your webhook
 
-Projet privé — tous droits réservés, sauf mention contraire de votre part.
+In the Meta App Dashboard → **WhatsApp → Configuration**:
+
+1. Click **Edit** next to Webhook.
+2. Callback URL: `https://repliq-bot.vercel.app/api/webhook`
+3. Verify token: the exact same string you set as `VERIFY_TOKEN` in Vercel.
+4. Click **Verify and save** — Meta will call your webhook with a `GET` request; if it responds correctly you'll see a success message.
+5. Under **Webhook fields**, subscribe to `messages`.
+
+## 4. Test it
+
+From your own WhatsApp (the number you verified as a test recipient in the Meta dashboard), send a message to the test number. Within a couple seconds you should get a Claude-generated reply back.
+
+Check **Vercel → your project → Logs** if something doesn't respond — that's where `console.log`/`console.error` output from the function shows up.
+
+## Known limitations (fine for testing, not for production)
+
+- **No conversation memory.** Each message is answered independently — the bot doesn't remember earlier turns. Fine for quick FAQ-style testing; for real conversations you'll want to store recent messages per customer (e.g. in Vercel KV or a small Postgres table) and pass them as `history` to `generateReply()` in `lib/ai.js`.
+- **One hardcoded business.** The system prompt in `lib/ai.js` describes a single fictional business. In the real product this needs to be loaded per WhatsApp number from a database, driven by what each RepliQ customer configures in their dashboard.
+- **Temporary access token.** The token from the Meta dashboard expires after ~24h. For anything beyond a single test session, generate a permanent token (System User token) in Meta Business Settings.
+- **Text-only.** Images, audio notes, and buttons aren't handled yet — the bot just replies with a fallback message for those.
+- **No order/reminder logic yet.** This is just the "AI answers a message" loop — order confirmation flows, scheduled reminders, and the status dashboard are separate pieces to build next.
+
+## Next steps
+
+Once this loop works end-to-end, the natural next additions are:
+1. Persistent conversation storage (per customer, per business).
+2. A way to configure each business's system prompt / FAQ from the RepliQ dashboard instead of hardcoding it.
+3. Scheduled reminders (a cron job, e.g. Vercel Cron, that sends template messages at the right time).
+4. Order/appointment confirmation as a structured flow rather than free-form chat.

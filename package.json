@@ -1,0 +1,9 @@
+{
+  "name": "repliq-whatsapp-bot",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Minimal WhatsApp Cloud API webhook + Claude-powered auto-replies, deployable on Vercel.",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.1"
+  }
+}
