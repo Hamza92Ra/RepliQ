@@ -49,12 +49,7 @@
             overflow: hidden;
         }
 
-        h1,
-        h2,
-        h3,
-        .logo,
-        .convo-phone,
-        .price-name {
+        h1, h2, h3, .logo, .convo-phone, .price-name {
             font-family: 'Sora', sans-serif;
         }
 
@@ -262,7 +257,7 @@
             align-items: center;
             gap: 12px;
             flex-wrap: wrap;
-            background: linear-gradient(180deg, rgba(255, 255, 255, 0.015), transparent);
+            background: linear-gradient(180deg, rgba(255,255,255,0.015), transparent);
         }
 
         #activePhone {
@@ -332,7 +327,7 @@
             font-size: 14px;
             line-height: 1.5;
             white-space: pre-wrap;
-            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+            box-shadow: 0 4px 14px rgba(0,0,0,0.18);
         }
 
         .bubble.user {
@@ -359,7 +354,7 @@
 
         .bubble-time {
             font-size: 10px;
-            color: rgba(255, 255, 255, 0.55);
+            color: rgba(255,255,255,0.55);
             margin-top: 6px;
             font-family: 'IBM Plex Mono', monospace;
         }
@@ -444,7 +439,7 @@
             font-weight: 600;
             display: none;
             z-index: 10;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
         }
 
         /* scrollbars */
@@ -459,6 +454,117 @@
 
         ::-webkit-scrollbar-track {
             background: transparent;
+        }
+
+        /* ---------- CONFIRM MODAL ---------- */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(6, 8, 11, 0.6);
+            backdrop-filter: blur(3px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .18s ease;
+        }
+
+        .modal-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-card {
+            width: 380px;
+            max-width: calc(100vw - 40px);
+            background: linear-gradient(180deg, var(--panel-2), var(--panel));
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 26px 26px 20px;
+            box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255,255,255,0.02) inset;
+            transform: translateY(10px) scale(0.97);
+            transition: transform .2s cubic-bezier(.2,.8,.2,1);
+        }
+
+        .modal-overlay.show .modal-card {
+            transform: translateY(0) scale(1);
+        }
+
+        .modal-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-bottom: 16px;
+        }
+
+        .modal-icon.human { background: var(--amber-bg); border: 1px solid var(--amber-border); }
+        .modal-icon.bot { background: var(--accent-glow); border: 1px solid rgba(37,211,102,0.35); }
+        .modal-icon.completed { background: var(--danger-bg); border: 1px solid var(--danger); }
+
+        .modal-title {
+            font-family: 'Sora', sans-serif;
+            font-size: 16.5px;
+            font-weight: 700;
+            margin: 0 0 8px;
+            letter-spacing: -0.01em;
+        }
+
+        .modal-body {
+            font-size: 13.5px;
+            color: var(--text-dim);
+            line-height: 1.55;
+            margin: 0 0 22px;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .modal-actions button {
+            padding: 10px 18px;
+            border-radius: 9px;
+            border: 1px solid var(--border);
+            background: var(--panel);
+            color: var(--text);
+            font-family: 'Manrope', sans-serif;
+            font-weight: 600;
+            font-size: 13.5px;
+            cursor: pointer;
+            transition: transform .12s ease, background .12s ease;
+        }
+
+        .modal-actions button:hover {
+            transform: translateY(-1px);
+            background: var(--panel-2);
+        }
+
+        .modal-actions button.confirm-human {
+            border-color: var(--accent);
+            background: linear-gradient(135deg, var(--accent), var(--accent-dim));
+            color: #05170c;
+            box-shadow: 0 8px 20px var(--accent-glow);
+        }
+
+        .modal-actions button.confirm-bot {
+            border-color: var(--accent);
+            background: linear-gradient(135deg, var(--accent), var(--accent-dim));
+            color: #05170c;
+            box-shadow: 0 8px 20px var(--accent-glow);
+        }
+
+        .modal-actions button.confirm-completed {
+            border-color: var(--danger);
+            background: linear-gradient(135deg, #ff6b6b, #c93f3f);
+            color: #2a0808;
+            box-shadow: 0 8px 20px rgba(255, 107, 107, 0.25);
         }
     </style>
     <base target="_blank">
@@ -502,6 +608,18 @@
     </div>
 
     <div id="toast"></div>
+
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-card">
+            <div class="modal-icon" id="modalIcon"></div>
+            <h3 class="modal-title" id="modalTitle"></h3>
+            <p class="modal-body" id="modalBody"></p>
+            <div class="modal-actions">
+                <button onclick="closeConfirmModal(false)">Annuler</button>
+                <button id="modalConfirmBtn" onclick="closeConfirmModal(true)">Confirmer</button>
+            </div>
+        </div>
+    </div>
 
     <script>
         let SECRET = localStorage.getItem("repliq_dashboard_key") || "";
@@ -597,14 +715,65 @@
             renderSidebar();
         }
 
+        const MODAL_CONTENT = {
+            human: {
+                icon: "👤",
+                iconClass: "human",
+                title: "Prendre en charge la conversation",
+                body: "Le bot arrêtera de répondre automatiquement à ce client. Vous pourrez lui écrire directement en tant que conseiller.",
+                confirmLabel: "Prendre en charge",
+                confirmClass: "confirm-human"
+            },
+            bot: {
+                icon: "🤖",
+                iconClass: "bot",
+                title: "Rendre la conversation au bot",
+                body: "RepliQ reprendra automatiquement la conversation avec ce client à partir de maintenant.",
+                confirmLabel: "Rendre au bot",
+                confirmClass: "confirm-bot"
+            },
+            completed: {
+                icon: "✅",
+                iconClass: "completed",
+                title: "Terminer la conversation",
+                body: "Le bot se taira définitivement sur cette conversation. Cette action est utile une fois la demande du client résolue.",
+                confirmLabel: "Terminer",
+                confirmClass: "confirm-completed"
+            }
+        };
+
+        let modalResolve = null;
+
+        function openConfirmModal(action) {
+            const c = MODAL_CONTENT[action];
+            const icon = document.getElementById("modalIcon");
+            icon.textContent = c.icon;
+            icon.className = "modal-icon " + c.iconClass;
+            document.getElementById("modalTitle").textContent = c.title;
+            document.getElementById("modalBody").textContent = c.body;
+            const btn = document.getElementById("modalConfirmBtn");
+            btn.textContent = c.confirmLabel;
+            btn.className = c.confirmClass;
+            document.getElementById("modalOverlay").classList.add("show");
+            return new Promise(resolve => { modalResolve = resolve; });
+        }
+
+        function closeConfirmModal(result) {
+            document.getElementById("modalOverlay").classList.remove("show");
+            if (modalResolve) {
+                modalResolve(result);
+                modalResolve = null;
+            }
+        }
+
+        document.getElementById("modalOverlay").addEventListener("click", (e) => {
+            if (e.target.id === "modalOverlay") closeConfirmModal(false);
+        });
+
         async function setMode(action) {
             if (!activePhone) return;
-            const labels = {
-                human: "prendre en charge cette conversation",
-                bot: "rendre cette conversation au bot",
-                completed: "terminer cette conversation (le bot se taira)"
-            };
-            if (!confirm(`Voulez-vous vraiment ${labels[action]} ?`)) return;
+            const confirmed = await openConfirmModal(action);
+            if (!confirmed) return;
 
             try {
                 const res = await fetch("/api/conversation?key=" + encodeURIComponent(SECRET), {
