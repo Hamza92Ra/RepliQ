@@ -111,7 +111,11 @@ export default async function handler(req, res) {
     // Everything below is best-effort: the lead is already saved and the
     // client already sees their receipt in the browser, so a WhatsApp or
     // notification hiccup here should never turn into an error response —
-    // it just gets logged.
+    // it just gets logged. TEMP DEBUG: we also attach the raw error into
+    // the JSON response (whatsapp_error / whatsapp_error_code below) so it
+    // shows up directly in the browser's Network tab, no Vercel log
+    // digging required. Remove this once the send is confirmed working.
+    let whatsappError = null;
     const phoneNumberId = process.env.DEFAULT_PHONE_NUMBER_ID;
     if (phoneNumberId) {
         try {
@@ -132,8 +136,10 @@ export default async function handler(req, res) {
             await saveMessage(cleanPhone, "assistant", congratsText, phoneNumberId);
         } catch (waErr) {
             console.error("Lead congrats WhatsApp message failed:", waErr);
+            whatsappError = { message: waErr.message, code: waErr.code || null, status: waErr.status || null };
         }
     } else {
+        whatsappError = { message: "DEFAULT_PHONE_NUMBER_ID not set" };
         console.warn("DEFAULT_PHONE_NUMBER_ID not set — skipping lead congrats WhatsApp message.");
     }
 
@@ -146,5 +152,5 @@ export default async function handler(req, res) {
         console.error("Lead team notification failed:", notifyErr);
     }
 
-    return res.status(200).json({ ok: true });
+    return res.status(200).json({ ok: true, whatsapp_error: whatsappError });
 }
