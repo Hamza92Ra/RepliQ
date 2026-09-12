@@ -27,8 +27,17 @@ export default async function handler(req, res) {
 
     // Normalize the same way the webhook/admin action does, so this lands
     // under the same conversation key a future WhatsApp message from this
-    // person would use (e.g. "+212 6 12-34-56" -> "212612345678").
-    const cleanPhone = String(phone).replace(/\D/g, "");
+    // person would use. WhatsApp always reports numbers in full
+    // international format (e.g. "212673046307"), but people naturally type
+    // local numbers into a form (e.g. "0673046307" or "06 73 04 63 07") —
+    // without this conversion those would create a SEPARATE, duplicate
+    // conversation instead of merging with their real WhatsApp thread.
+    let cleanPhone = String(phone).replace(/\D/g, "");
+    if (cleanPhone.startsWith("00")) {
+        cleanPhone = cleanPhone.slice(2); // "00212..." -> "212..."
+    } else if (cleanPhone.startsWith("0") && cleanPhone.length === 10) {
+        cleanPhone = "212" + cleanPhone.slice(1); // "0673046307" -> "212673046307"
+    }
     if (!cleanPhone) {
         return res.status(400).json({ error: "Invalid phone number" });
     }
