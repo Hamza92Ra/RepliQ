@@ -1,11 +1,46 @@
 import { saveMessage } from "../lib/db.js";
+import { sendWhatsAppText } from "../lib/whatsapp.js";
+import { notifyTeam } from "../lib/notify.js";
+
+// Short, friendly highlights per offer — used to build the WhatsApp congrats
+// message so the client gets a real explanation of what they picked, not
+// just a generic "thank you". Keep this in sync with the OFFERS features
+// shown in formulaire.html if those ever change.
+const OFFER_HIGHLIGHTS = {
+    "Essai gratuit": [
+        "Connexion de votre numéro WhatsApp Business",
+        "Confirmation automatique des commandes / RDV",
+        "Rappels automatiques programmés",
+    ],
+    "Essentielle": [
+        "Confirmation automatique des commandes / RDV",
+        "Rappels automatiques programmés",
+        "Suivi des statuts en temps réel",
+        "1h de formation incluse",
+    ],
+    "Standard": [
+        "Tout le contenu de l'offre Essentielle",
+        "Réponses automatiques par IA aux questions fréquentes",
+        "Transfert automatique vers un agent humain",
+        "Tableau de bord unifié de toutes vos conversations",
+    ],
+    "Premium": [
+        "Tout le contenu de l'offre Standard",
+        "Statistiques détaillées (réponse, confirmation, conversions)",
+        "Accès multi-utilisateurs pour votre équipe",
+        "Liens de paiement intégrés dans la conversation",
+        "Détection automatique de la langue du client",
+    ],
+};
 
 /**
  * Receives a submission from formulaire.html and registers it as a
  * conversation entry so it shows up in the dashboard (dashboard.html ->
  * /api/dashboard -> listConversations()) exactly like a real WhatsApp
  * message would — just tagged with role "lead" instead of "user" so it
- * renders distinctly.
+ * renders distinctly. It also (best-effort) sends the client a WhatsApp
+ * congrats message explaining their chosen plan, and pings the team so
+ * someone follows up ASAP.
  *
  * POST /api/lead
  * body: { fullname, business, activity, phone, email, offer, mode, price, message?, ref? }
@@ -65,11 +100,51 @@ export default async function handler(req, res) {
     try {
         // No phoneNumberId: this lead isn't yet tied to a WhatsApp Business
         // number — that gets attached automatically (setConversationOwner)
-        // the first time they actually message in on WhatsApp.
+        // the first time they actually message in on WhatsApp, or below if
+        // we successfully send the congrats message from our own number.
         await saveMessage(cleanPhone, "lead", lines.join("\n"));
-        return res.status(200).json({ ok: true });
     } catch (err) {
         console.error("Lead save failed:", err);
         return res.status(500).json({ error: "Failed to save lead" });
     }
+
+    // Everything below is best-effort: the lead is already saved and the
+    // client already sees their receipt in the browser, so a WhatsApp or
+    // notification hiccup here should never turn into an error response —
+    // it just gets logged.
+    const phoneNumberId = process.env.DEFAULT_PHONE_NUMBER_ID;
+    if (phoneNumberId) {
+        try {
+            const firstName = String(fullname).trim().split(/\s+/)[0];
+            const highlights = OFFER_HIGHLIGHTS[offer] || OFFER_HIGHLIGHTS["Essai gratuit"];
+            const congratsText =
+                `🎉 Félicitations ${firstName} ! Votre demande pour l'offre *${offer || "RepliQ"}* a bien été reçue.\n\n` +
+                `Voici ce que votre plan inclut :\n` +
+                highlights.map((h) => `• ${h}`).join("\n") +
+                `\n\n💰 Tarif : ${price || "—"} (${modeLabel})\n\n` +
+                `Un membre de notre équipe va vous contacter très prochainement pour connecter votre numéro WhatsApp Business et activer votre offre. En attendant, n'hésitez pas à poser vos questions ici, je suis là pour vous aider ! 🙌`;
+
+            await sendWhatsAppText(phoneNumberId, cleanPhone, congratsText);
+
+            // Record it in the same conversation, and set phoneNumberId so
+            // this becomes the recognized owner of the thread — this is
+            // what lets a dashboard admin reply to this person later.
+            await saveMessage(cleanPhone, "assistant", congratsText, phoneNumberId);
+        } catch (waErr) {
+            console.error("Lead congrats WhatsApp message failed:", waErr);
+        }
+    } else {
+        console.warn("DEFAULT_PHONE_NUMBER_ID not set — skipping lead congrats WhatsApp message.");
+    }
+
+    try {
+        await notifyTeam({
+            from: cleanPhone,
+            message: `Nouvelle commande via le formulaire — ${fullname} (${business}) a choisi l'offre "${offer}" (${modeLabel}, ${price || "—"}). À contacter dès que possible.`,
+        });
+    } catch (notifyErr) {
+        console.error("Lead team notification failed:", notifyErr);
+    }
+
+    return res.status(200).json({ ok: true });
 }
