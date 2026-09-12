@@ -331,6 +331,26 @@
             // Keep the raw data around for the PDF download button.
             currentReceipt = { fullname, ref, today, rows };
 
+            // Register this submission in the dashboard (fire-and-forget:
+            // the receipt still shows to the client even if this fails, so
+            // a network hiccup here never blocks their confirmation).
+            fetch('/api/lead', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    fullname,
+                    business,
+                    activity,
+                    phone,
+                    email,
+                    offer: offerName,
+                    mode,
+                    price: priceData.price + ' ' + priceData.unit,
+                    message: document.getElementById('message').value.trim(),
+                    ref
+                })
+            }).catch(err => console.error('Lead submission failed:', err));
+
             document.getElementById('formLayout').classList.add('hidden');
             document.getElementById('receiptWrap').classList.add('show');
             window.scrollTo({ top: 0, behavior: 'smooth' });
