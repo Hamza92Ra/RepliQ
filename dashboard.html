@@ -343,61 +343,128 @@
         .thread {
             flex: 1;
             overflow-y: auto;
-            padding: 26px 30px;
+            padding: 30px 34px;
             background:
                 radial-gradient(600px 300px at 100% 0%, rgba(37, 211, 102, 0.04), transparent 60%);
         }
 
+        .msg-row {
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+            margin-bottom: 18px;
+            max-width: 72%;
+            animation: msgIn .22s cubic-bezier(.2,.8,.2,1);
+        }
+
+        @keyframes msgIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .msg-row.user {
+            margin-right: auto;
+        }
+
+        .msg-row.assistant,
+        .msg-row.agent {
+            margin-left: auto;
+            flex-direction: row-reverse;
+        }
+
+        .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            flex-shrink: 0;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+        }
+
+        .avatar.user {
+            background: var(--panel-2);
+            border: 1px solid var(--border);
+        }
+
+        .avatar.assistant {
+            background: linear-gradient(135deg, var(--accent), var(--accent-dim));
+        }
+
+        .avatar.agent {
+            background: linear-gradient(135deg, var(--amber), #c9a53f);
+        }
+
+        .msg-col {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .msg-row.assistant .msg-col,
+        .msg-row.agent .msg-col {
+            align-items: flex-end;
+        }
+
+        .sender-label {
+            font-size: 11px;
+            font-weight: 700;
+            font-family: 'IBM Plex Mono', monospace;
+            letter-spacing: 0.02em;
+            margin-bottom: 5px;
+            padding: 0 3px;
+        }
+
+        .sender-label.user { color: var(--text-faint); }
+        .sender-label.assistant { color: var(--accent); }
+        .sender-label.agent { color: var(--amber); }
+
         .bubble {
-            max-width: 62%;
-            padding: 11px 15px;
-            border-radius: 14px;
-            margin-bottom: 12px;
-            font-size: 14px;
-            line-height: 1.5;
+            padding: 12px 16px;
+            border-radius: 16px;
+            font-size: 14.5px;
+            line-height: 1.6;
             white-space: pre-wrap;
-            box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.22);
+            word-break: break-word;
+        }
+
+        .bubble strong {
+            font-weight: 700;
         }
 
         .bubble.user {
             background: var(--panel-2);
             border: 1px solid var(--border);
-            margin-right: auto;
-            border-bottom-left-radius: 4px;
+            border-bottom-left-radius: 5px;
         }
 
         .bubble.assistant {
-            background: linear-gradient(135deg, var(--accent-dim), #147a3e);
-            color: #eafff2;
-            margin-left: auto;
-            border-bottom-right-radius: 4px;
+            background: linear-gradient(160deg, #1fae5c, #12723c);
+            color: #f2fff7;
+            border-bottom-right-radius: 5px;
         }
 
         .bubble.agent {
-            background: var(--amber-bg);
+            background: linear-gradient(160deg, #4a3d17, #372c11);
             border: 1px solid var(--amber-border);
             color: #fff3d6;
-            margin-left: auto;
-            border-bottom-right-radius: 4px;
+            border-bottom-right-radius: 5px;
         }
 
         .bubble-time {
-            font-size: 10px;
-            color: rgba(255,255,255,0.55);
+            font-size: 10.5px;
+            color: var(--text-faint);
             margin-top: 6px;
             font-family: 'IBM Plex Mono', monospace;
+            padding: 0 3px;
         }
 
-        .bubble.user .bubble-time {
-            color: var(--text-faint);
-        }
-
-        .bubble-role {
-            font-size: 10.5px;
-            font-weight: 700;
-            color: var(--amber);
-            margin-bottom: 4px;
-            font-family: 'IBM Plex Mono', monospace;
+        .msg-row.assistant .bubble-time,
+        .msg-row.agent .bubble-time {
+            text-align: right;
         }
 
         .composer {
@@ -712,6 +779,25 @@
             }).join("");
         }
 
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        // Turns raw bot/user text into clean, safe HTML: escapes everything
+        // first (so no injection), then re-introduces basic formatting the
+        // bot commonly uses — **bold** and literal "<br>" markers — as real
+        // markup, and collapses extra blank lines for a tidier look.
+        function formatContent(text) {
+            let safe = escapeHtml(text);
+            safe = safe.replace(/&lt;br\s*\/?&gt;/gi, "\n");
+            safe = safe.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+            safe = safe.replace(/\n{3,}/g, "\n\n");
+            return safe;
+        }
+
+        const ROLE_LABELS = { user: "Client", assistant: "RepliQ", agent: "Conseiller" };
+        const ROLE_AVATARS = { user: "🙂", assistant: "🤖", agent: "👤" };
+
         function renderThread(phone) {
             activePhone = phone;
             document.getElementById("activePhone").textContent = "+" + phone;
@@ -731,21 +817,16 @@
                 thread.innerHTML = '<div class="empty">Pas encore de messages.</div>';
                 return;
             }
-            // Distinguish the three roles visually: client (left), bot
-            // (green, right), and human conseiller (amber, right) who took
-            // over the SAME conversation from the dashboard.
-            const ROLE_META = {
-                user: { cls: "user", label: "" },
-                assistant: { cls: "assistant", label: "" },
-                agent: { cls: "agent", label: "👤 Conseiller" },
-            };
             thread.innerHTML = convo.messages.map(m => {
-                const meta = ROLE_META[m.role] || ROLE_META.assistant;
+                const role = ROLE_LABELS[m.role] ? m.role : "assistant";
                 const time = m.ts ? new Date(m.ts).toLocaleString("fr-FR") : "";
-                return `<div class="bubble ${meta.cls}">
-        ${meta.label ? `<div class="bubble-role">${meta.label}</div>` : ""}
-        ${m.content.replace(/</g, "&lt;")}
-        <div class="bubble-time">${time}</div>
+                return `<div class="msg-row ${role}">
+        <div class="avatar ${role}">${ROLE_AVATARS[role]}</div>
+        <div class="msg-col">
+          <div class="sender-label ${role}">${ROLE_LABELS[role]}</div>
+          <div class="bubble ${role}">${formatContent(m.content)}</div>
+          <div class="bubble-time">${time}</div>
+        </div>
       </div>`;
             }).join("");
             thread.scrollTop = thread.scrollHeight;
