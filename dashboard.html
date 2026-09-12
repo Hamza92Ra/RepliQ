@@ -5,9 +5,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RepliQ — Tableau de bord</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap"
+        rel="stylesheet">
     <style>
         :root {
             color-scheme: dark;
+            --bg: #0b0d11;
+            --bg-soft: #10131a;
+            --panel: #141821;
+            --panel-2: #191e29;
+            --border: #232a37;
+            --text: #eef1f6;
+            --text-dim: #9aa3b2;
+            --text-faint: #6b7383;
+            --accent: #25d366;
+            --accent-dim: #1a9950;
+            --accent-glow: rgba(37, 211, 102, 0.18);
+            --amber: #f0d77b;
+            --amber-bg: #3a2f14;
+            --amber-border: #6b551f;
+            --danger: #ff6b6b;
+            --danger-bg: #2c1518;
+            --radius: 14px;
         }
 
         * {
@@ -16,83 +38,181 @@
 
         body {
             margin: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            background: #0f1115;
-            color: #e8e8e8;
+            font-family: 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background:
+                radial-gradient(1200px 600px at 15% -10%, rgba(37, 211, 102, 0.08), transparent 60%),
+                radial-gradient(900px 500px at 100% 0%, rgba(37, 211, 102, 0.05), transparent 55%),
+                var(--bg);
+            color: var(--text);
             height: 100vh;
             display: flex;
+            overflow: hidden;
         }
 
+        h1,
+        h2,
+        h3,
+        .logo,
+        .convo-phone,
+        .price-name {
+            font-family: 'Sora', sans-serif;
+        }
+
+        .mono {
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        /* ---------- LOGIN ---------- */
         #login {
             margin: auto;
-            background: #1a1d24;
-            padding: 32px;
-            border-radius: 12px;
+            background: linear-gradient(180deg, var(--panel-2), var(--panel));
+            border: 1px solid var(--border);
+            padding: 40px 36px;
+            border-radius: 20px;
             text-align: center;
-            width: 300px;
+            width: 320px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+        }
+
+        #login h2 {
+            margin: 0 0 6px;
+            font-size: 20px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .login-sub {
+            color: var(--text-dim);
+            font-size: 13px;
+            margin: 0 0 22px;
+        }
+
+        .logo-dot {
+            display: inline-block;
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: var(--accent);
+            box-shadow: 0 0 12px var(--accent-glow), 0 0 0 4px var(--accent-glow);
         }
 
         #login input {
             width: 100%;
-            padding: 10px;
-            margin: 12px 0;
-            border-radius: 6px;
-            border: 1px solid #333;
-            background: #0f1115;
-            color: white;
+            padding: 12px 14px;
+            margin: 8px 0 16px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: var(--bg-soft);
+            color: var(--text);
+            font-family: inherit;
+            font-size: 14px;
+            outline: none;
+            transition: border-color .15s ease, box-shadow .15s ease;
+        }
+
+        #login input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
         }
 
         #login button,
         .refresh-btn {
             width: 100%;
-            padding: 10px;
-            border-radius: 6px;
+            padding: 12px;
+            border-radius: 10px;
             border: none;
-            background: #25d366;
-            color: #041b0e;
-            font-weight: 600;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dim));
+            color: #05170c;
+            font-weight: 700;
+            font-family: 'Sora', sans-serif;
+            font-size: 14px;
             cursor: pointer;
+            transition: transform .12s ease, box-shadow .12s ease;
+            box-shadow: 0 8px 20px var(--accent-glow);
         }
 
+        #login button:hover,
+        .refresh-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 26px var(--accent-glow);
+        }
+
+        /* ---------- APP LAYOUT ---------- */
         #app {
             display: none;
             width: 100%;
         }
 
         .sidebar {
-            width: 300px;
-            background: #171a21;
-            border-right: 1px solid #2a2d35;
+            width: 320px;
+            background: var(--bg-soft);
+            border-right: 1px solid var(--border);
             overflow-y: auto;
             height: 100vh;
+            flex-shrink: 0;
+        }
+
+        .sidebar-head {
+            padding: 20px 18px 14px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            position: sticky;
+            top: 0;
+            background: var(--bg-soft);
+            z-index: 2;
+        }
+
+        .sidebar-head .logo {
+            font-size: 17px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            letter-spacing: -0.01em;
+        }
+
+        .sidebar-head .count {
+            margin-left: auto;
+            font-size: 11px;
+            color: var(--text-faint);
+            font-family: 'IBM Plex Mono', monospace;
         }
 
         .convo-item {
-            padding: 14px 16px;
-            border-bottom: 1px solid #22252c;
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border);
             cursor: pointer;
+            transition: background .12s ease;
+            border-left: 3px solid transparent;
         }
 
         .convo-item:hover {
-            background: #1f232b;
+            background: var(--panel);
         }
 
         .convo-item.active {
-            background: #232a35;
+            background: var(--panel-2);
+            border-left: 3px solid var(--accent);
         }
 
         .convo-phone {
-            font-weight: 600;
+            font-weight: 700;
             font-size: 14px;
             display: flex;
             align-items: center;
             gap: 8px;
+            letter-spacing: -0.01em;
         }
 
         .convo-preview {
-            font-size: 12px;
-            color: #999;
-            margin-top: 4px;
+            font-size: 12.5px;
+            color: var(--text-dim);
+            margin-top: 5px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -101,24 +221,29 @@
         .badge {
             font-size: 10px;
             font-weight: 700;
-            padding: 2px 8px;
-            border-radius: 10px;
+            padding: 3px 9px;
+            border-radius: 20px;
             text-transform: uppercase;
+            letter-spacing: 0.03em;
+            font-family: 'IBM Plex Mono', monospace;
         }
 
         .badge.bot {
-            background: #1f5c3c;
-            color: #7bf0ae;
+            background: rgba(37, 211, 102, 0.14);
+            color: var(--accent);
+            border: 1px solid rgba(37, 211, 102, 0.35);
         }
 
         .badge.human {
-            background: #5c4a1f;
-            color: #f0d77b;
+            background: var(--amber-bg);
+            color: var(--amber);
+            border: 1px solid var(--amber-border);
         }
 
         .badge.completed {
-            background: #3a3d45;
-            color: #9aa0ab;
+            background: var(--panel-2);
+            color: var(--text-faint);
+            border: 1px solid var(--border);
         }
 
         .main {
@@ -126,16 +251,25 @@
             display: flex;
             flex-direction: column;
             height: 100vh;
+            min-width: 0;
         }
 
         .header {
-            padding: 16px 20px;
-            border-bottom: 1px solid #2a2d35;
+            padding: 18px 26px;
+            border-bottom: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
             align-items: center;
             gap: 12px;
             flex-wrap: wrap;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.015), transparent);
+        }
+
+        #activePhone {
+            font-size: 16px;
+            font-weight: 700;
+            font-family: 'Sora', sans-serif;
+            letter-spacing: -0.01em;
         }
 
         .header-actions {
@@ -145,143 +279,199 @@
         }
 
         .header-actions button {
-            padding: 8px 14px;
-            border-radius: 6px;
-            border: 1px solid #333;
-            background: #232a35;
-            color: #e8e8e8;
+            padding: 9px 15px;
+            border-radius: 9px;
+            border: 1px solid var(--border);
+            background: var(--panel);
+            color: var(--text);
             font-size: 13px;
+            font-weight: 600;
+            font-family: 'Manrope', sans-serif;
             cursor: pointer;
+            transition: background .12s ease, transform .12s ease, border-color .12s ease;
         }
 
         .header-actions button:hover {
-            background: #2c3440;
+            background: var(--panel-2);
+            transform: translateY(-1px);
         }
 
         .header-actions button.danger {
-            border-color: #5c2b2b;
-            background: #3a1f1f;
+            border-color: var(--danger);
+            background: var(--danger-bg);
+            color: #ffb3b3;
         }
 
         .header-actions button.danger:hover {
-            background: #4d2828;
+            background: #3a1c1f;
         }
 
         .header-actions button.primary {
-            border-color: #1f5c3c;
-            background: #163826;
+            border-color: var(--accent);
+            background: var(--accent-glow);
+            color: var(--accent);
+        }
+
+        .header-actions button.primary:hover {
+            background: rgba(37, 211, 102, 0.26);
         }
 
         .thread {
             flex: 1;
             overflow-y: auto;
-            padding: 20px;
+            padding: 26px 30px;
+            background:
+                radial-gradient(600px 300px at 100% 0%, rgba(37, 211, 102, 0.04), transparent 60%);
         }
 
         .bubble {
-            max-width: 65%;
-            padding: 10px 14px;
-            border-radius: 10px;
-            margin-bottom: 10px;
+            max-width: 62%;
+            padding: 11px 15px;
+            border-radius: 14px;
+            margin-bottom: 12px;
             font-size: 14px;
-            line-height: 1.4;
+            line-height: 1.5;
             white-space: pre-wrap;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
         }
 
         .bubble.user {
-            background: #232a35;
+            background: var(--panel-2);
+            border: 1px solid var(--border);
             margin-right: auto;
+            border-bottom-left-radius: 4px;
         }
 
         .bubble.assistant {
-            background: #1f5c3c;
+            background: linear-gradient(135deg, var(--accent-dim), #147a3e);
+            color: #eafff2;
             margin-left: auto;
+            border-bottom-right-radius: 4px;
         }
 
-        /* Human agent takeover: same right-hand side as bot messages (same
-           WhatsApp thread, same number) but visually distinct so the admin
-           always knows WHO spoke — the bot or a real conseiller. */
         .bubble.agent {
-            background: #4a3d17;
-            border: 1px solid #8a6d1f;
+            background: var(--amber-bg);
+            border: 1px solid var(--amber-border);
+            color: #fff3d6;
             margin-left: auto;
+            border-bottom-right-radius: 4px;
         }
 
         .bubble-time {
             font-size: 10px;
-            color: #888;
-            margin-top: 4px;
+            color: rgba(255, 255, 255, 0.55);
+            margin-top: 6px;
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        .bubble.user .bubble-time {
+            color: var(--text-faint);
         }
 
         .bubble-role {
-            font-size: 10px;
+            font-size: 10.5px;
             font-weight: 700;
-            color: #f0d77b;
-            margin-bottom: 3px;
+            color: var(--amber);
+            margin-bottom: 4px;
+            font-family: 'IBM Plex Mono', monospace;
         }
 
         .composer {
             display: flex;
-            gap: 8px;
-            padding: 12px 20px;
-            border-top: 1px solid #2a2d35;
+            gap: 10px;
+            padding: 16px 26px;
+            border-top: 1px solid var(--border);
+            background: var(--bg-soft);
         }
 
         .composer input {
             flex: 1;
-            padding: 10px 14px;
-            border-radius: 8px;
-            border: 1px solid #333;
-            background: #171a21;
-            color: #e8e8e8;
+            padding: 12px 16px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: var(--panel);
+            color: var(--text);
             font-size: 14px;
+            font-family: 'Manrope', sans-serif;
+            outline: none;
+            transition: border-color .15s ease, box-shadow .15s ease;
+        }
+
+        .composer input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
         }
 
         .composer button {
-            padding: 10px 20px;
-            border-radius: 8px;
+            padding: 12px 24px;
+            border-radius: 10px;
             border: none;
-            background: #25d366;
-            color: #041b0e;
-            font-weight: 600;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dim));
+            color: #05170c;
+            font-weight: 700;
+            font-family: 'Sora', sans-serif;
             cursor: pointer;
+            box-shadow: 0 6px 18px var(--accent-glow);
+            transition: transform .12s ease;
+        }
+
+        .composer button:hover {
+            transform: translateY(-1px);
         }
 
         .composer button:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+            transform: none;
         }
 
         .empty {
             margin: auto;
-            color: #666;
+            color: var(--text-faint);
             text-align: center;
+            font-size: 14px;
         }
 
         #toast {
             position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #232a35;
-            border: 1px solid #333;
-            padding: 12px 18px;
-            border-radius: 8px;
+            bottom: 24px;
+            right: 24px;
+            background: var(--panel-2);
+            border: 1px solid var(--border);
+            padding: 13px 20px;
+            border-radius: 10px;
             font-size: 13px;
+            font-weight: 600;
             display: none;
             z-index: 10;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        /* scrollbars */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
         }
     </style>
-    <base target="_blank">
     <base target="_blank">
 </head>
 
 <body>
 
     <div id="login">
-        <h2>🔒 RepliQ Dashboard</h2>
+        <h2><span class="logo-dot"></span>RepliQ</h2>
+        <p class="login-sub">Tableau de bord — accès conseiller</p>
         <input type="password" id="secretInput" placeholder="Mot de passe" />
         <button onclick="tryLogin()">Entrer</button>
-        <p id="loginError" style="color:#e5484d;font-size:13px;"></p>
+        <p id="loginError" style="color:#ff6b6b;font-size:13px;"></p>
     </div>
 
     <div id="app">
@@ -296,7 +486,7 @@
                     <button class="primary" onclick="setMode('human')">👤 Prendre en charge</button>
                     <button onclick="setMode('bot')">🤖 Rendre au bot</button>
                     <button class="danger" onclick="setMode('completed')">✅ Terminer la conversation</button>
-                    <button class="refresh-btn" style="width:auto;padding:8px 16px;" onclick="loadConversations()">🔄
+                    <button class="refresh-btn" style="width:auto;padding:9px 16px;" onclick="loadConversations()">🔄
                         Actualiser</button>
                 </div>
             </div>
@@ -352,11 +542,12 @@
 
         function renderSidebar() {
             const sidebar = document.getElementById("sidebar");
+            const head = `<div class="sidebar-head"><span class="logo"><span class="logo-dot"></span>RepliQ</span><span class="count">${conversations.length} conv.</span></div>`;
             if (conversations.length === 0) {
-                sidebar.innerHTML = '<div class="empty" style="padding:20px;">Aucune conversation pour l\'instant.</div>';
+                sidebar.innerHTML = head + '<div class="empty" style="padding:24px;">Aucune conversation pour l\'instant.</div>';
                 return;
             }
-            sidebar.innerHTML = conversations.map(c => {
+            sidebar.innerHTML = head + conversations.map(c => {
                 const last = c.messages[c.messages.length - 1];
                 const preview = last ? last.content : "";
                 return `<div class="convo-item ${c.phone === activePhone ? 'active' : ''}" onclick="renderThread('${c.phone}')">
