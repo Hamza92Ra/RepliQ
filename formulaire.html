@@ -11,10 +11,11 @@
         href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <!-- jsPDF: generates a real, downloadable PDF file client-side instead of relying on window.print() -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 
 <body>
-
     <nav class="nav scrolled" id="nav">
         <div class="wrap">
             <a href="index.html" class="logo"><span class="logo-dot"></span>RepliQ</a>
@@ -41,7 +42,6 @@
 
     <section class="form-section">
         <div class="wrap">
-
             <!-- FORM + SUMMARY -->
             <div class="form-layout" id="formLayout">
                 <div class="form-card">
@@ -143,14 +143,13 @@
                     <div class="receipt-ref" id="receiptRef">RÉF. —</div>
                     <div class="receipt-table" id="receiptTable"></div>
                     <div class="receipt-actions">
-                        <button class="receipt-btn primary" onclick="window.print()">Télécharger le reçu (PDF)</button>
+                        <button class="receipt-btn primary" onclick="downloadReceiptPdf()">Télécharger le reçu (PDF)</button>
                         <a class="receipt-btn ghost" id="waFollowUp" href="#" target="_blank" rel="noopener">Nous écrire
                             sur WhatsApp</a>
                         <a class="receipt-btn ghost" href="index.html">Retour à l'accueil</a>
                     </div>
                 </div>
             </div>
-
         </div>
     </section>
 
@@ -284,14 +283,16 @@
 
         offerSelect.value = initialOffer;
         offerSelect.addEventListener('change', () => setMode(modeRow.querySelector('input[name="mode"]:checked').value));
-
         pills.forEach(pill => {
             pill.addEventListener('click', () => setMode(pill.dataset.value));
         });
-
         setMode(initialMode);
 
         // ---- Submit -> generate receipt ----
+        // Holds the data behind the currently-displayed receipt so the PDF
+        // download button can build a real file without re-reading the DOM.
+        let currentReceipt = null;
+
         document.getElementById('signupForm').addEventListener('submit', function (e) {
             e.preventDefault();
 
@@ -309,9 +310,8 @@
             const today = new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
 
             document.getElementById('receiptTitle').textContent = 'Merci ' + fullname.split(' ')[0] + ', votre demande est reçue';
-            document.getElementById('receiptRef').textContent = 'RÉF. ' + ref + '  ·  ' + today;
+            document.getElementById('receiptRef').textContent = 'RÉF. ' + ref + ' · ' + today;
 
-            const table = document.getElementById('receiptTable');
             const rows = [
                 ['Entreprise', business],
                 ["Type d'activité", activity],
@@ -321,17 +321,99 @@
                 ['Téléphone', phone],
                 ['Email', email]
             ];
+
+            const table = document.getElementById('receiptTable');
             table.innerHTML = rows.map(r => `<div class="receipt-row"><span class="k">${r[0]}</span><span class="v">${r[1]}</span></div>`).join('');
 
             const waText = encodeURIComponent(`Bonjour RepliQ, je viens de faire une demande (réf. ${ref}) pour l'offre ${offerName}.`);
             document.getElementById('waFollowUp').href = `https://wa.me/212712614398?text=${waText}`;
 
+            // Keep the raw data around for the PDF download button.
+            currentReceipt = { fullname, ref, today, rows };
+
             document.getElementById('formLayout').classList.add('hidden');
             document.getElementById('receiptWrap').classList.add('show');
             window.scrollTo({ top: 0, behavior: 'smooth' });
         });
-    </script>
 
+        // ---- Real PDF download (replaces window.print()) ----
+        // Builds an actual .pdf file client-side with jsPDF and triggers a
+        // download, instead of opening the browser's print dialog.
+        function downloadReceiptPdf() {
+            if (!currentReceipt || !window.jspdf) return;
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const marginX = 56;
+            const accent = [37, 211, 102]; // RepliQ green
+            const dark = [17, 19, 24];
+            const gray = [110, 118, 130];
+
+            // Header band
+            doc.setFillColor(...dark);
+            doc.rect(0, 0, pageWidth, 96, 'F');
+            doc.setFillColor(...accent);
+            doc.circle(marginX + 4, 48, 4, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(20);
+            doc.text('RepliQ', marginX + 16, 53);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(200, 205, 212);
+            doc.text('Reçu de demande', marginX + 16, 68);
+
+            let y = 140;
+
+            doc.setTextColor(...dark);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(16);
+            doc.text(`Merci ${currentReceipt.fullname.split(' ')[0]}, votre demande est reçue`, marginX, y);
+
+            y += 22;
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(10.5);
+            doc.setTextColor(...gray);
+            doc.text('Notre équipe vous contacte sous 24h via WhatsApp ou email pour finaliser votre inscription.', marginX, y, { maxWidth: pageWidth - marginX * 2 });
+
+            y += 30;
+            doc.setFont('courier', 'bold');
+            doc.setFontSize(10);
+            doc.setTextColor(...accent);
+            doc.text(`RÉF. ${currentReceipt.ref}  ·  ${currentReceipt.today}`, marginX, y);
+
+            y += 24;
+            doc.setDrawColor(225, 228, 232);
+            doc.line(marginX, y, pageWidth - marginX, y);
+
+            y += 28;
+            currentReceipt.rows.forEach(([label, value]) => {
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(10.5);
+                doc.setTextColor(...gray);
+                doc.text(label, marginX, y);
+
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(...dark);
+                doc.text(String(value), pageWidth - marginX, y, { align: 'right' });
+
+                y += 18;
+                doc.setDrawColor(240, 242, 245);
+                doc.line(marginX, y - 6, pageWidth - marginX, y - 6);
+                y += 10;
+            });
+
+            y += 20;
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(9);
+            doc.setTextColor(...gray);
+            doc.text('© ' + new Date().getFullYear() + ' RepliQ — Automatisation WhatsApp Business', marginX, doc.internal.pageSize.getHeight() - 40);
+
+            doc.save(`recu-${currentReceipt.ref}.pdf`);
+        }
+    </script>
 </body>
 
 </html>
