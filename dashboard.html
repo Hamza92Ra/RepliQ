@@ -49,12 +49,7 @@
             overflow: hidden;
         }
 
-        h1,
-        h2,
-        h3,
-        .logo,
-        .convo-phone,
-        .price-name {
+        h1, h2, h3, .logo, .convo-phone, .price-name {
             font-family: 'Sora', sans-serif;
         }
 
@@ -284,7 +279,7 @@
             align-items: center;
             gap: 12px;
             flex-wrap: wrap;
-            background: linear-gradient(180deg, rgba(255, 255, 255, 0.015), transparent);
+            background: linear-gradient(180deg, rgba(255,255,255,0.015), transparent);
         }
 
         #activePhone {
@@ -362,17 +357,9 @@
         }
 
         @keyframes livePulse {
-            0% {
-                box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.5);
-            }
-
-            70% {
-                box-shadow: 0 0 0 7px rgba(37, 211, 102, 0);
-            }
-
-            100% {
-                box-shadow: 0 0 0 0 rgba(37, 211, 102, 0);
-            }
+            0% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.5); }
+            70% { box-shadow: 0 0 0 7px rgba(37, 211, 102, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0); }
         }
 
         .thread {
@@ -392,19 +379,12 @@
         }
 
         .msg-row.msg-new {
-            animation: msgIn .22s cubic-bezier(.2, .8, .2, 1);
+            animation: msgIn .22s cubic-bezier(.2,.8,.2,1);
         }
 
         @keyframes msgIn {
-            from {
-                opacity: 0;
-                transform: translateY(6px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .msg-row.user {
@@ -430,7 +410,7 @@
             justify-content: center;
             font-size: 15px;
             flex-shrink: 0;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.3);
         }
 
         .avatar.user {
@@ -470,21 +450,10 @@
             padding: 0 3px;
         }
 
-        .sender-label.user {
-            color: var(--text-faint);
-        }
-
-        .sender-label.assistant {
-            color: var(--accent);
-        }
-
-        .sender-label.agent {
-            color: var(--amber);
-        }
-
-        .sender-label.lead {
-            color: #6fa2ff;
-        }
+        .sender-label.user { color: var(--text-faint); }
+        .sender-label.assistant { color: var(--accent); }
+        .sender-label.agent { color: var(--amber); }
+        .sender-label.lead { color: #6fa2ff; }
 
         .bubble {
             padding: 12px 16px;
@@ -492,7 +461,7 @@
             font-size: 14.5px;
             line-height: 1.6;
             white-space: pre-wrap;
-            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.22);
             word-break: break-word;
         }
 
@@ -607,7 +576,7 @@
             font-weight: 600;
             display: none;
             z-index: 10;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
         }
 
         /* scrollbars */
@@ -651,9 +620,9 @@
             border: 1px solid var(--border);
             border-radius: 18px;
             padding: 26px 26px 20px;
-            box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+            box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255,255,255,0.02) inset;
             transform: translateY(10px) scale(0.97);
-            transition: transform .2s cubic-bezier(.2, .8, .2, 1);
+            transition: transform .2s cubic-bezier(.2,.8,.2,1);
         }
 
         .modal-overlay.show .modal-card {
@@ -671,20 +640,9 @@
             margin-bottom: 16px;
         }
 
-        .modal-icon.human {
-            background: var(--amber-bg);
-            border: 1px solid var(--amber-border);
-        }
-
-        .modal-icon.bot {
-            background: var(--accent-glow);
-            border: 1px solid rgba(37, 211, 102, 0.35);
-        }
-
-        .modal-icon.completed {
-            background: var(--danger-bg);
-            border: 1px solid var(--danger);
-        }
+        .modal-icon.human { background: var(--amber-bg); border: 1px solid var(--amber-border); }
+        .modal-icon.bot { background: var(--accent-glow); border: 1px solid rgba(37,211,102,0.35); }
+        .modal-icon.completed { background: var(--danger-bg); border: 1px solid var(--danger); }
 
         .modal-title {
             font-family: 'Sora', sans-serif;
@@ -782,8 +740,8 @@
                 max-width: 340px;
                 z-index: 60;
                 transform: translateX(-100%);
-                transition: transform .25s cubic-bezier(.2, .8, .2, 1);
-                box-shadow: 20px 0 50px rgba(0, 0, 0, 0.4);
+                transition: transform .25s cubic-bezier(.2,.8,.2,1);
+                box-shadow: 20px 0 50px rgba(0,0,0,0.4);
             }
 
             .sidebar.mobile-open {
@@ -794,7 +752,7 @@
                 display: block;
                 position: fixed;
                 inset: 0;
-                background: rgba(0, 0, 0, 0.5);
+                background: rgba(0,0,0,0.5);
                 z-index: 55;
                 opacity: 0;
                 pointer-events: none;
@@ -855,8 +813,7 @@
             }
 
             .composer input {
-                font-size: 16px;
-                /* prevents iOS auto-zoom on focus */
+                font-size: 16px; /* prevents iOS auto-zoom on focus */
             }
 
             .composer button {
@@ -901,13 +858,10 @@
                     </div>
                 </div>
                 <div class="header-actions" id="headerActions" style="display:none;">
-                    <button class="primary" onclick="setMode('human')">👤 <span class="btn-text">Prendre en
-                            charge</span></button>
+                    <button class="primary" onclick="setMode('human')">👤 <span class="btn-text">Prendre en charge</span></button>
                     <button onclick="setMode('bot')">🤖 <span class="btn-text">Rendre au bot</span></button>
-                    <button class="danger" onclick="setMode('completed')">✅ <span class="btn-text">Terminer la
-                            conversation</span></button>
-                    <span class="live-indicator"><span class="live-dot"></span><span class="btn-text">En
-                            direct</span></span>
+                    <button class="danger" onclick="setMode('completed')">✅ <span class="btn-text">Terminer la conversation</span></button>
+                    <span class="live-indicator"><span class="live-dot"></span><span class="btn-text">En direct</span></span>
                 </div>
             </div>
             <div class="thread" id="thread">
@@ -1023,6 +977,14 @@
             return `<span class="badge ${m}">${MODE_LABELS[m] || m}</span>`;
         }
 
+        // A conversation is a "pending lead" only until it has an actual
+        // message beyond the form submission — the moment they write on
+        // WhatsApp (or an agent replies), it becomes a real conversation
+        // and moves to that section automatically.
+        function isPendingLead(convo) {
+            return convo.messages.length > 0 && convo.messages.every(m => m.role === "lead");
+        }
+
         function renderSidebar() {
             const sidebar = document.getElementById("sidebar");
             const head = `<div class="sidebar-head">
@@ -1030,18 +992,33 @@
         <span class="count">${conversations.length} conv.</span>
         <button class="logout-btn" onclick="logout()" title="Déconnexion" aria-label="Déconnexion">⎋</button>
       </div>`;
+
             if (conversations.length === 0) {
                 sidebar.innerHTML = head + '<div class="empty" style="padding:24px;">Aucune conversation pour l\'instant.</div>';
                 return;
             }
-            sidebar.innerHTML = head + conversations.map(c => {
+
+            const leads = conversations.filter(isPendingLead);
+            const chats = conversations.filter(c => !isPendingLead(c));
+
+            function convoItemHtml(c) {
                 const last = c.messages[c.messages.length - 1];
                 const preview = last ? last.content : "";
                 return `<div class="convo-item ${c.phone === activePhone ? 'active' : ''}" onclick="renderThread('${c.phone}')">
         <div class="convo-phone">+${c.phone} ${modeBadgeHtml(c.mode)}</div>
         <div class="convo-preview">${preview.replace(/</g, "&lt;")}</div>
       </div>`;
-            }).join("");
+            }
+
+            function sectionHtml(title, icon, items) {
+                if (items.length === 0) return "";
+                return `<div class="sidebar-section-head"><span>${icon} ${title}</span><span class="sidebar-section-count">${items.length}</span></div>`
+                    + items.map(convoItemHtml).join("");
+            }
+
+            sidebar.innerHTML = head
+                + sectionHtml("Nouvelles demandes", "📋", leads)
+                + sectionHtml("Conversations", "💬", chats);
         }
 
         function escapeHtml(str) {
