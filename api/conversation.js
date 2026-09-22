@@ -15,6 +15,7 @@ import {
     setConversationOwner,
     getBusinessConfig,
     claimMessage,
+    deleteConversation, // NEW — see lib/db.js note below
 } from "../lib/db.js";
 
 const FALLBACK_REPLY =
@@ -53,7 +54,7 @@ function describeInbound(message) {
 /**
  * Handles admin actions sent from dashboard.html:
  *   POST /api/conversation?key=DASHBOARD_SECRET
- *   body: { phone, action: "human"|"bot"|"completed"|"reply", message? }
+ *   body: { phone, action: "human"|"bot"|"completed"|"reply"|"delete", message? }
  * This is a completely different request shape from Meta's webhook payload
  * (which has no "phone"/"action" fields and no ?key=), so it's safe to
  * branch on that before touching any webhook logic.
@@ -117,6 +118,18 @@ async function handleAdminAction(req, res) {
             return res.status(200).json({ ok: true });
         }
 
+        // NEW — permanently remove a conversation the dashboard's trash icon
+        // asked to delete. Wipes stored messages/mode/ownership for this
+        // phone so it disappears from the dashboard on the next poll.
+        if (action === "delete") {
+            const recipient = String(phone).replace(/\D/g, "");
+            if (!recipient) {
+                return res.status(400).json({ error: "Invalid conversation phone number" });
+            }
+            await deleteConversation(recipient);
+            return res.status(200).json({ ok: true });
+        }
+
         return res.status(400).json({ error: `Unknown action: ${action}` });
     } catch (err) {
         console.error("Admin action failed:", err);
@@ -150,10 +163,10 @@ export default async function handler(req, res) {
 
     if (req.method === "POST") {
         // --- Dashboard admin actions (Prendre en charge / Rendre au bot /
-        // Terminer / manual reply) arrive here with a { phone, action } body,
-        // never with "entry" (that's Meta's webhook shape). Branch on that
-        // first so these get real JSON responses instead of falling into the
-        // webhook's "EVENT_RECEIVED" ack path. ---
+        // Terminer / Supprimer / manual reply) arrive here with a
+        // { phone, action } body, never with "entry" (that's Meta's webhook
+        // shape). Branch on that first so these get real JSON responses
+        // instead of falling into the webhook's "EVENT_RECEIVED" ack path. ---
         if (req.body && typeof req.body === "object" && req.body.action && req.body.phone) {
             return handleAdminAction(req, res);
         }
