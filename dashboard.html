@@ -1564,7 +1564,13 @@
 
         async function loadConversations(isLogin = false) {
             try {
-                const res = await fetch("/api/dashboard?key=" + encodeURIComponent(SECRET));
+                // cache: "no-store" is required here — without it the browser
+                // treats this JSON endpoint as a cacheable resource and starts
+                // sending conditional requests, which can come back as a bare
+                // 304 Not Modified with no body. res.json() on that throws, and
+                // conversations silently falls back to [], which looks exactly
+                // like "conversations stopped appearing".
+                const res = await fetch("/api/dashboard?key=" + encodeURIComponent(SECRET), { cache: "no-store" });
                 if (res.status === 401) {
                     document.getElementById("loginError").textContent = "Mot de passe incorrect.";
                     return;
