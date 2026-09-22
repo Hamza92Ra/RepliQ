@@ -17,7 +17,9 @@
             --bg-soft: #10131a;
             --panel: #141821;
             --panel-2: #191e29;
+            --panel-3: #1e2430;
             --border: #232a37;
+            --border-soft: #1b212c;
             --text: #eef1f6;
             --text-dim: #9aa3b2;
             --text-faint: #6b7383;
@@ -29,11 +31,17 @@
             --amber-border: #6b551f;
             --danger: #ff6b6b;
             --danger-bg: #2c1518;
+            --blue: #6fa2ff;
             --radius: 14px;
         }
 
         * {
             box-sizing: border-box;
+        }
+
+        *:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
         }
 
         body {
@@ -135,6 +143,33 @@
             box-shadow: 0 10px 26px var(--accent-glow);
         }
 
+        #login button:disabled {
+            opacity: .6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .spinner {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            border: 2px solid rgba(5, 23, 12, 0.35);
+            border-top-color: #05170c;
+            display: inline-block;
+            vertical-align: -2px;
+            margin-right: 7px;
+            animation: spin .7s linear infinite;
+        }
+
+        .spinner.light {
+            border: 2px solid rgba(255, 255, 255, 0.25);
+            border-top-color: var(--text);
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
         /* ---------- APP LAYOUT ---------- */
         #app {
             display: none;
@@ -142,16 +177,18 @@
         }
 
         .sidebar {
-            width: 320px;
+            width: 330px;
             background: var(--bg-soft);
             border-right: 1px solid var(--border);
             overflow-y: auto;
             height: 100vh;
             flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
         }
 
         .sidebar-head {
-            padding: 20px 18px 14px;
+            padding: 18px 18px 14px;
             border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
@@ -159,7 +196,7 @@
             position: sticky;
             top: 0;
             background: var(--bg-soft);
-            z-index: 2;
+            z-index: 3;
         }
 
         .sidebar-head .logo {
@@ -200,21 +237,144 @@
             color: #ffb3b3;
         }
 
-        .convo-item {
-            padding: 14px 18px;
+        .search-wrap {
+            padding: 10px 14px;
             border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 61px;
+            background: var(--bg-soft);
+            z-index: 3;
+        }
+
+        .search-box {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-box svg {
+            position: absolute;
+            left: 11px;
+            width: 14px;
+            height: 14px;
+            color: var(--text-faint);
+            pointer-events: none;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 9px 12px 9px 32px;
+            border-radius: 9px;
+            border: 1px solid var(--border);
+            background: var(--panel);
+            color: var(--text);
+            font-family: 'Manrope', sans-serif;
+            font-size: 13px;
+            outline: none;
+            transition: border-color .15s ease, box-shadow .15s ease;
+        }
+
+        .search-box input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .search-clear {
+            position: absolute;
+            right: 8px;
+            background: none;
+            border: none;
+            color: var(--text-faint);
+            cursor: pointer;
+            font-size: 15px;
+            padding: 2px 4px;
+            line-height: 1;
+        }
+
+        .search-clear:hover {
+            color: var(--text);
+        }
+
+        .convo-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .convo-item {
+            padding: 13px 18px;
+            border-bottom: 1px solid var(--border-soft);
             cursor: pointer;
             transition: background .12s ease;
             border-left: 3px solid transparent;
+            position: relative;
         }
 
         .convo-item:hover {
             background: var(--panel);
         }
 
+        .convo-item:hover .convo-delete {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
         .convo-item.active {
             background: var(--panel-2);
             border-left: 3px solid var(--accent);
+        }
+
+        .convo-item.unread .convo-phone {
+            color: var(--text);
+            font-weight: 800;
+        }
+
+        .convo-top-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .unread-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+            flex-shrink: 0;
+        }
+
+        .convo-time {
+            margin-left: auto;
+            font-size: 10.5px;
+            color: var(--text-faint);
+            font-family: 'IBM Plex Mono', monospace;
+            flex-shrink: 0;
+        }
+
+        .convo-delete {
+            opacity: 0;
+            pointer-events: none;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 24px;
+            height: 24px;
+            border-radius: 7px;
+            border: 1px solid var(--border);
+            background: var(--panel-3);
+            color: var(--text-dim);
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: opacity .12s ease, background .12s ease, color .12s ease, border-color .12s ease;
+        }
+
+        .convo-delete:hover {
+            background: var(--danger-bg);
+            border-color: var(--danger);
+            color: #ffb3b3;
         }
 
         .sidebar-tabs {
@@ -223,9 +383,9 @@
             padding: 12px 14px;
             border-bottom: 1px solid var(--border);
             position: sticky;
-            top: 65px;
+            top: 115px;
             background: var(--bg-soft);
-            z-index: 2;
+            z-index: 3;
         }
 
         .sidebar-tab {
@@ -275,6 +435,7 @@
             align-items: center;
             gap: 8px;
             letter-spacing: -0.01em;
+            color: var(--text-dim);
         }
 
         .convo-preview {
@@ -284,6 +445,7 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            padding-right: 20px;
         }
 
         .badge {
@@ -316,7 +478,7 @@
 
         .badge.lead {
             background: rgba(79, 140, 255, 0.14);
-            color: #6fa2ff;
+            color: var(--blue);
             border: 1px solid rgba(79, 140, 255, 0.35);
         }
 
@@ -350,6 +512,7 @@
             display: flex;
             gap: 8px;
             flex-wrap: wrap;
+            align-items: center;
         }
 
         .header-actions button {
@@ -390,6 +553,14 @@
             background: rgba(37, 211, 102, 0.26);
         }
 
+        .icon-btn {
+            width: 36px;
+            padding: 9px 0 !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
         .live-indicator {
             display: flex;
             align-items: center;
@@ -411,6 +582,18 @@
             background: var(--accent);
             box-shadow: 0 0 0 0 var(--accent-glow);
             animation: livePulse 1.8s ease-in-out infinite;
+        }
+
+        .live-indicator.offline .live-dot {
+            background: var(--danger);
+            animation: none;
+            box-shadow: none;
+        }
+
+        .live-indicator.offline {
+            color: #ffb3b3;
+            border-color: var(--danger);
+            background: var(--danger-bg);
         }
 
         @keyframes livePulse {
@@ -484,7 +667,7 @@
         }
 
         .avatar.lead {
-            background: linear-gradient(135deg, #4f8cff, #2f5fd6);
+            background: linear-gradient(135deg, var(--blue), #2f5fd6);
         }
 
         .msg-col {
@@ -510,7 +693,7 @@
         .sender-label.user { color: var(--text-faint); }
         .sender-label.assistant { color: var(--accent); }
         .sender-label.agent { color: var(--amber); }
-        .sender-label.lead { color: #6fa2ff; }
+        .sender-label.lead { color: var(--blue); }
 
         .bubble {
             padding: 12px 16px;
@@ -565,35 +748,73 @@
             text-align: right;
         }
 
+        .day-divider {
+            text-align: center;
+            margin: 22px 0;
+            font-size: 11px;
+            color: var(--text-faint);
+            font-family: 'IBM Plex Mono', monospace;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            position: relative;
+        }
+
+        .day-divider span {
+            background: var(--bg);
+            padding: 0 12px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .day-divider::before {
+            content: "";
+            position: absolute;
+            left: 0; right: 0; top: 50%;
+            height: 1px;
+            background: var(--border);
+        }
+
         .composer {
             display: flex;
             gap: 10px;
-            padding: 16px 26px;
+            padding: 14px 26px;
             border-top: 1px solid var(--border);
             background: var(--bg-soft);
+            align-items: flex-end;
         }
 
-        .composer input {
+        .composer textarea {
             flex: 1;
             padding: 12px 16px;
-            border-radius: 10px;
+            border-radius: 14px;
             border: 1px solid var(--border);
             background: var(--panel);
             color: var(--text);
             font-size: 14px;
             font-family: 'Manrope', sans-serif;
             outline: none;
+            resize: none;
+            max-height: 140px;
+            line-height: 1.5;
             transition: border-color .15s ease, box-shadow .15s ease;
         }
 
-        .composer input:focus {
+        .composer textarea:focus {
             border-color: var(--accent);
             box-shadow: 0 0 0 3px var(--accent-glow);
         }
 
+        .composer-hint {
+            font-size: 10.5px;
+            color: var(--text-faint);
+            margin-top: 4px;
+            padding-left: 2px;
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
         .composer button {
-            padding: 12px 24px;
-            border-radius: 10px;
+            padding: 13px 22px;
+            border-radius: 12px;
             border: none;
             background: linear-gradient(135deg, var(--accent), var(--accent-dim));
             color: #05170c;
@@ -602,6 +823,7 @@
             cursor: pointer;
             box-shadow: 0 6px 18px var(--accent-glow);
             transition: transform .12s ease;
+            flex-shrink: 0;
         }
 
         .composer button:hover {
@@ -619,6 +841,16 @@
             color: var(--text-faint);
             text-align: center;
             font-size: 14px;
+            padding: 24px;
+            max-width: 280px;
+            line-height: 1.6;
+        }
+
+        .empty .empty-icon {
+            font-size: 30px;
+            display: block;
+            margin-bottom: 10px;
+            opacity: .7;
         }
 
         #toast {
@@ -627,13 +859,31 @@
             right: 24px;
             background: var(--panel-2);
             border: 1px solid var(--border);
-            padding: 13px 20px;
+            padding: 12px 18px;
             border-radius: 10px;
             font-size: 13px;
             font-weight: 600;
             display: none;
+            align-items: center;
+            gap: 9px;
             z-index: 10;
             box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            animation: toastIn .2s cubic-bezier(.2,.8,.2,1);
+        }
+
+        #toast.error {
+            border-color: var(--danger);
+            background: var(--danger-bg);
+            color: #ffb3b3;
+        }
+
+        #toast.success {
+            border-color: var(--accent);
+        }
+
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         /* scrollbars */
@@ -700,6 +950,7 @@
         .modal-icon.human { background: var(--amber-bg); border: 1px solid var(--amber-border); }
         .modal-icon.bot { background: var(--accent-glow); border: 1px solid rgba(37,211,102,0.35); }
         .modal-icon.completed { background: var(--danger-bg); border: 1px solid var(--danger); }
+        .modal-icon.delete { background: var(--danger-bg); border: 1px solid var(--danger); }
 
         .modal-title {
             font-family: 'Sora', sans-serif;
@@ -714,6 +965,10 @@
             color: var(--text-dim);
             line-height: 1.55;
             margin: 0 0 22px;
+        }
+
+        .modal-body strong {
+            color: var(--text);
         }
 
         .modal-actions {
@@ -754,7 +1009,8 @@
             box-shadow: 0 8px 20px var(--accent-glow);
         }
 
-        .modal-actions button.confirm-completed {
+        .modal-actions button.confirm-completed,
+        .modal-actions button.confirm-delete {
             border-color: var(--danger);
             background: linear-gradient(135deg, #ff6b6b, #c93f3f);
             color: #2a0808;
@@ -869,7 +1125,7 @@
                 padding: 12px 14px;
             }
 
-            .composer input {
+            .composer textarea {
                 font-size: 16px; /* prevents iOS auto-zoom on focus */
             }
 
@@ -888,6 +1144,13 @@
                 display: none;
             }
         }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.001ms !important;
+                transition-duration: 0.001ms !important;
+            }
+        }
     </style>
     <base target="_blank">
 </head>
@@ -897,9 +1160,9 @@
     <div id="login">
         <h2><span class="logo-dot"></span>RepliQ</h2>
         <p class="login-sub">Tableau de bord — accès conseiller</p>
-        <input type="password" id="secretInput" placeholder="Mot de passe" />
-        <button onclick="tryLogin()">Entrer</button>
-        <p id="loginError" style="color:#ff6b6b;font-size:13px;"></p>
+        <input type="password" id="secretInput" placeholder="Mot de passe" onkeydown="if(event.key==='Enter')tryLogin()" />
+        <button id="loginBtn" onclick="tryLogin()">Entrer</button>
+        <p id="loginError" style="color:#ff6b6b;font-size:13px; margin: 12px 0 0;"></p>
     </div>
 
     <div id="app">
@@ -917,16 +1180,19 @@
                 <div class="header-actions" id="headerActions" style="display:none;">
                     <button class="primary" onclick="setMode('human')">👤 <span class="btn-text">Prendre en charge</span></button>
                     <button onclick="setMode('bot')">🤖 <span class="btn-text">Rendre au bot</span></button>
-                    <button class="danger" onclick="setMode('completed')">✅ <span class="btn-text">Terminer la conversation</span></button>
-                    <span class="live-indicator"><span class="live-dot"></span><span class="btn-text">En direct</span></span>
+                    <button class="danger" onclick="setMode('completed')">✅ <span class="btn-text">Terminer</span></button>
+                    <button class="danger icon-btn" onclick="confirmDelete(activePhone)" title="Supprimer la conversation" aria-label="Supprimer la conversation">🗑️</button>
+                    <span class="live-indicator" id="liveIndicator"><span class="live-dot"></span><span class="btn-text" id="liveLabel">En direct</span></span>
                 </div>
             </div>
             <div class="thread" id="thread">
-                <div class="empty">Aucune conversation sélectionnée</div>
+                <div class="empty"><span class="empty-icon">💬</span>Sélectionnez une conversation dans la liste pour afficher les messages.</div>
             </div>
             <div class="composer" id="composer" style="display:none;">
-                <input type="text" id="replyInput" placeholder="Répondre au client en tant que conseiller…"
-                    onkeydown="if(event.key==='Enter')sendReply()" />
+                <div style="flex:1;">
+                    <textarea id="replyInput" rows="1" placeholder="Répondre au client en tant que conseiller…"
+                        onkeydown="handleComposerKey(event)" oninput="autoGrow(this)"></textarea>
+                </div>
                 <button id="replyBtn" onclick="sendReply()">Envoyer</button>
             </div>
         </div>
@@ -951,6 +1217,16 @@
         let conversations = [];
         let activePhone = null;
         let activeTab = "chats"; // "chats" | "leads" — which page of the sidebar is showing
+        let searchQuery = "";
+
+        // Per-conversation "last viewed" timestamps, kept locally per browser
+        // so we can show an unread indicator without needing backend support.
+        let lastSeen = {};
+        try { lastSeen = JSON.parse(localStorage.getItem("repliq_last_seen") || "{}"); } catch (e) { lastSeen = {}; }
+
+        function persistLastSeen() {
+            try { localStorage.setItem("repliq_last_seen", JSON.stringify(lastSeen)); } catch (e) {}
+        }
 
         function setActiveTab(tab) {
             activeTab = tab;
@@ -979,13 +1255,28 @@
 
         function tryLogin() {
             SECRET = document.getElementById("secretInput").value;
-            loadConversations(true);
+            const btn = document.getElementById("loginBtn");
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner light"></span>Connexion…';
+            loadConversations(true).finally(() => {
+                btn.disabled = false;
+                btn.textContent = "Entrer";
+            });
         }
 
         let pollTimer = null;
         const POLL_INTERVAL_MS = 4000;
         let lastDataSnapshot = null;
         let renderedCounts = {}; // phone -> number of messages already rendered (so we don't replay entry animation on them)
+        let consecutiveFailures = 0;
+
+        function setLiveStatus(online) {
+            const el = document.getElementById("liveIndicator");
+            const label = document.getElementById("liveLabel");
+            if (!el) return;
+            el.classList.toggle("offline", !online);
+            label.textContent = online ? "En direct" : "Hors ligne";
+        }
 
         async function loadConversations(isLogin = false) {
             try {
@@ -997,6 +1288,9 @@
                 const data = await res.json();
                 const newConversations = data.conversations || [];
                 const snapshot = JSON.stringify(newConversations);
+
+                consecutiveFailures = 0;
+                setLiveStatus(true);
 
                 localStorage.setItem("repliq_dashboard_key", SECRET);
                 document.getElementById("login").style.display = "none";
@@ -1014,7 +1308,7 @@
                 conversations = newConversations;
 
                 renderSidebar();
-                if (activePhone) renderThread(activePhone);
+                if (activePhone) renderThread(activePhone, true);
 
                 // Start live polling once we're successfully in — no manual
                 // refresh button needed, the dashboard just stays up to date.
@@ -1022,7 +1316,12 @@
                     pollTimer = setInterval(loadConversations, POLL_INTERVAL_MS);
                 }
             } catch (err) {
-                document.getElementById("loginError").textContent = "Erreur de connexion.";
+                consecutiveFailures++;
+                if (isLogin) {
+                    document.getElementById("loginError").textContent = "Erreur de connexion.";
+                } else if (consecutiveFailures >= 2) {
+                    setLiveStatus(false);
+                }
                 console.error(err);
             }
         }
@@ -1048,6 +1347,55 @@
             return convo.messages.length > 0 && convo.messages.every(m => m.role === "lead");
         }
 
+        function lastMessageTs(convo) {
+            if (!convo.messages.length) return 0;
+            const last = convo.messages[convo.messages.length - 1];
+            return last.ts ? new Date(last.ts).getTime() : 0;
+        }
+
+        // Unread = the newest message is from the customer (not us) and is
+        // newer than the last time this conservation was opened locally.
+        function isUnread(convo) {
+            if (!convo.messages.length) return false;
+            const last = convo.messages[convo.messages.length - 1];
+            if (last.role !== "user" && last.role !== "lead") return false;
+            const ts = last.ts ? new Date(last.ts).getTime() : 0;
+            const seen = lastSeen[convo.phone] || 0;
+            return ts > seen;
+        }
+
+        function timeAgo(ts) {
+            if (!ts) return "";
+            const date = new Date(ts);
+            const diffSec = Math.round((Date.now() - date.getTime()) / 1000);
+            if (diffSec < 45) return "à l'instant";
+            if (diffSec < 3600) return `il y a ${Math.round(diffSec / 60)} min`;
+            if (diffSec < 86400) return `il y a ${Math.round(diffSec / 3600)} h`;
+            if (diffSec < 172800) return "hier";
+            if (diffSec < 604800) return `il y a ${Math.round(diffSec / 86400)} j`;
+            return date.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" });
+        }
+
+        function matchesSearch(convo, q) {
+            if (!q) return true;
+            const needle = q.toLowerCase();
+            if (convo.phone.toLowerCase().includes(needle)) return true;
+            return convo.messages.some(m => (m.content || "").toLowerCase().includes(needle));
+        }
+
+        function onSearchInput(value) {
+            searchQuery = value.trim();
+            document.getElementById("searchClear").style.display = searchQuery ? "block" : "none";
+            renderSidebar();
+        }
+
+        function clearSearch() {
+            searchQuery = "";
+            document.getElementById("searchInput").value = "";
+            document.getElementById("searchClear").style.display = "none";
+            renderSidebar();
+        }
+
         function renderSidebar() {
             const sidebar = document.getElementById("sidebar");
             const head = `<div class="sidebar-head">
@@ -1056,13 +1404,21 @@
         <button class="logout-btn" onclick="logout()" title="Déconnexion" aria-label="Déconnexion">⎋</button>
       </div>`;
 
+            const search = `<div class="search-wrap">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input id="searchInput" type="text" placeholder="Rechercher par numéro ou message…" value="${searchQuery.replace(/"/g, '&quot;')}" oninput="onSearchInput(this.value)" />
+          <button class="search-clear" id="searchClear" style="display:${searchQuery ? 'block' : 'none'};" onclick="clearSearch()" aria-label="Effacer la recherche">✕</button>
+        </div>
+      </div>`;
+
             if (conversations.length === 0) {
-                sidebar.innerHTML = head + '<div class="empty" style="padding:24px;">Aucune conversation pour l\'instant.</div>';
+                sidebar.innerHTML = head + search + '<div class="empty" style="padding:24px;">Aucune conversation pour l\'instant.</div>';
                 return;
             }
 
-            const leads = conversations.filter(isPendingLead);
-            const chats = conversations.filter(c => !isPendingLead(c));
+            const leads = conversations.filter(isPendingLead).sort((a, b) => lastMessageTs(b) - lastMessageTs(a));
+            const chats = conversations.filter(c => !isPendingLead(c)).sort((a, b) => lastMessageTs(b) - lastMessageTs(a));
 
             function convoItemHtml(c) {
                 const last = c.messages[c.messages.length - 1];
@@ -1070,8 +1426,17 @@
                 const badge = isPendingLead(c)
                     ? '<span class="badge lead">Nouvelle</span>'
                     : modeBadgeHtml(c.mode);
-                return `<div class="convo-item ${c.phone === activePhone ? 'active' : ''}" onclick="renderThread('${c.phone}')">
-        <div class="convo-phone">+${c.phone} ${badge}</div>
+                const unread = isUnread(c);
+                const time = timeAgo(lastMessageTs(c));
+                return `<div class="convo-item ${c.phone === activePhone ? 'active' : ''} ${unread ? 'unread' : ''}" onclick="renderThread('${c.phone}')">
+        <button class="convo-delete" onclick="event.stopPropagation(); confirmDelete('${c.phone}')" title="Supprimer" aria-label="Supprimer la conversation">🗑️</button>
+        <div class="convo-top-row">
+          <div class="convo-phone">${unread ? '<span class="unread-dot"></span>' : ''}+${c.phone}</div>
+        </div>
+        <div class="convo-top-row" style="margin-top:6px;">
+          ${badge}
+          <span class="convo-time">${time}</span>
+        </div>
         <div class="convo-preview">${preview.replace(/</g, "&lt;")}</div>
       </div>`;
             }
@@ -1085,12 +1450,19 @@
         </button>
       </div>`;
 
-            const activeItems = activeTab === 'leads' ? leads : chats;
-            const listHtml = activeItems.length > 0
-                ? activeItems.map(convoItemHtml).join("")
-                : `<div class="empty" style="padding:24px;">${activeTab === 'leads' ? "Aucune nouvelle demande." : "Aucune conversation pour l'instant."}</div>`;
+            const activeItemsAll = activeTab === 'leads' ? leads : chats;
+            const activeItems = activeItemsAll.filter(c => matchesSearch(c, searchQuery));
 
-            sidebar.innerHTML = head + tabs + listHtml;
+            let listHtml;
+            if (activeItemsAll.length === 0) {
+                listHtml = `<div class="empty" style="padding:24px;">${activeTab === 'leads' ? "Aucune nouvelle demande." : "Aucune conversation pour l'instant."}</div>`;
+            } else if (activeItems.length === 0) {
+                listHtml = `<div class="empty" style="padding:24px;">Aucun résultat pour « ${searchQuery.replace(/</g, "&lt;")} ».</div>`;
+            } else {
+                listHtml = activeItems.map(convoItemHtml).join("");
+            }
+
+            sidebar.innerHTML = head + search + tabs + `<div class="convo-list">${listHtml}</div>`;
         }
 
         function escapeHtml(str) {
@@ -1112,10 +1484,22 @@
         const ROLE_LABELS = { user: "Client", assistant: "RepliQ", agent: "Conseiller", lead: "Nouvelle demande" };
         const ROLE_AVATARS = { user: "🙂", assistant: "🤖", agent: "👤", lead: "📋" };
 
-        function renderThread(phone) {
+        function sameDay(a, b) {
+            return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+        }
+
+        function dayLabel(date) {
+            const now = new Date();
+            const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1);
+            if (sameDay(date, now)) return "Aujourd'hui";
+            if (sameDay(date, yesterday)) return "Hier";
+            return date.toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
+        }
+
+        function renderThread(phone, silent) {
             activePhone = phone;
             document.getElementById("activePhone").textContent = "+" + phone;
-            toggleSidebar(false);
+            if (!silent) toggleSidebar(false);
 
             const convo = conversations.find(c => c.phone === phone);
             const badge = document.getElementById("modeBadge");
@@ -1127,17 +1511,31 @@
             document.getElementById("headerActions").style.display = "flex";
             document.getElementById("composer").style.display = "flex";
 
+            // Mark as seen locally so the unread dot clears.
+            lastSeen[phone] = Date.now();
+            persistLastSeen();
+
             const thread = document.getElementById("thread");
             if (!convo || convo.messages.length === 0) {
-                thread.innerHTML = '<div class="empty">Pas encore de messages.</div>';
+                thread.innerHTML = '<div class="empty"><span class="empty-icon">🗒️</span>Pas encore de messages sur cette conversation.</div>';
+                renderSidebar();
                 return;
             }
             const previouslyRendered = renderedCounts[phone] || 0;
-            thread.innerHTML = convo.messages.map((m, i) => {
+            let lastDate = null;
+            const rows = convo.messages.map((m, i) => {
                 const role = ROLE_LABELS[m.role] ? m.role : "assistant";
-                const time = m.ts ? new Date(m.ts).toLocaleString("fr-FR") : "";
+                const dateObj = m.ts ? new Date(m.ts) : null;
+                const time = dateObj ? dateObj.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }) : "";
                 const isNew = i >= previouslyRendered;
-                return `<div class="msg-row ${role}${isNew ? " msg-new" : ""}">
+
+                let divider = "";
+                if (dateObj && (!lastDate || !sameDay(dateObj, lastDate))) {
+                    divider = `<div class="day-divider"><span>${dayLabel(dateObj)}</span></div>`;
+                    lastDate = dateObj;
+                }
+
+                return divider + `<div class="msg-row ${role}${isNew ? " msg-new" : ""}">
         <div class="avatar ${role}">${ROLE_AVATARS[role]}</div>
         <div class="msg-col">
           <div class="sender-label ${role}">${ROLE_LABELS[role]}</div>
@@ -1146,6 +1544,7 @@
         </div>
       </div>`;
             }).join("");
+            thread.innerHTML = rows;
             renderedCounts[phone] = convo.messages.length;
             thread.scrollTop = thread.scrollHeight;
             renderSidebar();
@@ -1175,18 +1574,26 @@
                 body: "Le bot se taira définitivement sur cette conversation. Cette action est utile une fois la demande du client résolue.",
                 confirmLabel: "Terminer",
                 confirmClass: "confirm-completed"
+            },
+            delete: {
+                icon: "🗑️",
+                iconClass: "delete",
+                title: "Supprimer la conversation",
+                body: "Tout l'historique de cette conversation sera définitivement supprimé. Cette action est irréversible.",
+                confirmLabel: "Supprimer",
+                confirmClass: "confirm-delete"
             }
         };
 
         let modalResolve = null;
 
-        function openConfirmModal(action) {
+        function openConfirmModal(action, bodyOverride) {
             const c = MODAL_CONTENT[action];
             const icon = document.getElementById("modalIcon");
             icon.textContent = c.icon;
             icon.className = "modal-icon " + c.iconClass;
             document.getElementById("modalTitle").textContent = c.title;
-            document.getElementById("modalBody").textContent = c.body;
+            document.getElementById("modalBody").innerHTML = bodyOverride || c.body;
             const btn = document.getElementById("modalConfirmBtn");
             btn.textContent = c.confirmLabel;
             btn.className = c.confirmClass;
@@ -1206,6 +1613,10 @@
             if (e.target.id === "modalOverlay") closeConfirmModal(false);
         });
 
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") closeConfirmModal(false);
+        });
+
         async function setMode(action) {
             if (!activePhone) return;
             const confirmed = await openConfirmModal(action);
@@ -1219,14 +1630,74 @@
                 });
                 const data = await res.json();
                 if (!res.ok) {
-                    toast("Erreur : " + (data.error || res.status));
+                    toast("Erreur : " + (data.error || res.status), "error");
                     return;
                 }
-                toast("Conversation mise à jour ✅");
+                toast("Conversation mise à jour", "success");
                 await loadConversations();
             } catch (err) {
                 console.error(err);
-                toast("Erreur de connexion.");
+                toast("Erreur de connexion.", "error");
+            }
+        }
+
+        // Deleting is intentionally separate from setMode: it needs its own
+        // "phone" argument (so it can be triggered from the sidebar's hover
+        // icon on a conversation that isn't the active one), a distinct
+        // backend action, and local cleanup of any cached per-phone state.
+        async function confirmDelete(phone) {
+            if (!phone) return;
+            const confirmed = await openConfirmModal(
+                "delete",
+                `Tout l'historique de <strong>+${phone}</strong> sera définitivement supprimé. Cette action est irréversible.`
+            );
+            if (!confirmed) return;
+
+            try {
+                const res = await fetch("/api/conversation?key=" + encodeURIComponent(SECRET), {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ phone, action: "delete" })
+                });
+                let data = {};
+                try { data = await res.json(); } catch (e) {}
+                if (!res.ok) {
+                    toast("Erreur : " + (data.error || res.status), "error");
+                    return;
+                }
+
+                conversations = conversations.filter(c => c.phone !== phone);
+                delete renderedCounts[phone];
+                delete lastSeen[phone];
+                persistLastSeen();
+                lastDataSnapshot = JSON.stringify(conversations);
+
+                if (activePhone === phone) {
+                    activePhone = null;
+                    document.getElementById("activePhone").textContent = "Sélectionnez une conversation";
+                    document.getElementById("modeBadge").style.display = "none";
+                    document.getElementById("headerActions").style.display = "none";
+                    document.getElementById("composer").style.display = "none";
+                    document.getElementById("thread").innerHTML = '<div class="empty"><span class="empty-icon">💬</span>Sélectionnez une conversation dans la liste pour afficher les messages.</div>';
+                }
+
+                renderSidebar();
+                toast("Conversation supprimée", "success");
+            } catch (err) {
+                console.error(err);
+                toast("Erreur de connexion.", "error");
+            }
+        }
+
+        function autoGrow(el) {
+            el.style.height = "auto";
+            el.style.height = Math.min(el.scrollHeight, 140) + "px";
+        }
+
+        function handleComposerKey(e) {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                sendReply();
             }
         }
 
@@ -1240,6 +1711,8 @@
 
             const btn = document.getElementById("replyBtn");
             btn.disabled = true;
+            const originalLabel = btn.textContent;
+            btn.innerHTML = '<span class="spinner"></span>Envoi…';
             try {
                 const res = await fetch("/api/conversation?key=" + encodeURIComponent(SECRET), {
                     method: "POST",
@@ -1253,24 +1726,28 @@
                 });
                 const data = await res.json();
                 if (!res.ok) {
-                    toast("Erreur : " + (data.details || data.error || res.status));
+                    toast("Erreur : " + (data.details || data.error || res.status), "error");
                     return;
                 }
                 input.value = "";
+                autoGrow(input);
                 await loadConversations();
             } catch (err) {
                 console.error(err);
-                toast("Erreur de connexion.");
+                toast("Erreur de connexion.", "error");
             } finally {
                 btn.disabled = false;
+                btn.textContent = originalLabel;
             }
         }
 
         let toastTimer = null;
-        function toast(msg) {
+        function toast(msg, type) {
             const el = document.getElementById("toast");
-            el.textContent = msg;
-            el.style.display = "block";
+            const icon = type === "error" ? "⚠️" : type === "success" ? "✅" : "ℹ️";
+            el.innerHTML = `<span>${icon}</span><span>${msg}</span>`;
+            el.className = type || "";
+            el.style.display = "flex";
             clearTimeout(toastTimer);
             toastTimer = setTimeout(() => { el.style.display = "none"; }, 3000);
         }
