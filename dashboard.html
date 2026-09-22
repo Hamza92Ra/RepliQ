@@ -1296,6 +1296,195 @@
             }
         }
 
+
+
+        /* ---------- POLISHED KINETIC CHAT UI ---------- */
+        :root {
+            --bg: #0a1120;
+            --bg-soft: rgba(10, 17, 32, 0.78);
+            --panel: rgba(17, 28, 48, 0.76);
+            --panel-2: rgba(30, 48, 76, 0.74);
+            --panel-3: #192841;
+            --border: rgba(174, 191, 214, 0.15);
+            --border-soft: rgba(174, 191, 214, 0.09);
+            --text: #e6eefc;
+            --text-dim: #aebfd6;
+            --text-faint: #7588a5;
+            --accent: #38bdf8;
+            --accent-dim: #0ea5e9;
+            --accent-glow: rgba(56, 189, 248, 0.2);
+            --violet: #a855f7;
+            --outgoing: #164e63;
+            --incoming: #111c30;
+            --radius: 14px;
+        }
+
+        body {
+            background:
+                radial-gradient(900px 620px at 8% -8%, rgba(56,189,248,.2), transparent 58%),
+                radial-gradient(780px 600px at 105% 60%, rgba(168,85,247,.16), transparent 60%),
+                var(--bg);
+        }
+
+        #app { isolation: isolate; }
+        #app::before, #app::after {
+            content: "";
+            position: fixed;
+            z-index: -1;
+            pointer-events: none;
+            border-radius: 40px;
+            border: 1px solid rgba(255,255,255,.08);
+            background: linear-gradient(145deg, rgba(255,255,255,.1), rgba(255,255,255,.015));
+            backdrop-filter: blur(10px);
+        }
+        #app::before { width: 320px; height: 500px; right: -110px; top: -150px; transform: rotate(18deg); }
+        #app::after { width: 280px; height: 380px; left: -130px; bottom: -180px; transform: rotate(-14deg); }
+
+        .sidebar {
+            background: rgba(10,17,32,.78);
+            backdrop-filter: blur(22px) saturate(1.25);
+            border-right-color: var(--border);
+        }
+        .sidebar-head {
+            min-height: 72px;
+            padding: 14px 16px;
+            background: rgba(10,17,32,.9);
+            backdrop-filter: blur(18px);
+        }
+        .sidebar-head .logo::before {
+            content: "R";
+            display: grid;
+            place-items: center;
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            color: #07111c;
+            background: linear-gradient(135deg, var(--accent), var(--violet));
+            font-size: 17px;
+            font-weight: 800;
+            box-shadow: 0 10px 25px rgba(56,189,248,.18);
+        }
+        .sidebar-head .logo .logo-dot { display: none; }
+        .logout-btn { width: 38px; height: 38px; border-radius: 12px; background: rgba(255,255,255,.04); }
+        .search-wrap { top: 72px; padding: 11px 14px; background: rgba(10,17,32,.9); backdrop-filter: blur(18px); }
+        .search-box input { min-height: 44px; padding-left: 38px; border-radius: 14px; background: rgba(255,255,255,.055); }
+        .sidebar-tabs { top: 139px; padding: 8px 14px 12px; background: rgba(10,17,32,.9); backdrop-filter: blur(18px); }
+        .sidebar-tab { min-height: 40px; border-radius: 12px; background: rgba(255,255,255,.035); }
+        .sidebar-tab.active { color: var(--text); border-color: rgba(56,189,248,.35); background: linear-gradient(135deg, rgba(56,189,248,.23), rgba(168,85,247,.16)); }
+        .convo-list { padding: 6px 10px 18px; }
+        .convo-item { margin: 5px 0; padding: 14px 14px 14px 66px; min-height: 78px; border: 1px solid transparent; border-radius: 14px; }
+        .convo-item::before {
+            content: attr(data-initials);
+            position: absolute;
+            left: 12px;
+            top: 14px;
+            width: 42px;
+            height: 42px;
+            display: grid;
+            place-items: center;
+            border-radius: 13px;
+            background: linear-gradient(135deg, rgba(56,189,248,.9), rgba(168,85,247,.82));
+            color: #07111c;
+            font-family: 'Sora', sans-serif;
+            font-weight: 800;
+            font-size: 12px;
+        }
+        .convo-item:hover { background: rgba(255,255,255,.055); border-color: var(--border); }
+        .convo-item.active { background: linear-gradient(145deg, rgba(255,255,255,.11), rgba(255,255,255,.035)); border-color: rgba(255,255,255,.12); box-shadow: 0 18px 35px rgba(0,0,0,.18); }
+        .convo-phone { color: var(--text); }
+        .convo-preview { margin-top: 7px; }
+        .convo-delete { top: 44px; right: 12px; }
+
+        .header {
+            min-height: 74px;
+            padding: 12px 20px;
+            background: rgba(10,17,32,.72);
+            backdrop-filter: blur(18px) saturate(1.2);
+        }
+        .contact-avatar {
+            width: 42px;
+            height: 42px;
+            flex: 0 0 42px;
+            display: grid;
+            place-items: center;
+            border-radius: 13px;
+            background: linear-gradient(135deg, var(--accent), var(--violet));
+            color: #07111c;
+            font-family: 'Sora', sans-serif;
+            font-size: 13px;
+            font-weight: 800;
+        }
+        .conversation-status { display: block; margin-top: 3px; color: var(--text-dim); font-size: 11px; }
+        .header-actions button, .live-indicator { background: rgba(255,255,255,.055); backdrop-filter: blur(10px); }
+        .actions-toggle svg, .menu-toggle svg, .send-icon { width: 20px; height: 20px; display: block; }
+
+        .thread {
+            padding: 28px clamp(18px, 4vw, 54px);
+            background:
+                linear-gradient(rgba(10,17,32,.72), rgba(10,17,32,.78)),
+                radial-gradient(circle at 20% 20%, rgba(56,189,248,.12), transparent 34%),
+                radial-gradient(circle at 82% 78%, rgba(168,85,247,.1), transparent 36%);
+        }
+        .thread .empty { height: 100%; max-width: 380px; display: grid; place-content: center; padding: 32px; }
+        .empty-visual {
+            width: 74px;
+            height: 74px;
+            margin: 0 auto 18px;
+            display: grid;
+            place-items: center;
+            border-radius: 24px;
+            color: var(--accent);
+            background: linear-gradient(145deg, rgba(255,255,255,.11), rgba(255,255,255,.025));
+            border: 1px solid rgba(255,255,255,.11);
+            box-shadow: 0 24px 60px rgba(0,0,0,.28);
+        }
+        .empty-visual svg { width: 32px; height: 32px; }
+        .empty-title { display:block; color:var(--text); font-family:'Sora',sans-serif; font-size:17px; font-weight:600; margin-bottom:7px; }
+        .empty-copy { display:block; color:var(--text-dim); font-size:13px; line-height:1.55; }
+        .msg-row { max-width: min(72%, 640px); margin-bottom: 10px; }
+        .sender-label { margin-bottom: 4px; }
+        .bubble { padding: 10px 13px 8px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,.16); }
+        .bubble.user, .bubble.lead { background: rgba(17,28,48,.9); border-color: rgba(174,191,214,.12); }
+        .bubble.assistant { background: linear-gradient(135deg, #155e75, #4c1d95); }
+        .bubble.agent { background: linear-gradient(135deg, #334155, #4c1d95); border-color: rgba(168,85,247,.28); color: var(--text); }
+        .day-divider span { border: 1px solid var(--border); border-radius: 999px; background: rgba(17,28,48,.8); padding: 5px 12px; }
+        .day-divider::before { display: none; }
+        .composer { padding: 12px 18px; background: rgba(10,17,32,.86); backdrop-filter: blur(18px); }
+        .composer textarea { min-height: 46px; border-radius: 16px; background: rgba(255,255,255,.06); }
+        .composer button { width: 46px; height: 46px; padding: 0; display: grid; place-items:center; border-radius: 15px; color:#07111c; background: linear-gradient(135deg, var(--accent), var(--violet)); }
+        .composer button .send-label { display:none; }
+
+        @media (max-width: 860px) {
+            #app::before { width: 230px; height: 360px; right: -150px; top: -110px; opacity: .7; }
+            #app::after { display:none; }
+            .sidebar-head { min-height: 68px; padding: 12px 14px; }
+            .search-wrap { top: 68px; padding: 8px 12px; }
+            .sidebar-tabs { top: 128px; }
+            .convo-list { padding: 5px 8px 14px; }
+            .convo-item { min-height: 76px; margin: 4px 0; border-radius: 14px; padding-right: 42px; }
+            .header { min-height: 68px; padding: 8px 8px 8px 2px; }
+            .conversation-heading { gap: 8px; }
+            .contact-avatar { width: 40px; height: 40px; flex-basis:40px; border-radius:12px; }
+            #activePhone { font-size: 14px; }
+            #modeBadge { margin-top: 4px; }
+            .conversation-status { display:none; }
+            .header-actions { top: 62px; right: 10px; width: min(294px, calc(100vw - 20px)); padding: 10px; border-radius: 16px; background: rgba(17,28,48,.94); backdrop-filter: blur(22px); }
+            .header-actions.mobile-visible { grid-template-columns: 1fr; gap: 6px; }
+            .header-actions button, .live-indicator { min-height: 46px; border-radius: 12px; background: #192841; border-color: rgba(174,191,214,.18); color: var(--text); }
+            .header-actions button.primary { background: #123d58; border-color: var(--accent); color: #dff7ff; }
+            .header-actions button.danger { background: #341b2b; border-color: #d85a70; color: #ffd9df; }
+            .live-indicator { grid-column: auto; }
+            .thread { padding: 16px 10px 18px; }
+            .msg-row { max-width: 82%; margin-bottom: 7px; }
+            .bubble { border-radius: 14px; font-size: 14px; padding: 9px 11px 7px; }
+            .bubble.user, .bubble.lead { border-top-left-radius: 4px; }
+            .bubble.assistant, .bubble.agent { border-top-right-radius: 4px; }
+            .bubble-time { margin-top: 2px; }
+            .composer { padding: 8px max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)); }
+            .composer textarea { min-height: 46px; border-radius: 16px; padding: 11px 14px; }
+            .composer button { width:46px; height:46px; border-radius:15px; }
+        }
+
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after {
                 animation-duration: 0.001ms !important;
@@ -1322,12 +1511,14 @@
         <div class="main">
             <div class="header">
                 <div class="conversation-heading">
-                    <button class="menu-toggle" id="menuToggle" onclick="showConversationList()" aria-label="Retour aux conversations">‹</button>
+                    <button class="menu-toggle" id="menuToggle" onclick="showConversationList()" aria-label="Retour aux conversations"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg></button>
+                    <div class="contact-avatar" id="contactAvatar" aria-hidden="true">RQ</div>
                     <div class="conversation-identity">
-                        <strong id="activePhone">Sélectionnez une conversation</strong>
+                        <strong id="activePhone">Vos conversations</strong>
+                        <span class="conversation-status" id="conversationStatus">Choisissez un client pour commencer</span>
                         <span id="modeBadge" class="badge bot" style="display:none;"></span>
                     </div>
-                    <button class="actions-toggle" id="actionsToggle" onclick="toggleActionsMenu(event)" aria-label="Actions de la conversation" aria-expanded="false">⋮</button>
+                    <button class="actions-toggle" id="actionsToggle" onclick="toggleActionsMenu(event)" aria-label="Actions de la conversation" aria-expanded="false"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg></button>
                 </div>
                 <div class="header-actions" id="headerActions" style="display:none;">
                     <button class="primary" onclick="setMode('human')">👤 <span class="btn-text">Prendre en charge</span></button>
@@ -1338,14 +1529,14 @@
                 </div>
             </div>
             <div class="thread" id="thread">
-                <div class="empty"><span class="empty-icon">💬</span>Sélectionnez une conversation dans la liste pour afficher les messages.</div>
+                <div class="empty"><span class="empty-visual"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 5.5h16v11H9l-5 3v-14Z"/><path d="M8 10h8M8 13h5"/></svg></span><span class="empty-title">Votre espace de conversation</span><span class="empty-copy">Sélectionnez un client dans la liste pour consulter son historique et lui répondre.</span></div>
             </div>
             <div class="composer" id="composer" style="display:none;">
                 <div style="flex:1;">
-                    <textarea id="replyInput" rows="1" placeholder="Répondre au client en tant que conseiller…"
+                    <textarea id="replyInput" rows="1" placeholder="Écrire un message…"
                         onkeydown="handleComposerKey(event)" oninput="autoGrow(this)"></textarea>
                 </div>
-                <button id="replyBtn" onclick="sendReply()">Envoyer</button>
+                <button id="replyBtn" onclick="sendReply()" aria-label="Envoyer"><span class="send-label">Envoyer</span><svg class="send-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m4 4 17 8-17 8 3-8-3-8Z"/><path d="M7 12h14"/></svg></button>
             </div>
         </div>
     </div>
@@ -1609,7 +1800,8 @@
                     : modeBadgeHtml(c.mode);
                 const unread = isUnread(c);
                 const time = timeAgo(lastMessageTs(c));
-                return `<div class="convo-item ${c.phone === activePhone ? 'active' : ''} ${unread ? 'unread' : ''}" onclick="renderThread('${c.phone}')">
+                const initials = c.phone.slice(-2);
+                return `<div class="convo-item ${c.phone === activePhone ? 'active' : ''} ${unread ? 'unread' : ''}" data-initials="${initials}" onclick="renderThread('${c.phone}')">
         <button class="convo-delete" onclick="event.stopPropagation(); confirmDelete('${c.phone}')" title="Supprimer" aria-label="Supprimer la conversation">🗑️</button>
         <div class="convo-top-row">
           <div class="convo-phone">${unread ? '<span class="unread-dot"></span>' : ''}+${c.phone}</div>
@@ -1624,10 +1816,10 @@
 
             const tabs = `<div class="sidebar-tabs">
         <button class="sidebar-tab ${activeTab === 'chats' ? 'active' : ''}" onclick="setActiveTab('chats')">
-          💬 Conversations <span class="tab-count">${chats.length}</span>
+          Conversations <span class="tab-count">${chats.length}</span>
         </button>
         <button class="sidebar-tab ${activeTab === 'leads' ? 'active' : ''}" onclick="setActiveTab('leads')">
-          📋 Commandes <span class="tab-count">${leads.length}</span>
+          Commandes <span class="tab-count">${leads.length}</span>
         </button>
       </div>`;
 
@@ -1680,6 +1872,8 @@
         function renderThread(phone, silent) {
             activePhone = phone;
             document.getElementById("activePhone").textContent = "+" + phone;
+            document.getElementById("contactAvatar").textContent = phone.slice(-2);
+            document.getElementById("conversationStatus").textContent = "Conversation client";
             document.getElementById("app").classList.add("conversation-open");
             document.getElementById("headerActions").classList.remove("mobile-visible");
             document.getElementById("actionsToggle").setAttribute("aria-expanded", "false");
@@ -1700,7 +1894,7 @@
 
             const thread = document.getElementById("thread");
             if (!convo || convo.messages.length === 0) {
-                thread.innerHTML = '<div class="empty"><span class="empty-icon">🗒️</span>Pas encore de messages sur cette conversation.</div>';
+                thread.innerHTML = '<div class="empty"><span class="empty-visual"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 5.5h16v11H9l-5 3v-14Z"/><path d="M8 10h8M8 13h5"/></svg></span><span class="empty-title">La conversation commence ici</span><span class="empty-copy">Envoyez le premier message à ce client depuis le champ ci-dessous.</span></div>';
                 renderSidebar();
                 return;
             }
@@ -1859,11 +2053,13 @@
 
                 if (activePhone === phone) {
                     activePhone = null;
-                    document.getElementById("activePhone").textContent = "Sélectionnez une conversation";
+                    document.getElementById("activePhone").textContent = "Vos conversations";
+                    document.getElementById("contactAvatar").textContent = "RQ";
+                    document.getElementById("conversationStatus").textContent = "Choisissez un client pour commencer";
                     document.getElementById("modeBadge").style.display = "none";
                     document.getElementById("headerActions").style.display = "none";
                     document.getElementById("composer").style.display = "none";
-                    document.getElementById("thread").innerHTML = '<div class="empty"><span class="empty-icon">💬</span>Sélectionnez une conversation dans la liste pour afficher les messages.</div>';
+                    document.getElementById("thread").innerHTML = '<div class="empty"><span class="empty-visual"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 5.5h16v11H9l-5 3v-14Z"/><path d="M8 10h8M8 13h5"/></svg></span><span class="empty-title">Votre espace de conversation</span><span class="empty-copy">Sélectionnez un client dans la liste pour consulter son historique et lui répondre.</span></div>';
                 }
 
                 renderSidebar();
@@ -1896,8 +2092,8 @@
 
             const btn = document.getElementById("replyBtn");
             btn.disabled = true;
-            const originalLabel = btn.textContent;
-            btn.innerHTML = '<span class="spinner"></span>Envoi…';
+            const originalMarkup = btn.innerHTML;
+            btn.innerHTML = '<span class="spinner"></span><span class="send-label">Envoi…</span>';
             try {
                 const res = await fetch("/api/conversation?key=" + encodeURIComponent(SECRET), {
                     method: "POST",
@@ -1922,7 +2118,7 @@
                 toast("Erreur de connexion.", "error");
             } finally {
                 btn.disabled = false;
-                btn.textContent = originalLabel;
+                btn.innerHTML = originalMarkup;
             }
         }
 
