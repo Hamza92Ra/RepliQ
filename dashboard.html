@@ -515,6 +515,21 @@
             align-items: center;
         }
 
+        .conversation-heading {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+
+        .conversation-identity {
+            min-width: 0;
+        }
+
+        .actions-toggle {
+            display: none;
+        }
+
         .header-actions button {
             padding: 9px 15px;
             border-radius: 9px;
@@ -1022,17 +1037,23 @@
         }
 
         /* ---------- MOBILE ---------- */
-        .menu-toggle {
-            display: none;
-            width: 36px;
-            height: 36px;
-            border-radius: 9px;
-            border: 1px solid var(--border);
-            background: var(--panel);
+        .menu-toggle,
+        .actions-toggle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 0;
+            background: transparent;
             color: var(--text);
-            font-size: 16px;
+            font-size: 20px;
             cursor: pointer;
             flex-shrink: 0;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .menu-toggle {
+            display: none;
         }
 
         .sidebar-overlay {
@@ -1040,112 +1061,238 @@
         }
 
         @media (max-width: 860px) {
-            #app {
-                position: relative;
+            body {
+                height: 100dvh;
             }
 
-            .menu-toggle {
-                display: block;
+            #app {
+                position: relative;
+                height: 100dvh;
+                overflow: hidden;
             }
 
             .sidebar {
-                position: fixed;
-                top: 0;
-                left: 0;
+                position: relative;
+                width: 100%;
+                max-width: none;
                 height: 100dvh;
-                width: 86vw;
-                max-width: 340px;
-                z-index: 60;
-                transform: translateX(-100%);
-                transition: transform .25s cubic-bezier(.2,.8,.2,1);
-                box-shadow: 20px 0 50px rgba(0,0,0,0.4);
+                border-right: 0;
+                transform: none;
+                box-shadow: none;
             }
 
-            .sidebar.mobile-open {
-                transform: translateX(0);
+            #app.conversation-open .sidebar {
+                display: none;
             }
 
-            .sidebar-overlay {
-                display: block;
-                position: fixed;
-                inset: 0;
-                background: rgba(0,0,0,0.5);
-                z-index: 55;
-                opacity: 0;
-                pointer-events: none;
-                transition: opacity .2s ease;
+            .main {
+                display: none;
+                width: 100%;
+                height: 100dvh;
             }
 
-            .sidebar-overlay.show {
+            #app.conversation-open .main {
+                display: flex;
+            }
+
+            .sidebar-head {
+                min-height: 58px;
+                padding: 10px 14px;
+            }
+
+            .search-wrap {
+                top: 58px;
+                padding: 8px 12px;
+            }
+
+            .sidebar-tabs {
+                top: 109px;
+                padding: 8px 12px;
+            }
+
+            .sidebar-tab {
+                border: 0;
+                background: transparent;
+                border-bottom: 2px solid transparent;
+                border-radius: 0;
+            }
+
+            .sidebar-tab.active {
+                background: transparent;
+                border-color: var(--accent);
+            }
+
+            .convo-item {
+                min-height: 72px;
+                padding: 12px 16px;
+                border-left: 0;
+            }
+
+            .convo-item.active {
+                border-left: 0;
+            }
+
+            .convo-delete {
                 opacity: 1;
                 pointer-events: auto;
+                top: 38px;
+            }
+
+            .menu-toggle,
+            .actions-toggle {
+                display: flex;
             }
 
             .header {
-                padding: 14px 16px;
-                gap: 10px;
+                position: relative;
+                min-height: 60px;
+                padding: 8px 10px 8px 6px;
+                flex-wrap: nowrap;
+                background: var(--bg-soft);
+            }
+
+            .conversation-heading {
+                flex: 1;
+                min-width: 0;
+                gap: 4px;
+            }
+
+            .conversation-identity {
+                flex: 1;
+                overflow: hidden;
             }
 
             #activePhone {
-                font-size: 14px;
+                display: block;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                font-size: 15px;
+            }
+
+            #modeBadge {
+                margin-top: 3px;
+                font-size: 9px;
             }
 
             .header-actions {
-                width: 100%;
-                gap: 6px;
+                position: absolute;
+                top: 54px;
+                right: 8px;
+                z-index: 50;
+                width: min(280px, calc(100vw - 16px));
+                padding: 8px;
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                background: var(--panel-2);
+                box-shadow: 0 16px 38px rgba(0,0,0,.48);
+            }
+
+            .header-actions:not(.mobile-visible) {
+                display: none !important;
+            }
+
+            .header-actions.mobile-visible {
+                display: grid !important;
+                grid-template-columns: 1fr 1fr;
             }
 
             .header-actions button,
             .live-indicator {
-                flex: 1 1 auto;
-                padding: 10px 8px;
-                font-size: 12px;
-                justify-content: center;
-                text-align: center;
+                min-height: 42px;
+                padding: 9px 10px;
+                justify-content: flex-start;
+                text-align: left;
+            }
+
+            .header-actions .icon-btn {
+                width: auto;
+            }
+
+            .live-indicator {
+                grid-column: 1 / -1;
             }
 
             .thread {
-                padding: 18px 14px;
+                padding: 16px 10px 22px;
+                background-color: var(--bg);
             }
 
             .msg-row {
-                max-width: 88%;
-                gap: 7px;
-                margin-bottom: 14px;
+                max-width: 84%;
+                gap: 0;
+                margin-bottom: 8px;
             }
 
-            .avatar {
-                width: 26px;
-                height: 26px;
-                font-size: 12px;
+            .msg-row .avatar,
+            .sender-label {
+                display: none;
             }
 
             .bubble {
+                padding: 8px 10px;
+                border-radius: 8px;
                 font-size: 14px;
-                padding: 10px 13px;
+                line-height: 1.45;
+                box-shadow: 0 2px 5px rgba(0,0,0,.24);
+            }
+
+            .bubble.user,
+            .bubble.lead {
+                border-top-left-radius: 2px;
+            }
+
+            .bubble.assistant,
+            .bubble.agent {
+                border-top-right-radius: 2px;
+            }
+
+            .bubble-time {
+                margin-top: 3px;
+                font-size: 9px;
+            }
+
+            .day-divider {
+                margin: 14px 0;
             }
 
             .composer {
-                padding: 12px 14px;
+                gap: 8px;
+                padding: 8px max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+                align-items: flex-end;
             }
 
             .composer textarea {
-                font-size: 16px; /* prevents iOS auto-zoom on focus */
+                min-height: 44px;
+                padding: 10px 14px;
+                border: 0;
+                border-radius: 22px;
+                font-size: 16px;
             }
 
             .composer button {
-                padding: 12px 18px;
+                width: 44px;
+                height: 44px;
+                padding: 0;
+                border-radius: 50%;
+                font-size: 0;
+            }
+
+            .composer button::before {
+                content: "➤";
+                font-size: 18px;
+            }
+
+            #toast {
+                left: 12px;
+                right: 12px;
+                bottom: 76px;
+                justify-content: center;
             }
 
             .modal-card {
-                width: calc(100vw - 32px);
+                width: calc(100vw - 28px);
                 padding: 22px 20px 18px;
-            }
-        }
-
-        @media (max-width: 420px) {
-            .header-actions button span.btn-text {
-                display: none;
             }
         }
 
@@ -1174,12 +1321,13 @@
         <div class="sidebar" id="sidebar"></div>
         <div class="main">
             <div class="header">
-                <div style="display:flex; align-items:center; gap:12px;">
-                    <button class="menu-toggle" id="menuToggle" onclick="toggleSidebar()" aria-label="Menu">☰</button>
-                    <div>
+                <div class="conversation-heading">
+                    <button class="menu-toggle" id="menuToggle" onclick="showConversationList()" aria-label="Retour aux conversations">‹</button>
+                    <div class="conversation-identity">
                         <strong id="activePhone">Sélectionnez une conversation</strong>
                         <span id="modeBadge" class="badge bot" style="display:none;"></span>
                     </div>
+                    <button class="actions-toggle" id="actionsToggle" onclick="toggleActionsMenu(event)" aria-label="Actions de la conversation" aria-expanded="false">⋮</button>
                 </div>
                 <div class="header-actions" id="headerActions" style="display:none;">
                     <button class="primary" onclick="setMode('human')">👤 <span class="btn-text">Prendre en charge</span></button>
@@ -1253,8 +1401,12 @@
 
             document.getElementById("secretInput").value = "";
             document.getElementById("loginError").textContent = "";
-            document.getElementById("app").style.display = "none";
+            const app = document.getElementById("app");
+            app.classList.remove("conversation-open");
+            app.style.display = "none";
+            document.getElementById("headerActions").classList.remove("mobile-visible");
             document.getElementById("login").style.display = "block";
+            document.getElementById("secretInput").focus();
         }
 
         function tryLogin() {
@@ -1289,7 +1441,13 @@
                     document.getElementById("loginError").textContent = "Mot de passe incorrect.";
                     return;
                 }
-                const data = await res.json();
+                let data = {};
+                try { data = await res.json(); } catch (e) {}
+                if (!res.ok) {
+                    const message = data.error || `Erreur serveur (${res.status})`;
+                    if (isLogin) document.getElementById("loginError").textContent = message;
+                    throw new Error(message);
+                }
                 const newConversations = data.conversations || [];
                 const snapshot = JSON.stringify(newConversations);
 
@@ -1330,13 +1488,32 @@
             }
         }
 
-        function toggleSidebar(force) {
-            const sidebar = document.getElementById("sidebar");
-            const overlay = document.getElementById("sidebarOverlay");
-            const shouldOpen = typeof force === "boolean" ? force : !sidebar.classList.contains("mobile-open");
-            sidebar.classList.toggle("mobile-open", shouldOpen);
-            overlay.classList.toggle("show", shouldOpen);
+        function showConversationList() {
+            document.getElementById("app").classList.remove("conversation-open");
+            const actions = document.getElementById("headerActions");
+            actions.classList.remove("mobile-visible");
+            document.getElementById("actionsToggle").setAttribute("aria-expanded", "false");
         }
+
+        function toggleSidebar(force) {
+            if (force === false) return;
+            showConversationList();
+        }
+
+        function toggleActionsMenu(event) {
+            if (event) event.stopPropagation();
+            const actions = document.getElementById("headerActions");
+            const open = actions.classList.toggle("mobile-visible");
+            document.getElementById("actionsToggle").setAttribute("aria-expanded", String(open));
+        }
+
+        document.addEventListener("click", (event) => {
+            const actions = document.getElementById("headerActions");
+            if (!actions.contains(event.target) && event.target.id !== "actionsToggle") {
+                actions.classList.remove("mobile-visible");
+                document.getElementById("actionsToggle").setAttribute("aria-expanded", "false");
+            }
+        });
 
         function modeBadgeHtml(mode) {
             const m = mode || "bot";
@@ -1503,7 +1680,9 @@
         function renderThread(phone, silent) {
             activePhone = phone;
             document.getElementById("activePhone").textContent = "+" + phone;
-            if (!silent) toggleSidebar(false);
+            document.getElementById("app").classList.add("conversation-open");
+            document.getElementById("headerActions").classList.remove("mobile-visible");
+            document.getElementById("actionsToggle").setAttribute("aria-expanded", "false");
 
             const convo = conversations.find(c => c.phone === phone);
             const badge = document.getElementById("modeBadge");
@@ -1623,6 +1802,8 @@
 
         async function setMode(action) {
             if (!activePhone) return;
+            document.getElementById("headerActions").classList.remove("mobile-visible");
+            document.getElementById("actionsToggle").setAttribute("aria-expanded", "false");
             const confirmed = await openConfirmModal(action);
             if (!confirmed) return;
 
