@@ -6,7 +6,7 @@ import {
   getMediaUrl,
   downloadMedia,
 } from "../lib/whatsapp.js";
-import { generateReply, transcribeAudio } from "../lib/ai.js";
+import { generateReply, transcribeAudio, extractOrder } from "../lib/ai.js";
 import { notifyTeam, looksLikeFinalizeIntent } from "../lib/notify.js";
 import {
   saveMessage,
