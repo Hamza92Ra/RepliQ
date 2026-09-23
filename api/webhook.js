@@ -17,7 +17,7 @@ import {
   setConversationOwner,
   getBusinessConfig,
   claimMessage,
-  deleteConversation, // NEW — see lib/db.js note below
+  deleteConversation,
 } from "../lib/db.js";
 
 const FALLBACK_REPLY =
@@ -59,7 +59,9 @@ function describeInbound(message) {
  *   body: { phone, action: "human"|"bot"|"completed"|"reply"|"delete", message? }
  * This is a completely different request shape from Meta's webhook payload
  * (which has no "phone"/"action" fields and no ?key=), so it's safe to
- * branch on that before touching any webhook logic.
+ * branch on that before touching any webhook logic. NOTE: this is served
+ * from the SAME file as Meta's webhook — dashboard.html's /api/conversation
+ * calls route here, not to a separate file.
  */
 async function handleAdminAction(req, res) {
   const key = req.query.key;
@@ -124,9 +126,9 @@ async function handleAdminAction(req, res) {
       return res.status(200).json({ ok: true });
     }
 
-    // NEW — permanently remove a conversation the dashboard's trash icon
-    // asked to delete. Wipes stored messages/mode/ownership for this
-    // phone so it disappears from the dashboard on the next poll.
+    // Permanently remove a conversation the dashboard's trash icon asked
+    // to delete. Wipes stored messages/mode/ownership for this phone so
+    // it disappears from the dashboard on the next poll.
     if (action === "delete") {
       const recipient = isBsuid(phone) ? phone : String(phone).replace(/\D/g, "");
       if (!recipient) {
