@@ -482,6 +482,31 @@
             border: 1px solid rgba(79, 140, 255, 0.35);
         }
 
+        /* Order status badges — same tokens as above, reused for a different meaning. */
+        .badge.pending {
+            background: var(--amber-bg);
+            color: var(--amber);
+            border: 1px solid var(--amber-border);
+        }
+
+        .badge.confirmed {
+            background: rgba(37, 211, 102, 0.14);
+            color: var(--accent);
+            border: 1px solid rgba(37, 211, 102, 0.35);
+        }
+
+        .badge.shipped {
+            background: rgba(79, 140, 255, 0.14);
+            color: var(--blue);
+            border: 1px solid rgba(79, 140, 255, 0.35);
+        }
+
+        .badge.cancelled {
+            background: var(--danger-bg);
+            color: var(--danger);
+            border: 1px solid var(--danger);
+        }
+
         .main {
             flex: 1;
             display: flex;
@@ -1245,33 +1270,31 @@
             }
         }
 
-
-
-        /* ---------- POLISHED KINETIC CHAT UI ---------- */
+        /* ---------- POLISHED GLASS UI (same green brand, kept the glass/kinetic layout) ---------- */
         :root {
-            --bg: #0a1120;
-            --bg-soft: rgba(10, 17, 32, 0.78);
-            --panel: rgba(17, 28, 48, 0.76);
-            --panel-2: rgba(30, 48, 76, 0.74);
-            --panel-3: #192841;
-            --border: rgba(174, 191, 214, 0.15);
-            --border-soft: rgba(174, 191, 214, 0.09);
-            --text: #e6eefc;
-            --text-dim: #aebfd6;
-            --text-faint: #7588a5;
-            --accent: #38bdf8;
-            --accent-dim: #0ea5e9;
-            --accent-glow: rgba(56, 189, 248, 0.2);
-            --violet: #a855f7;
-            --outgoing: #164e63;
-            --incoming: #111c30;
+            --bg: #0a120e;
+            --bg-soft: rgba(10, 18, 14, 0.78);
+            --panel: rgba(17, 30, 24, 0.76);
+            --panel-2: rgba(24, 48, 36, 0.74);
+            --panel-3: #16281f;
+            --border: rgba(191, 214, 197, 0.15);
+            --border-soft: rgba(191, 214, 197, 0.09);
+            --text: #e9fbf0;
+            --text-dim: #a9c9b6;
+            --text-faint: #75a586;
+            --accent: #25d366;
+            --accent-dim: #1a9950;
+            --accent-glow: rgba(37, 211, 102, 0.2);
+            --accent-2: #059669;
+            --outgoing: #123a2c;
+            --incoming: #101f18;
             --radius: 14px;
         }
 
         body {
             background:
-                radial-gradient(900px 620px at 8% -8%, rgba(56,189,248,.2), transparent 58%),
-                radial-gradient(780px 600px at 105% 60%, rgba(168,85,247,.16), transparent 60%),
+                radial-gradient(900px 620px at 8% -8%, rgba(37,211,102,.2), transparent 58%),
+                radial-gradient(780px 600px at 105% 60%, rgba(5,150,105,.16), transparent 60%),
                 var(--bg);
         }
 
@@ -1290,14 +1313,14 @@
         #app::after { width: 280px; height: 380px; left: -130px; bottom: -180px; transform: rotate(-14deg); }
 
         .sidebar {
-            background: rgba(10,17,32,.78);
+            background: rgba(10,18,14,.78);
             backdrop-filter: blur(22px) saturate(1.25);
             border-right-color: var(--border);
         }
         .sidebar-head {
             min-height: 72px;
             padding: 14px 16px;
-            background: rgba(10,17,32,.9);
+            background: rgba(10,18,14,.9);
             backdrop-filter: blur(18px);
         }
         .sidebar-head .logo::before {
@@ -1307,19 +1330,19 @@
             width: 38px;
             height: 38px;
             border-radius: 12px;
-            color: #07111c;
-            background: linear-gradient(135deg, var(--accent), var(--violet));
+            color: #05170c;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
             font-size: 17px;
             font-weight: 800;
-            box-shadow: 0 10px 25px rgba(56,189,248,.18);
+            box-shadow: 0 10px 25px rgba(37,211,102,.18);
         }
         .sidebar-head .logo .logo-dot { display: none; }
         .logout-btn { width: 38px; height: 38px; border-radius: 12px; background: rgba(255,255,255,.04); }
-        .search-wrap { top: 72px; padding: 11px 14px; background: rgba(10,17,32,.9); backdrop-filter: blur(18px); }
+        .search-wrap { top: 72px; padding: 11px 14px; background: rgba(10,18,14,.9); backdrop-filter: blur(18px); }
         .search-box input { min-height: 44px; padding-left: 38px; border-radius: 14px; background: rgba(255,255,255,.055); }
-        .sidebar-tabs { top: 139px; padding: 8px 14px 12px; background: rgba(10,17,32,.9); backdrop-filter: blur(18px); }
+        .sidebar-tabs { top: 139px; padding: 8px 14px 12px; background: rgba(10,18,14,.9); backdrop-filter: blur(18px); }
         .sidebar-tab { min-height: 40px; border-radius: 12px; background: rgba(255,255,255,.035); }
-        .sidebar-tab.active { color: var(--text); border-color: rgba(56,189,248,.35); background: linear-gradient(135deg, rgba(56,189,248,.23), rgba(168,85,247,.16)); }
+        .sidebar-tab.active { color: var(--text); border-color: rgba(37,211,102,.35); background: linear-gradient(135deg, rgba(37,211,102,.23), rgba(5,150,105,.16)); }
         .convo-list { padding: 6px 10px 18px; }
         .convo-item { margin: 5px 0; padding: 14px 14px 14px 66px; min-height: 78px; border: 1px solid transparent; border-radius: 14px; }
         .convo-item::before {
@@ -1332,8 +1355,8 @@
             display: grid;
             place-items: center;
             border-radius: 13px;
-            background: linear-gradient(135deg, rgba(56,189,248,.9), rgba(168,85,247,.82));
-            color: #07111c;
+            background: linear-gradient(135deg, rgba(37,211,102,.9), rgba(5,150,105,.82));
+            color: #05170c;
             font-family: 'Sora', sans-serif;
             font-weight: 800;
             font-size: 12px;
@@ -1347,7 +1370,7 @@
         .header {
             min-height: 74px;
             padding: 12px 20px;
-            background: rgba(10,17,32,.72);
+            background: rgba(10,18,14,.72);
             backdrop-filter: blur(18px) saturate(1.2);
         }
         .contact-avatar {
@@ -1357,8 +1380,8 @@
             display: grid;
             place-items: center;
             border-radius: 13px;
-            background: linear-gradient(135deg, var(--accent), var(--violet));
-            color: #07111c;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            color: #05170c;
             font-family: 'Sora', sans-serif;
             font-size: 13px;
             font-weight: 800;
@@ -1370,9 +1393,9 @@
         .thread {
             padding: 28px clamp(18px, 4vw, 54px);
             background:
-                linear-gradient(rgba(10,17,32,.72), rgba(10,17,32,.78)),
-                radial-gradient(circle at 20% 20%, rgba(56,189,248,.12), transparent 34%),
-                radial-gradient(circle at 82% 78%, rgba(168,85,247,.1), transparent 36%);
+                linear-gradient(rgba(10,18,14,.72), rgba(10,18,14,.78)),
+                radial-gradient(circle at 20% 20%, rgba(37,211,102,.12), transparent 34%),
+                radial-gradient(circle at 82% 78%, rgba(5,150,105,.1), transparent 36%);
         }
         .thread .empty { height: 100%; max-width: 380px; display: grid; place-content: center; padding: 32px; }
         .empty-visual {
@@ -1394,13 +1417,13 @@
         .sender-label { margin-bottom: 4px; }
         .bubble { padding: 10px 13px 8px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,.16); }
         .bubble.user, .bubble.lead { background: rgba(17,28,48,.9); border-color: rgba(174,191,214,.12); }
-        .bubble.assistant { background: linear-gradient(135deg, #155e75, #4c1d95); }
-        .bubble.agent { background: linear-gradient(135deg, #334155, #4c1d95); border-color: rgba(168,85,247,.28); color: var(--text); }
+        .bubble.assistant { background: linear-gradient(135deg, #15803d, #065f46); }
+        .bubble.agent { background: linear-gradient(135deg, #4a3d17, #372c11); border-color: var(--amber-border); color: #fff3d6; }
         .day-divider span { border: 1px solid var(--border); border-radius: 999px; background: rgba(17,28,48,.8); padding: 5px 12px; }
         .day-divider::before { display: none; }
-        .composer { padding: 12px 18px; background: rgba(10,17,32,.86); backdrop-filter: blur(18px); }
+        .composer { padding: 12px 18px; background: rgba(10,18,14,.86); backdrop-filter: blur(18px); }
         .composer textarea { min-height: 46px; border-radius: 16px; background: rgba(255,255,255,.06); }
-        .composer button { width: 46px; height: 46px; padding: 0; display: grid; place-items:center; border-radius: 15px; color:#07111c; background: linear-gradient(135deg, var(--accent), var(--violet)); }
+        .composer button { width: 46px; height: 46px; padding: 0; display: grid; place-items:center; border-radius: 15px; color:#05170c; background: linear-gradient(135deg, var(--accent), var(--accent-2)); }
         .composer button .send-label { display:none; }
 
         @media (max-width: 860px) {
@@ -1417,11 +1440,11 @@
             #activePhone { font-size: 14px; }
             #modeBadge { margin-top: 4px; }
             .conversation-status { display:none; }
-            .header-actions { top: 62px; right: 10px; width: min(294px, calc(100vw - 20px)); padding: 10px; border-radius: 16px; background: rgba(17,28,48,.94); backdrop-filter: blur(22px); }
+            .header-actions { top: 62px; right: 10px; width: min(294px, calc(100vw - 20px)); padding: 10px; border-radius: 16px; background: rgba(17,30,24,.94); backdrop-filter: blur(22px); }
             .header-actions.mobile-visible { grid-template-columns: 1fr; gap: 6px; }
-            .header-actions button { min-height: 46px; border-radius: 12px; background: #192841; border-color: rgba(174,191,214,.18); color: var(--text); }
-            .header-actions button.primary { background: #123d58; border-color: var(--accent); color: #dff7ff; }
-            .header-actions button.danger { background: #341b2b; border-color: #d85a70; color: #ffd9df; }
+            .header-actions button { min-height: 46px; border-radius: 12px; background: #16281f; border-color: rgba(191,214,197,.18); color: var(--text); }
+            .header-actions button.primary { background: #123d2a; border-color: var(--accent); color: #dff7e6; }
+            .header-actions button.danger { background: #341b1b; border-color: #d85a5a; color: #ffd9d9; }
             .thread { padding: 16px 10px 18px; }
             .msg-row { max-width: 82%; margin-bottom: 7px; }
             .bubble { border-radius: 14px; font-size: 14px; padding: 9px 11px 7px; }
@@ -1474,6 +1497,11 @@
                     <button class="danger" onclick="setMode('completed')">✅ <span class="btn-text">Terminer</span></button>
                     <button class="danger icon-btn" onclick="confirmDelete(activePhone)" title="Supprimer la conversation" aria-label="Supprimer la conversation">🗑️</button>
                 </div>
+                <div class="header-actions" id="orderActions" style="display:none;">
+                    <button class="primary" onclick="setOrderStatus('confirmed')">✅ <span class="btn-text">Confirmer</span></button>
+                    <button onclick="setOrderStatus('shipped')">📦 <span class="btn-text">Marquer expédiée</span></button>
+                    <button class="danger" onclick="setOrderStatus('cancelled')">✖️ <span class="btn-text">Annuler</span></button>
+                </div>
             </div>
             <div class="thread" id="thread">
                 <div class="empty"><span class="empty-visual"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 5.5h16v11H9l-5 3v-14Z"/><path d="M8 10h8M8 13h5"/></svg></span><span class="empty-title">Votre espace de conversation</span><span class="empty-copy">Sélectionnez un client dans la liste pour consulter son historique et lui répondre.</span></div>
@@ -1503,8 +1531,10 @@
     <script>
         let SECRET = localStorage.getItem("repliq_dashboard_key") || "";
         let conversations = [];
+        let orders = [];
         let activePhone = null;
-        let activeTab = "chats"; // "chats" | "leads" — which page of the sidebar is showing
+        let activeOrderId = null;
+        let activeTab = "chats"; // "chats" | "leads" | "orders" — which page of the sidebar is showing
         let searchQuery = "";
 
         // Per-conversation "last viewed" timestamps, kept locally per browser
@@ -1522,6 +1552,7 @@
         }
 
         const MODE_LABELS = { bot: "Bot", human: "Humain", completed: "Terminée" };
+        const ORDER_STATUS_LABELS = { pending: "En attente", confirmed: "Confirmée", shipped: "Expédiée", cancelled: "Annulée" };
 
         function logout() {
             if (pollTimer) {
@@ -1531,8 +1562,11 @@
             localStorage.removeItem("repliq_dashboard_key");
             SECRET = "";
             conversations = [];
+            orders = [];
             activePhone = null;
+            activeOrderId = null;
             lastDataSnapshot = null;
+            lastOrdersSnapshot = null;
             renderedCounts = {};
 
             document.getElementById("secretInput").value = "";
@@ -1541,6 +1575,7 @@
             app.classList.remove("conversation-open");
             app.style.display = "none";
             document.getElementById("headerActions").classList.remove("mobile-visible");
+            document.getElementById("orderActions").classList.remove("mobile-visible");
             document.getElementById("login").style.display = "block";
             document.getElementById("secretInput").focus();
         }
@@ -1559,6 +1594,7 @@
         let pollTimer = null;
         const POLL_INTERVAL_MS = 4000;
         let lastDataSnapshot = null;
+        let lastOrdersSnapshot = null;
         let renderedCounts = {}; // phone -> number of messages already rendered (so we don't replay entry animation on them)
         let consecutiveFailures = 0;
 
@@ -1570,20 +1606,35 @@
                 // 304 Not Modified with no body. res.json() on that throws, and
                 // conversations silently falls back to [], which looks exactly
                 // like "conversations stopped appearing".
-                const res = await fetch("/api/dashboard?key=" + encodeURIComponent(SECRET), { cache: "no-store" });
-                if (res.status === 401) {
+                const [convRes, orderRes] = await Promise.all([
+                    fetch("/api/dashboard?key=" + encodeURIComponent(SECRET), { cache: "no-store" }),
+                    fetch("/api/orders?key=" + encodeURIComponent(SECRET), { cache: "no-store" }).catch(() => null),
+                ]);
+                if (convRes.status === 401) {
                     document.getElementById("loginError").textContent = "Mot de passe incorrect.";
                     return;
                 }
                 let data = {};
-                try { data = await res.json(); } catch (e) {}
-                if (!res.ok) {
-                    const message = data.error || `Erreur serveur (${res.status})`;
+                try { data = await convRes.json(); } catch (e) {}
+                if (!convRes.ok) {
+                    const message = data.error || `Erreur serveur (${convRes.status})`;
                     if (isLogin) document.getElementById("loginError").textContent = message;
                     throw new Error(message);
                 }
                 const newConversations = data.conversations || [];
                 const snapshot = JSON.stringify(newConversations);
+
+                let orderData = {};
+                if (orderRes && orderRes.ok) {
+                    try { orderData = await orderRes.json(); } catch (e) {}
+                }
+                const newOrders = orderData.orders || [];
+                const ordersSnapshot = JSON.stringify(newOrders);
+                const ordersChanged = ordersSnapshot !== lastOrdersSnapshot;
+                if (ordersChanged) {
+                    lastOrdersSnapshot = ordersSnapshot;
+                    orders = newOrders;
+                }
 
                 consecutiveFailures = 0;
 
@@ -1595,15 +1646,17 @@
                 // re-render entirely. This is what removes the flash: we
                 // were rebuilding (and re-animating) the whole thread every
                 // 4s even when there was nothing new to show.
-                if (snapshot === lastDataSnapshot) {
+                if (snapshot === lastDataSnapshot && !ordersChanged) {
                     if (!pollTimer) pollTimer = setInterval(loadConversations, POLL_INTERVAL_MS);
                     return;
                 }
+                const conversationsChanged = snapshot !== lastDataSnapshot;
                 lastDataSnapshot = snapshot;
                 conversations = newConversations;
 
                 renderSidebar();
-                if (activePhone) renderThread(activePhone, true);
+                if (conversationsChanged && activePhone) renderThread(activePhone, true);
+                if (ordersChanged && activeOrderId) openOrder(activeOrderId);
 
                 // Start live polling once we're successfully in — no manual
                 // refresh button needed, the dashboard just stays up to date.
@@ -1621,8 +1674,8 @@
 
         function showConversationList() {
             document.getElementById("app").classList.remove("conversation-open");
-            const actions = document.getElementById("headerActions");
-            actions.classList.remove("mobile-visible");
+            document.getElementById("headerActions").classList.remove("mobile-visible");
+            document.getElementById("orderActions").classList.remove("mobile-visible");
             document.getElementById("actionsToggle").setAttribute("aria-expanded", "false");
         }
 
@@ -1631,17 +1684,21 @@
             showConversationList();
         }
 
+        function activeActionsPanel() {
+            return activeOrderId ? document.getElementById("orderActions") : document.getElementById("headerActions");
+        }
+
         function toggleActionsMenu(event) {
             if (event) event.stopPropagation();
-            const actions = document.getElementById("headerActions");
-            const open = actions.classList.toggle("mobile-visible");
+            const panel = activeActionsPanel();
+            const open = panel.classList.toggle("mobile-visible");
             document.getElementById("actionsToggle").setAttribute("aria-expanded", String(open));
         }
 
         document.addEventListener("click", (event) => {
-            const actions = document.getElementById("headerActions");
-            if (!actions.contains(event.target) && event.target.id !== "actionsToggle") {
-                actions.classList.remove("mobile-visible");
+            const panel = activeActionsPanel();
+            if (!panel.contains(event.target) && event.target.id !== "actionsToggle") {
+                panel.classList.remove("mobile-visible");
                 document.getElementById("actionsToggle").setAttribute("aria-expanded", "false");
             }
         });
@@ -1695,6 +1752,20 @@
             return convo.messages.some(m => (m.content || "").toLowerCase().includes(needle));
         }
 
+        function orderItemsSummary(order) {
+            if (!order.items || order.items.length === 0) return "Commande sans détail";
+            const first = order.items[0];
+            const label = `${first.quantity || 1}× ${first.name}`;
+            return order.items.length > 1 ? `${label} +${order.items.length - 1}` : label;
+        }
+
+        function matchesOrderSearch(order, q) {
+            if (!q) return true;
+            const needle = q.toLowerCase();
+            if ((order.phone || "").toLowerCase().includes(needle)) return true;
+            return (order.items || []).some(it => (it.name || "").toLowerCase().includes(needle));
+        }
+
         function onSearchInput(value) {
             searchQuery = value.trim();
             document.getElementById("searchClear").style.display = searchQuery ? "block" : "none";
@@ -1708,6 +1779,22 @@
             renderSidebar();
         }
 
+        function orderItemHtml(o) {
+            const badge = `<span class="badge ${o.status}">${ORDER_STATUS_LABELS[o.status] || o.status}</span>`;
+            const time = timeAgo(o.createdAt);
+            const amount = o.amount != null ? `<span class="convo-time" style="margin-left:8px;">${o.amount} MAD</span>` : "";
+            return `<div class="convo-item ${o.id === activeOrderId ? 'active' : ''}" data-initials="${(o.phone || '').slice(-2)}" onclick="openOrder('${o.id}')">
+        <div class="convo-top-row">
+          <div class="convo-phone">+${o.phone}</div>
+          <span class="convo-time">${time}</span>
+        </div>
+        <div class="convo-top-row" style="margin-top:6px;">
+          ${badge}${amount}
+        </div>
+        <div class="convo-preview">${orderItemsSummary(o).replace(/</g, "&lt;")}</div>
+      </div>`;
+        }
+
         function renderSidebar() {
             const sidebar = document.getElementById("sidebar");
             const head = `<div class="sidebar-head">
@@ -1719,15 +1806,10 @@
             const search = `<div class="search-wrap">
         <div class="search-box">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input id="searchInput" type="text" placeholder="Rechercher par numéro ou message…" value="${searchQuery.replace(/"/g, '&quot;')}" oninput="onSearchInput(this.value)" />
+          <input id="searchInput" type="text" placeholder="Rechercher…" value="${searchQuery.replace(/"/g, '&quot;')}" oninput="onSearchInput(this.value)" />
           <button class="search-clear" id="searchClear" style="display:${searchQuery ? 'block' : 'none'};" onclick="clearSearch()" aria-label="Effacer la recherche">✕</button>
         </div>
       </div>`;
-
-            if (conversations.length === 0) {
-                sidebar.innerHTML = head + search + '<div class="empty" style="padding:24px;">Aucune conversation pour l\'instant.</div>';
-                return;
-            }
 
             const leads = conversations.filter(isPendingLead).sort((a, b) => lastMessageTs(b) - lastMessageTs(a));
             const chats = conversations.filter(c => !isPendingLead(c)).sort((a, b) => lastMessageTs(b) - lastMessageTs(a));
@@ -1759,20 +1841,33 @@
           Conversations <span class="tab-count">${chats.length}</span>
         </button>
         <button class="sidebar-tab ${activeTab === 'leads' ? 'active' : ''}" onclick="setActiveTab('leads')">
-          Commandes <span class="tab-count">${leads.length}</span>
+          Prospects <span class="tab-count">${leads.length}</span>
+        </button>
+        <button class="sidebar-tab ${activeTab === 'orders' ? 'active' : ''}" onclick="setActiveTab('orders')">
+          Commandes <span class="tab-count">${orders.length}</span>
         </button>
       </div>`;
 
-            const activeItemsAll = activeTab === 'leads' ? leads : chats;
-            const activeItems = activeItemsAll.filter(c => matchesSearch(c, searchQuery));
-
             let listHtml;
-            if (activeItemsAll.length === 0) {
-                listHtml = `<div class="empty" style="padding:24px;">${activeTab === 'leads' ? "Aucune nouvelle demande." : "Aucune conversation pour l'instant."}</div>`;
-            } else if (activeItems.length === 0) {
-                listHtml = `<div class="empty" style="padding:24px;">Aucun résultat pour « ${searchQuery.replace(/</g, "&lt;")} ».</div>`;
+            if (activeTab === 'orders') {
+                const filtered = orders.filter(o => matchesOrderSearch(o, searchQuery));
+                if (orders.length === 0) {
+                    listHtml = `<div class="empty" style="padding:24px;">Aucune commande pour l'instant.</div>`;
+                } else if (filtered.length === 0) {
+                    listHtml = `<div class="empty" style="padding:24px;">Aucun résultat pour « ${searchQuery.replace(/</g, "&lt;")} ».</div>`;
+                } else {
+                    listHtml = filtered.map(orderItemHtml).join("");
+                }
             } else {
-                listHtml = activeItems.map(convoItemHtml).join("");
+                const activeItemsAll = activeTab === 'leads' ? leads : chats;
+                const activeItems = activeItemsAll.filter(c => matchesSearch(c, searchQuery));
+                if (activeItemsAll.length === 0) {
+                    listHtml = `<div class="empty" style="padding:24px;">${activeTab === 'leads' ? "Aucun prospect pour l'instant." : "Aucune conversation pour l'instant."}</div>`;
+                } else if (activeItems.length === 0) {
+                    listHtml = `<div class="empty" style="padding:24px;">Aucun résultat pour « ${searchQuery.replace(/</g, "&lt;")} ».</div>`;
+                } else {
+                    listHtml = activeItems.map(convoItemHtml).join("");
+                }
             }
 
             sidebar.innerHTML = head + search + tabs + `<div class="convo-list">${listHtml}</div>`;
@@ -1811,6 +1906,8 @@
 
         function renderThread(phone, silent) {
             activePhone = phone;
+            activeOrderId = null;
+            document.getElementById("orderActions").style.display = "none";
             document.getElementById("activePhone").textContent = "+" + phone;
             document.getElementById("contactAvatar").textContent = phone.slice(-2);
             document.getElementById("conversationStatus").textContent = "Conversation client";
@@ -1867,6 +1964,43 @@
             renderSidebar();
         }
 
+        function openOrder(id) {
+            const order = orders.find(o => o.id === id);
+            if (!order) return;
+            activeOrderId = id;
+            activePhone = null;
+
+            document.getElementById("app").classList.add("conversation-open");
+            document.getElementById("contactAvatar").textContent = (order.phone || "").slice(-2);
+            document.getElementById("activePhone").textContent = "+" + order.phone;
+            document.getElementById("conversationStatus").textContent = "Commande";
+            document.getElementById("headerActions").classList.remove("mobile-visible");
+            document.getElementById("orderActions").classList.remove("mobile-visible");
+            document.getElementById("actionsToggle").setAttribute("aria-expanded", "false");
+
+            const badge = document.getElementById("modeBadge");
+            badge.textContent = ORDER_STATUS_LABELS[order.status] || order.status;
+            badge.className = "badge " + order.status;
+            badge.style.display = "inline-block";
+
+            document.getElementById("headerActions").style.display = "none";
+            document.getElementById("orderActions").style.display = "flex";
+            document.getElementById("composer").style.display = "none";
+
+            const itemsHtml = (order.items && order.items.length)
+                ? order.items.map(it => `<div class="bubble user" style="margin-bottom:10px; display:inline-block;">${it.quantity || 1}× ${escapeHtml(it.name || "Article")}${it.price != null ? ` — ${it.price} MAD` : ""}</div><br>`).join("")
+                : '<div class="empty-copy">Aucun détail d\'article enregistré pour cette commande.</div>';
+
+            const thread = document.getElementById("thread");
+            thread.innerHTML = `<div>
+        <div class="day-divider"><span>Détails de la commande</span></div>
+        ${itemsHtml}
+        ${order.amount != null ? `<div class="bubble assistant" style="display:inline-block; margin-top:6px;">Total : ${order.amount} MAD</div>` : ""}
+      </div>`;
+
+            renderSidebar();
+        }
+
         const MODAL_CONTENT = {
             human: {
                 icon: "👤",
@@ -1898,6 +2032,30 @@
                 title: "Supprimer la conversation",
                 body: "Tout l'historique de cette conversation sera définitivement supprimé. Cette action est irréversible.",
                 confirmLabel: "Supprimer",
+                confirmClass: "confirm-delete"
+            },
+            order_confirmed: {
+                icon: "✅",
+                iconClass: "bot",
+                title: "Confirmer la commande",
+                body: "Cette commande sera marquée comme confirmée par le client.",
+                confirmLabel: "Confirmer",
+                confirmClass: "confirm-bot"
+            },
+            order_shipped: {
+                icon: "📦",
+                iconClass: "bot",
+                title: "Marquer comme expédiée",
+                body: "Cette commande sera marquée comme envoyée au client.",
+                confirmLabel: "Marquer expédiée",
+                confirmClass: "confirm-bot"
+            },
+            order_cancelled: {
+                icon: "✖️",
+                iconClass: "delete",
+                title: "Annuler la commande",
+                body: "Cette commande sera marquée comme annulée.",
+                confirmLabel: "Annuler la commande",
                 confirmClass: "confirm-delete"
             }
         };
@@ -1954,6 +2112,33 @@
                 }
                 toast("Conversation mise à jour", "success");
                 await loadConversations();
+            } catch (err) {
+                console.error(err);
+                toast("Erreur de connexion.", "error");
+            }
+        }
+
+        async function setOrderStatus(status) {
+            if (!activeOrderId) return;
+            document.getElementById("orderActions").classList.remove("mobile-visible");
+            const confirmed = await openConfirmModal("order_" + status);
+            if (!confirmed) return;
+
+            try {
+                const res = await fetch("/api/orders?key=" + encodeURIComponent(SECRET), {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ orderId: activeOrderId, status })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    toast("Erreur : " + (data.error || res.status), "error");
+                    return;
+                }
+                toast("Commande mise à jour", "success");
+                const keepId = activeOrderId;
+                await loadConversations();
+                openOrder(keepId);
             } catch (err) {
                 console.error(err);
                 toast("Erreur de connexion.", "error");
