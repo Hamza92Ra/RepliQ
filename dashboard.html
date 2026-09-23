@@ -1537,6 +1537,20 @@
         let activeTab = "chats"; // "chats" | "leads" | "orders" — which page of the sidebar is showing
         let searchQuery = "";
 
+        // BSUID SUPPORT: Meta identifies WhatsApp-username-only customers by
+        // a "business-scoped user ID" (format "XX.digits", e.g.
+        // "MA.1587668549511396") instead of a phone number — see
+        // lib/whatsapp.js on the backend for the matching logic. Showing a
+        // "+" in front of one of these makes it look like a broken phone
+        // number, so we only prepend "+" for real phone numbers.
+        const BSUID_PATTERN = /^[A-Za-z]{2}\.[A-Za-z0-9]+$/;
+        function isBsuidId(id) {
+            return typeof id === "string" && BSUID_PATTERN.test(id);
+        }
+        function displayIdentity(id) {
+            return isBsuidId(id) ? id : "+" + id;
+        }
+
         // Per-conversation "last viewed" timestamps, kept locally per browser
         // so we can show an unread indicator without needing backend support.
         let lastSeen = {};
@@ -1785,7 +1799,7 @@
             const amount = o.amount != null ? `<span class="convo-time" style="margin-left:8px;">${o.amount} MAD</span>` : "";
             return `<div class="convo-item ${o.id === activeOrderId ? 'active' : ''}" data-initials="${(o.phone || '').slice(-2)}" onclick="openOrder('${o.id}')">
         <div class="convo-top-row">
-          <div class="convo-phone">+${o.phone}</div>
+          <div class="convo-phone">${displayIdentity(o.phone)}</div>
           <span class="convo-time">${time}</span>
         </div>
         <div class="convo-top-row" style="margin-top:6px;">
@@ -1826,7 +1840,7 @@
                 return `<div class="convo-item ${c.phone === activePhone ? 'active' : ''} ${unread ? 'unread' : ''}" data-initials="${initials}" onclick="renderThread('${c.phone}')">
         <button class="convo-delete" onclick="event.stopPropagation(); confirmDelete('${c.phone}')" title="Supprimer" aria-label="Supprimer la conversation">🗑️</button>
         <div class="convo-top-row">
-          <div class="convo-phone">${unread ? '<span class="unread-dot"></span>' : ''}+${c.phone}</div>
+          <div class="convo-phone">${unread ? '<span class="unread-dot"></span>' : ''}${displayIdentity(c.phone)}</div>
         </div>
         <div class="convo-top-row" style="margin-top:6px;">
           ${badge}
@@ -1908,7 +1922,7 @@
             activePhone = phone;
             activeOrderId = null;
             document.getElementById("orderActions").style.display = "none";
-            document.getElementById("activePhone").textContent = "+" + phone;
+            document.getElementById("activePhone").textContent = displayIdentity(phone);
             document.getElementById("contactAvatar").textContent = phone.slice(-2);
             document.getElementById("conversationStatus").textContent = "Conversation client";
             document.getElementById("app").classList.add("conversation-open");
@@ -1972,7 +1986,7 @@
 
             document.getElementById("app").classList.add("conversation-open");
             document.getElementById("contactAvatar").textContent = (order.phone || "").slice(-2);
-            document.getElementById("activePhone").textContent = "+" + order.phone;
+            document.getElementById("activePhone").textContent = displayIdentity(order.phone);
             document.getElementById("conversationStatus").textContent = "Commande";
             document.getElementById("headerActions").classList.remove("mobile-visible");
             document.getElementById("orderActions").classList.remove("mobile-visible");
@@ -2153,7 +2167,7 @@
             if (!phone) return;
             const confirmed = await openConfirmModal(
                 "delete",
-                `Tout l'historique de <strong>+${phone}</strong> sera définitivement supprimé. Cette action est irréversible.`
+                `Tout l'historique de <strong>${displayIdentity(phone)}</strong> sera définitivement supprimé. Cette action est irréversible.`
             );
             if (!confirmed) return;
 
