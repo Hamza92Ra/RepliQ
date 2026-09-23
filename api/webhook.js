@@ -5,6 +5,7 @@ import {
   markAsRead,
   getMediaUrl,
   downloadMedia,
+  isBsuid,
 } from "../lib/whatsapp.js";
 import { generateReply, transcribeAudio, extractOrder } from "../lib/ai.js";
 import { notifyTeam, looksLikeFinalizeIntent } from "../lib/notify.js";
@@ -92,7 +93,11 @@ async function handleAdminAction(req, res) {
           error: "This conversation has no WhatsApp Business number assigned. Send a new customer message first so ownership can be recorded."
         });
       }
-      const recipient = String(phone).replace(/\D/g, "");
+      // BSUID-only conversations (username-only contacts, no known phone
+      // number) are stored under the BSUID string, e.g. "MA.1587668...".
+      // Stripping non-digits would mangle that into garbage, so only
+      // sanitize when it's actually a phone number.
+      const recipient = isBsuid(phone) ? phone : String(phone).replace(/\D/g, "");
       if (!recipient) {
         return res.status(400).json({ error: "Invalid conversation phone number" });
       }
@@ -123,7 +128,7 @@ async function handleAdminAction(req, res) {
     // asked to delete. Wipes stored messages/mode/ownership for this
     // phone so it disappears from the dashboard on the next poll.
     if (action === "delete") {
-      const recipient = String(phone).replace(/\D/g, "");
+      const recipient = isBsuid(phone) ? phone : String(phone).replace(/\D/g, "");
       if (!recipient) {
         return res.status(400).json({ error: "Invalid conversation phone number" });
       }
@@ -204,19 +209,28 @@ export default async function handler(req, res) {
 
 async function processMessage({ message, phoneNumberId }) {
   try {
-    const from = message.from; // customer's WhatsApp number
+    // BSUID SUPPORT: Meta omits message.from (the phone number) for
+    // customers who've set a WhatsApp username and have no prior message
+    // history with this business number — only message.from_user_id (a
+    // BSUID like "MA.1587668549511396") is guaranteed in that case. Fall
+    // back to it so these customers aren't silently dropped. Everything
+    // downstream (Redis keys, dashboard display, outbound send) treats
+    // this the same as a phone number — lib/whatsapp.js's sendWhatsAppText
+    // detects the BSUID format and uses Meta's "recipient" field instead
+    // of "to" automatically.
+    const from = message.from || message.from_user_id;
 
     // FIX: some inbound messages (e.g. system/referral/order-type events,
-    // or malformed payloads) can arrive without a top-level "from". If we
-    // don't catch this here, the code below silently burns an AI call,
-    // fails to save to the DB with a cryptic "null args" Redis error, then
-    // crashes trying to send a WhatsApp reply to an undefined recipient —
-    // and the customer never gets anything, with no useful log trail.
-    // Bail out immediately and dump the full raw message so we can see
-    // exactly what shape these payloads have.
+    // or malformed payloads) can arrive without a top-level "from" or
+    // "from_user_id". If we don't catch this here, the code below silently
+    // burns an AI call, fails to save to the DB with a cryptic "null args"
+    // Redis error, then crashes trying to send a WhatsApp reply to an
+    // undefined recipient — and the customer never gets anything, with no
+    // useful log trail. Bail out immediately and dump the full raw message
+    // so we can see exactly what shape these payloads have.
     if (!from) {
       console.error(
-        "processMessage: message has no 'from' field, cannot process. type=",
+        "processMessage: message has no 'from' or 'from_user_id' field, cannot process. type=",
         message.type,
         "raw message=",
         JSON.stringify(message)
