@@ -91,25 +91,10 @@
                         <div class="field-group">
                             <label for="offer">Offre choisie</label>
                             <select id="offer" name="offer" required>
-                                <option value="Essai gratuit">Essai gratuit (1 mois offert)</option>
-                                <option value="Essentielle">Essentielle</option>
-                                <option value="Standard">Standard</option>
-                                <option value="Premium">Premium</option>
+                                <option value="Essentielle">Essentielle — 400 MAD d'installation + 200 MAD/mois</option>
+                                <option value="Standard">Standard — 600 MAD d'installation + 400 MAD/mois</option>
+                                <option value="Premium">Premium — 1 000 MAD d'installation + 800 MAD/mois</option>
                             </select>
-                        </div>
-
-                        <div class="field-group">
-                            <label>Mode de paiement</label>
-                            <div class="radio-row" id="modeRow">
-                                <label class="radio-pill" data-value="unique">
-                                    <input type="radio" name="mode" value="unique">
-                                    <span>Paiement unique</span>
-                                </label>
-                                <label class="radio-pill" data-value="monthly">
-                                    <input type="radio" name="mode" value="monthly">
-                                    <span>Abonnement mensuel</span>
-                                </label>
-                            </div>
                         </div>
 
                         <div class="field-group">
@@ -128,9 +113,11 @@
                     <div class="chosen-flag" id="chosenFlag"><span class="dot"></span><span id="chosenFlagText">Offre
                             sélectionnée</span></div>
                     <h3>Récapitulatif de votre offre</h3>
-                    <div class="offer-name" id="summaryName">Essai gratuit</div>
-                    <div class="offer-price" id="summaryPrice">0 <span class="unit">MAD — 1er mois offert</span></div>
+                    <div class="offer-name" id="summaryName">Standard</div>
+                    <div class="offer-price" id="summaryPrice">600 <span class="unit">MAD d'installation</span></div>
                     <ul id="summaryFeatures"></ul>
+                    <h3 style="margin-top:22px;">Facturation</h3>
+                    <ul id="summaryBilling"></ul>
                 </aside>
             </div>
 
@@ -190,21 +177,22 @@
     </a>
 
     <script>
-        // ---- Offer data (mirrors index.html pricing) ----
-        const OFFERS = {
-            "Essai gratuit": {
-                unique: null,
-                monthly: { price: "0", unit: "MAD — 1er mois offert, puis 1 490 MAD/mois" },
-                features: [
-                    "Connexion de votre numéro WhatsApp Business",
-                    "Confirmation automatique des commandes / RDV",
-                    "Rappels automatiques programmés",
-                    "Suivi des statuts en temps réel"
-                ]
-            },
+        // ---- Pricing rules (single source of truth for this page) ----
+        // setup       : one-time installation fee, paid at signup
+        // base        : monthly price (MAD) after the free months
+        // discStart   : loyalty discount (%) applied in year 2
+        // discCap     : maximum loyalty discount (%)
+        // Year 1      : 3 months free, then 9 months at base price
+        // Year 2+     : base price minus discount for all 12 months; discount grows by
+        //               LOYALTY_STEP % each year until it hits discCap.
+        // If a client cancels and comes back, their loyalty level restarts at year 1.
+        const FREE_MONTHS = 3;
+        const PAID_MONTHS_Y1 = 12 - FREE_MONTHS;
+        const LOYALTY_STEP = 5;
+
+        const PLANS = {
             "Essentielle": {
-                unique: { price: "12 000", unit: "MAD — paiement unique" },
-                monthly: { price: "1 490", unit: "MAD / mois — engagement 12 mois" },
+                setup: 400, base: 200, discStart: 15, discCap: 35,
                 features: [
                     "Connexion de votre numéro WhatsApp Business",
                     "Confirmation automatique des commandes / RDV",
@@ -214,8 +202,7 @@
                 ]
             },
             "Standard": {
-                unique: { price: "28 000", unit: "MAD — paiement unique" },
-                monthly: { price: "2 890", unit: "MAD / mois — engagement 12 mois" },
+                setup: 600, base: 400, discStart: 20, discCap: 40,
                 features: [
                     "Tout le contenu de la formule Essentielle",
                     "Réponses automatiques par IA aux questions fréquentes",
@@ -225,8 +212,7 @@
                 ]
             },
             "Premium": {
-                unique: { price: "55 000", unit: "MAD — paiement unique" },
-                monthly: { price: "4 990", unit: "MAD / mois — engagement 12 mois" },
+                setup: 1000, base: 800, discStart: 25, discCap: 50,
                 features: [
                     "Tout le contenu de la formule Standard",
                     "Tableau de statistiques (réponse, confirmation, conversions)",
@@ -238,55 +224,69 @@
             }
         };
 
+        function discountForYear(plan, year) {
+            if (year <= 1) return 0;
+            return Math.min(plan.discStart + (year - 2) * LOYALTY_STEP, plan.discCap);
+        }
+        function monthlyPriceForYear(plan, year) {
+            return Math.round(plan.base * (1 - discountForYear(plan, year) / 100));
+        }
+        function capYear(plan) {
+            return 2 + Math.ceil((plan.discCap - plan.discStart) / LOYALTY_STEP);
+        }
+        function year1Total(plan) {
+            return plan.setup + PAID_MONTHS_Y1 * plan.base;
+        }
+        // fr-FR uses a narrow no-break space that jsPDF's default font can't draw, so use a plain space.
+        const fmt = n => n.toLocaleString('fr-FR').replace(/[\u202f\u00a0]/g, ' ');
+        const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+        // ---- Page state ----
         const params = new URLSearchParams(window.location.search);
-        const initialOffer = params.get('offer') && OFFERS[params.get('offer')] ? params.get('offer') : 'Essai gratuit';
-        const initialMode = params.get('mode') === 'unique' ? 'unique' : 'monthly';
+        const requested = params.get('offer');
+        const initialOffer = requested && PLANS[requested] ? requested : 'Standard';
 
         const offerSelect = document.getElementById('offer');
-        const modeRow = document.getElementById('modeRow');
-        const modeInputs = modeRow.querySelectorAll('input[name="mode"]');
-        const pills = modeRow.querySelectorAll('.radio-pill');
-
-        function setMode(mode) {
-            if (mode === 'unique' && OFFERS[offerSelect.value].unique === null) {
-                mode = 'monthly'; // essai gratuit has no "paiement unique"
-            }
-            modeInputs.forEach(i => i.checked = (i.value === mode));
-            pills.forEach(p => p.classList.toggle('checked', p.dataset.value === mode));
-            updateSummary();
-        }
 
         function updateSummary() {
             const offerName = offerSelect.value;
-            const data = OFFERS[offerName];
-            const mode = modeRow.querySelector('input[name="mode"]:checked').value;
-            const priceData = data[mode] || data.monthly;
+            const p = PLANS[offerName];
 
             document.getElementById('summaryName').textContent = offerName;
-            document.getElementById('summaryPrice').innerHTML = priceData.price + ' <span class="unit">' + priceData.unit + '</span>';
+            document.getElementById('summaryPrice').innerHTML =
+                fmt(p.setup) + ' <span class="unit">MAD d\'installation · puis 3 mois offerts</span>';
             document.getElementById('chosenFlagText').textContent = 'Vous avez choisi : ' + offerName;
 
             const list = document.getElementById('summaryFeatures');
             list.innerHTML = '';
-            data.features.forEach(f => {
+            p.features.forEach(f => {
                 const li = document.createElement('li');
                 li.textContent = f;
                 list.appendChild(li);
             });
 
-            // disable "paiement unique" pill for free trial
-            const uniquePill = modeRow.querySelector('.radio-pill[data-value="unique"]');
-            const disabled = data.unique === null;
-            uniquePill.style.opacity = disabled ? 0.4 : 1;
-            uniquePill.style.pointerEvents = disabled ? 'none' : 'auto';
+            const y2 = 2;
+            const billing = [
+                'Installation : ' + fmt(p.setup) + ' MAD (à la signature)',
+                'Mois 1 à ' + FREE_MONTHS + ' : offerts',
+                'Mois ' + (FREE_MONTHS + 1) + ' à 12 : ' + fmt(p.base) + ' MAD/mois',
+                'Total année 1 : ' + fmt(year1Total(p)) + ' MAD',
+                'Année 2 : ' + fmt(monthlyPriceForYear(p, y2)) + ' MAD/mois (−' + discountForYear(p, y2) + '%)',
+                'Puis −5% supplémentaires par an, plafond −' + p.discCap + '% (' + fmt(monthlyPriceForYear(p, capYear(p))) + ' MAD/mois) dès l\'année ' + capYear(p),
+                'Si vous résiliez puis revenez, le niveau de fidélité repart à l\'année 1'
+            ];
+            const bl = document.getElementById('summaryBilling');
+            bl.innerHTML = '';
+            billing.forEach(t => {
+                const li = document.createElement('li');
+                li.textContent = t;
+                bl.appendChild(li);
+            });
         }
 
         offerSelect.value = initialOffer;
-        offerSelect.addEventListener('change', () => setMode(modeRow.querySelector('input[name="mode"]:checked').value));
-        pills.forEach(pill => {
-            pill.addEventListener('click', () => setMode(pill.dataset.value));
-        });
-        setMode(initialMode);
+        offerSelect.addEventListener('change', updateSummary);
+        updateSummary();
 
         // ---- Submit -> generate receipt ----
         // Holds the data behind the currently-displayed receipt so the PDF
@@ -302,9 +302,13 @@
             const phone = document.getElementById('phone').value.trim();
             const email = document.getElementById('email').value.trim();
             const offerName = offerSelect.value;
-            const mode = modeRow.querySelector('input[name="mode"]:checked').value;
-            const modeLabel = mode === 'unique' ? 'Paiement unique' : 'Abonnement mensuel';
-            const priceData = OFFERS[offerName][mode] || OFFERS[offerName].monthly;
+            const p = PLANS[offerName];
+
+            const setupLabel = fmt(p.setup) + ' MAD (une seule fois)';
+            const subLabel = FREE_MONTHS + ' mois offerts, puis ' + fmt(p.base) + ' MAD/mois pendant ' + PAID_MONTHS_Y1 + ' mois';
+            const total1Label = fmt(year1Total(p)) + ' MAD';
+            // Kept as a single string for /api/lead (which stores/uses "price")
+            const priceSummary = 'Installation ' + fmt(p.setup) + ' MAD + ' + fmt(p.base) + ' MAD/mois (' + FREE_MONTHS + ' mois offerts)';
 
             const ref = 'RPLQ-' + Date.now().toString().slice(-6) + '-' + Math.floor(Math.random() * 900 + 100);
             const today = new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
@@ -316,14 +320,15 @@
                 ['Entreprise', business],
                 ["Type d'activité", activity],
                 ['Offre choisie', offerName],
-                ['Mode', modeLabel],
-                ['Tarif', priceData.price + ' ' + priceData.unit],
+                ['Installation', setupLabel],
+                ['Abonnement', subLabel],
+                ['Total année 1', total1Label],
                 ['Téléphone', phone],
                 ['Email', email]
             ];
 
             const table = document.getElementById('receiptTable');
-            table.innerHTML = rows.map(r => `<div class="receipt-row"><span class="k">${r[0]}</span><span class="v">${r[1]}</span></div>`).join('');
+            table.innerHTML = rows.map(r => `<div class="receipt-row"><span class="k">${esc(r[0])}</span><span class="v">${esc(r[1])}</span></div>`).join('');
 
             const waText = encodeURIComponent(`Bonjour RepliQ, je viens de faire une demande (réf. ${ref}) pour l'offre ${offerName}.`);
             document.getElementById('waFollowUp').href = `https://wa.me/212712614398?text=${waText}`;
@@ -334,6 +339,7 @@
             // Register this submission in the dashboard (fire-and-forget:
             // the receipt still shows to the client even if this fails, so
             // a network hiccup here never blocks their confirmation).
+            // "mode" is still sent as 'monthly' so api/lead.js keeps working unchanged.
             fetch('/api/lead', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -344,8 +350,10 @@
                     phone,
                     email,
                     offer: offerName,
-                    mode,
-                    price: priceData.price + ' ' + priceData.unit,
+                    mode: 'monthly',
+                    price: priceSummary,
+                    setup: p.setup,
+                    monthly: p.base,
                     message: document.getElementById('message').value.trim(),
                     ref
                 })
