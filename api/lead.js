@@ -77,7 +77,10 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: "Invalid phone number" });
     }
 
-    const modeLabel = mode === "unique" ? "Paiement unique" : "Abonnement mensuel";
+    const modeLabel =
+        mode === "unique" ? "Paiement unique"
+        : mode === "annual" ? "Abonnement annuel (paiement annuel)"
+        : "Abonnement mensuel";
 
     const lines = [
         "📋 Nouvelle demande via le formulaire RepliQ",

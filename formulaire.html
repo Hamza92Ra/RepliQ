@@ -98,6 +98,14 @@
                         </div>
 
                         <div class="field-group">
+                            <label for="billing">Mode de paiement</label>
+                            <select id="billing" name="billing" required>
+                                <option value="monthly">Paiement mensuel</option>
+                                <option value="annual">Paiement annuel (9 mois réglés en une fois, 3 mois offerts)</option>
+                            </select>
+                        </div>
+
+                        <div class="field-group">
                             <label for="message">Message (optionnel)</label>
                             <textarea id="message" name="message"
                                 placeholder="Précisez un besoin particulier si nécessaire..."></textarea>
@@ -246,14 +254,30 @@
         const initialOffer = requested && PLANS[requested] ? requested : 'Standard';
 
         const offerSelect = document.getElementById('offer');
+        const billingSelect = document.getElementById('billing');
+        const requestedBilling = params.get('billing');
+        const initialBilling = requestedBilling === 'annual' ? 'annual' : 'monthly';
+        // Annual payment = the 9 paid months of year 1 paid at once (3 months offered).
+        const annualPrice = plan => PAID_MONTHS_Y1 * plan.base;
+        const annualPriceForYear = (plan, year) => 12 * monthlyPriceForYear(plan, year);
 
         function updateSummary() {
             const offerName = offerSelect.value;
             const p = PLANS[offerName];
 
+            const annualMode = billingSelect.value === 'annual';
+
+            // Keep the dropdown labels in sync with the chosen payment mode
+            Array.from(offerSelect.options).forEach(opt => {
+                const pl = PLANS[opt.value];
+                opt.textContent = opt.value + ' — ' + (annualMode ? 'installation incluse : ' : fmt(pl.setup) + ' MAD d\'installation + ') +
+                    (annualMode ? fmt(year1Total(pl)) + ' MAD (1re année)' : fmt(pl.base) + ' MAD/mois');
+            });
+
             document.getElementById('summaryName').textContent = offerName;
-            document.getElementById('summaryPrice').innerHTML =
-                fmt(p.setup) + ' <span class="unit">MAD d\'installation · puis 3 mois offerts</span>';
+            document.getElementById('summaryPrice').innerHTML = annualMode
+                ? fmt(year1Total(p)) + ' <span class="unit">MAD / an · installation de ' + fmt(p.setup) + ' MAD incluse · 3 mois offerts</span>'
+                : fmt(p.base) + ' <span class="unit">MAD / mois · + ' + fmt(p.setup) + ' MAD d\'installation · 3 mois offerts</span>';
             document.getElementById('chosenFlagText').textContent = 'Vous avez choisi : ' + offerName;
 
             const list = document.getElementById('summaryFeatures');
@@ -265,7 +289,16 @@
             });
 
             const y2 = 2;
-            const billing = [
+            const isAnnual = billingSelect.value === 'annual';
+            const billing = isAnnual ? [
+                'Installation : ' + fmt(p.setup) + ' MAD (à la signature)',
+                'Mois 1 à ' + FREE_MONTHS + ' : offerts',
+                'Paiement annuel : ' + fmt(annualPrice(p)) + ' MAD (' + PAID_MONTHS_Y1 + ' mois × ' + fmt(p.base) + ' MAD, réglés en une fois)',
+                'Total année 1 : ' + fmt(year1Total(p)) + ' MAD',
+                'Année 2 : ' + fmt(annualPriceForYear(p, y2)) + ' MAD/an (−' + discountForYear(p, y2) + '%)',
+                'Puis −5% supplémentaires par an, plafond −' + p.discCap + '% (' + fmt(annualPriceForYear(p, capYear(p))) + ' MAD/an) dès l\'année ' + capYear(p),
+                'Si vous résiliez puis revenez, le niveau de fidélité repart à l\'année 1'
+            ] : [
                 'Installation : ' + fmt(p.setup) + ' MAD (à la signature)',
                 'Mois 1 à ' + FREE_MONTHS + ' : offerts',
                 'Mois ' + (FREE_MONTHS + 1) + ' à 12 : ' + fmt(p.base) + ' MAD/mois',
@@ -284,7 +317,9 @@
         }
 
         offerSelect.value = initialOffer;
+        billingSelect.value = initialBilling;
         offerSelect.addEventListener('change', updateSummary);
+        billingSelect.addEventListener('change', updateSummary);
         updateSummary();
 
         // ---- Submit -> generate receipt ----
@@ -304,10 +339,16 @@
             const p = PLANS[offerName];
 
             const setupLabel = fmt(p.setup) + ' MAD (une seule fois)';
-            const subLabel = FREE_MONTHS + ' mois offerts, puis ' + fmt(p.base) + ' MAD/mois pendant ' + PAID_MONTHS_Y1 + ' mois';
+            const isAnnual = billingSelect.value === 'annual';
+            const billingLabel = isAnnual ? 'Paiement annuel' : 'Paiement mensuel';
+            const subLabel = isAnnual
+                ? FREE_MONTHS + ' mois offerts, puis ' + fmt(annualPrice(p)) + ' MAD pour ' + PAID_MONTHS_Y1 + ' mois (réglés en une fois)'
+                : FREE_MONTHS + ' mois offerts, puis ' + fmt(p.base) + ' MAD/mois pendant ' + PAID_MONTHS_Y1 + ' mois';
             const total1Label = fmt(year1Total(p)) + ' MAD';
             // Kept as a single string for /api/lead (which stores/uses "price")
-            const priceSummary = 'Installation ' + fmt(p.setup) + ' MAD + ' + fmt(p.base) + ' MAD/mois (' + FREE_MONTHS + ' mois offerts)';
+            const priceSummary = isAnnual
+                ? 'Installation ' + fmt(p.setup) + ' MAD + ' + fmt(annualPrice(p)) + ' MAD/an (' + FREE_MONTHS + ' mois offerts)'
+                : 'Installation ' + fmt(p.setup) + ' MAD + ' + fmt(p.base) + ' MAD/mois (' + FREE_MONTHS + ' mois offerts)';
 
             const ref = 'RPLQ-' + Date.now().toString().slice(-6) + '-' + Math.floor(Math.random() * 900 + 100);
             const today = new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
@@ -319,6 +360,7 @@
                 ['Entreprise', business],
                 ["Type d'activité", activity],
                 ['Offre choisie', offerName],
+                ['Mode de paiement', billingLabel],
                 ['Installation', setupLabel],
                 ['Abonnement', subLabel],
                 ['Total année 1', total1Label],
@@ -329,7 +371,7 @@
             const table = document.getElementById('receiptTable');
             table.innerHTML = rows.map(r => `<div class="receipt-row"><span class="k">${esc(r[0])}</span><span class="v">${esc(r[1])}</span></div>`).join('');
 
-            const waText = encodeURIComponent(`Bonjour RepliQ, je viens de faire une demande (réf. ${ref}) pour l'offre ${offerName}.`);
+            const waText = encodeURIComponent(`Bonjour RepliQ, je viens de faire une demande (réf. ${ref}) pour l'offre ${offerName} (${billingLabel.toLowerCase()}).`);
             document.getElementById('waFollowUp').href = `https://wa.me/212712614398?text=${waText}`;
 
             // Keep the raw data around for the PDF download button.
@@ -338,7 +380,7 @@
             // Register this submission in the dashboard (fire-and-forget:
             // the receipt still shows to the client even if this fails, so
             // a network hiccup here never blocks their confirmation).
-            // "mode" is still sent as 'monthly' so api/lead.js keeps working unchanged.
+            // "mode" is 'monthly' or 'annual' (handled in api/lead.js).
             fetch('/api/lead', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -349,10 +391,11 @@
                     phone,
                     email,
                     offer: offerName,
-                    mode: 'monthly',
+                    mode: isAnnual ? 'annual' : 'monthly',
                     price: priceSummary,
                     setup: p.setup,
                     monthly: p.base,
+                    annual: isAnnual ? annualPrice(p) : null,
                     message: document.getElementById('message').value.trim(),
                     ref
                 })
@@ -443,4 +486,4 @@
     </script>
 </body>
 
-</html>
+</html> 

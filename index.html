@@ -11,6 +11,13 @@
         href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <style>
+        .toggle-btn { white-space: nowrap; }
+        @media (max-width: 600px) {
+            .toggle-wrap { max-width: 100%; }
+            .toggle-btn { padding: 10px 14px; font-size: 13px; }
+        }
+    </style>
 </head>
 
 <body>
@@ -278,15 +285,25 @@
                 <a href="formulaire.html?offer=Standard" class="btn-ghost-link">En profiter →</a>
             </div>
 
+            <div class="toggle-row">
+                <div class="toggle-wrap" id="toggleWrap">
+                    <div class="toggle-thumb"></div>
+                    <button class="toggle-btn active" data-mode="monthly">Paiement mensuel</button>
+                    <button class="toggle-btn" data-mode="annual">Paiement annuel</button>
+                </div>
+            </div>
+
             <div class="price-cards">
                 <!-- ESSENTIELLE -->
                 <div class="price-card">
                     <div class="price-name">Essentielle</div>
                     <div class="price-desc">Pour répondre automatiquement à vos clients et ne manquer aucune commande.
                     </div>
-                    <div class="price-amount">200 <span class="unit">MAD / mois</span></div>
-                    <div class="price-note">Installation : 400 MAD (une seule fois) · 3 mois offerts, puis 9 mois à 200
+                    <div class="price-amount" data-view="monthly">200 <span class="unit">MAD / mois</span></div>
+                    <div class="price-note" data-view="monthly">Installation : 400 MAD (une seule fois) · 3 mois offerts, puis 9 mois à 200
                         MAD/mois · hébergement inclus</div>
+                    <div class="price-amount hide" data-view="annual">2 200 <span class="unit">MAD / an</span></div>
+                    <div class="price-note hide" data-view="annual">Installation incluse : 400 MAD (une seule fois) + 1 800 MAD d'abonnement (9 mois × 200 MAD, 3 mois offerts) · hébergement inclus</div>
                     <div class="price-note">Dès l'année 2 : de −15% jusqu'à −35% de réduction fidélité</div>
                     <ul class="price-features">
                         <li>Connexion de votre numéro WhatsApp Business</li>
@@ -304,9 +321,11 @@
                     <div class="price-name">Standard</div>
                     <div class="price-desc">Pour présenter votre business en ligne et passer la main à un humain au bon
                         moment.</div>
-                    <div class="price-amount">400 <span class="unit">MAD / mois</span></div>
-                    <div class="price-note">Installation : 600 MAD (une seule fois) · 3 mois offerts, puis 9 mois à 400
+                    <div class="price-amount" data-view="monthly">400 <span class="unit">MAD / mois</span></div>
+                    <div class="price-note" data-view="monthly">Installation : 600 MAD (une seule fois) · 3 mois offerts, puis 9 mois à 400
                         MAD/mois · hébergement inclus</div>
+                    <div class="price-amount hide" data-view="annual">4 200 <span class="unit">MAD / an</span></div>
+                    <div class="price-note hide" data-view="annual">Installation incluse : 600 MAD (une seule fois) + 3 600 MAD d'abonnement (9 mois × 400 MAD, 3 mois offerts) · hébergement inclus</div>
                     <div class="price-note">Dès l'année 2 : de −20% jusqu'à −40% de réduction fidélité</div>
                     <ul class="price-features">
                         <li>Tout le contenu de la formule Essentielle</li>
@@ -323,10 +342,12 @@
                     <div class="price-name">Premium</div>
                     <div class="price-desc">Pour automatiser la prise de commande et piloter votre activité avec des
                         chiffres.</div>
-                    <div class="price-amount">800 <span class="unit">MAD / mois</span></div>
-                    <div class="price-note">Installation : 1 000 MAD (une seule fois) · 3 mois offerts, puis 9 mois à
+                    <div class="price-amount" data-view="monthly">800 <span class="unit">MAD / mois</span></div>
+                    <div class="price-note" data-view="monthly">Installation : 1 000 MAD (une seule fois) · 3 mois offerts, puis 9 mois à
                         800
                         MAD/mois · hébergement inclus</div>
+                    <div class="price-amount hide" data-view="annual">8 200 <span class="unit">MAD / an</span></div>
+                    <div class="price-note hide" data-view="annual">Installation incluse : 1 000 MAD (une seule fois) + 7 200 MAD d'abonnement (9 mois × 800 MAD, 3 mois offerts) · hébergement inclus</div>
                     <div class="price-note">Dès l'année 2 : de −25% jusqu'à −50% de réduction fidélité</div>
                     <ul class="price-features">
                         <li>Tout le contenu de la formule Standard</li>
@@ -498,11 +519,38 @@
         burger.addEventListener('click', () => mobileMenu.classList.toggle('open'));
         mobileMenu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => mobileMenu.classList.remove('open')));
 
+        // Pricing switch: monthly / annual payment
+        const toggleWrap = document.getElementById('toggleWrap');
+        const toggleBtns = toggleWrap.querySelectorAll('.toggle-btn');
+        const toggleThumb = toggleWrap.querySelector('.toggle-thumb');
+
+        function moveThumb() {
+            const active = toggleWrap.querySelector('.toggle-btn.active');
+            if (!active || !toggleThumb) return;
+            toggleThumb.style.transform = 'none';
+            toggleThumb.style.left = active.offsetLeft + 'px';
+            toggleThumb.style.width = active.offsetWidth + 'px';
+        }
+
+        function setBilling(mode) {
+            toggleBtns.forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+            document.querySelectorAll('.price-card [data-view]').forEach(el => {
+                el.classList.toggle('hide', el.dataset.view !== mode);
+            });
+            moveThumb();
+        }
+
+        toggleBtns.forEach(b => b.addEventListener('click', () => setBilling(b.dataset.mode)));
+        window.addEventListener('resize', moveThumb);
+        window.addEventListener('load', moveThumb);
+        moveThumb();
+
         // Pricing CTA -> go to formulaire with the chosen plan
-        // (single subscription model now: no more "paiement unique" toggle)
         document.querySelectorAll('.price-cta[data-offer]').forEach(btn => {
             btn.addEventListener('click', () => {
-                window.location.href = `formulaire.html?offer=${encodeURIComponent(btn.dataset.offer)}`;
+                const active = document.querySelector('#toggleWrap .toggle-btn.active');
+                const billing = active ? active.dataset.mode : 'monthly';
+                window.location.href = `formulaire.html?offer=${encodeURIComponent(btn.dataset.offer)}&billing=${billing}`;
             });
         });
 
