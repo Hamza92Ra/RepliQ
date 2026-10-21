@@ -9,27 +9,27 @@ import { notifyTeam } from "../lib/notify.js";
 const OFFER_HIGHLIGHTS = {
     "Essai gratuit": [
         "Connexion de votre numéro WhatsApp Business",
-        "Confirmation automatique des commandes / RDV",
-        "Rappels automatiques programmés",
+        "Chatbot WhatsApp qui répond à toutes les questions de vos clients",
+        "Alerte au responsable quand un client veut finaliser sa commande",
     ],
     "Essentielle": [
-        "Confirmation automatique des commandes / RDV",
-        "Rappels automatiques programmés",
-        "Suivi des statuts en temps réel",
+        "Chatbot WhatsApp qui répond à toutes les questions de vos clients",
+        "Alerte au responsable quand un client veut finaliser sa commande",
+        "Tableau de bord pour consulter toutes les discussions",
         "1h de formation incluse",
     ],
     "Standard": [
         "Tout le contenu de l'offre Essentielle",
-        "Réponses automatiques par IA aux questions fréquentes",
+        "Site web qui présente votre business",
         "Transfert automatique vers un agent humain",
-        "Tableau de bord unifié de toutes vos conversations",
+        "Prise en main manuelle des conversations depuis le tableau de bord",
     ],
     "Premium": [
         "Tout le contenu de l'offre Standard",
+        "Nom de domaine personnalisé pour votre site web",
+        "Fiches clients avec historique des commandes",
+        "Confirmation automatique des commandes",
         "Statistiques détaillées (réponse, confirmation, conversions)",
-        "Accès multi-utilisateurs pour votre équipe",
-        "Liens de paiement intégrés dans la conversation",
-        "Détection automatique de la langue du client",
     ],
 };
 
