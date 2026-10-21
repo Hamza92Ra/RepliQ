@@ -17,6 +17,92 @@
             .toggle-wrap { max-width: 100%; }
             .toggle-btn { padding: 10px 14px; font-size: 13px; }
         }
+
+        /* ---------- MOBILE: Instagram-style bottom tab bar ---------- */
+        .bottom-nav { display: none; }
+
+        @media (max-width: 920px) {
+            /* top bar keeps only logo + CTA, burger menu is replaced by the bottom bar */
+            .nav-burger { display: none !important; }
+            .mobile-menu { display: none !important; }
+
+            body { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
+
+            .bottom-nav {
+                display: flex; align-items: center; justify-content: space-around;
+                position: fixed; left: 0; right: 0; bottom: 0; z-index: 110;
+                height: calc(64px + env(safe-area-inset-bottom));
+                padding: 0 8px env(safe-area-inset-bottom);
+                background: rgba(11, 21, 18, 0.96);
+                backdrop-filter: blur(14px);
+                -webkit-backdrop-filter: blur(14px);
+                border-top: 1px solid var(--line);
+            }
+            .bottom-nav a {
+                flex: 1; height: 64px;
+                display: flex; align-items: center; justify-content: center;
+                -webkit-tap-highlight-color: transparent;
+            }
+            .bottom-nav .tab-pill {
+                width: 62px; height: 44px; border-radius: 22px;
+                display: flex; align-items: center; justify-content: center;
+                color: var(--text-light);
+                transition: background .25s ease, transform .15s ease;
+            }
+            .bottom-nav a:active .tab-pill { transform: scale(0.9); }
+            .bottom-nav a.active .tab-pill { background: rgba(243, 246, 242, 0.14); }
+            .bottom-nav svg {
+                width: 27px; height: 27px; fill: none; stroke: currentColor;
+                stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round;
+            }
+            .bottom-nav a.active svg { fill: currentColor; }
+            .bottom-nav a.active svg .keep-stroke { stroke: var(--ink); fill: none; }
+
+            /* WhatsApp bubble sits above the tab bar so the footer stays visible */
+            .wa-float {
+                bottom: calc(80px + env(safe-area-inset-bottom));
+                right: 16px; width: 50px; height: 50px;
+            }
+        }
+
+        @media print { .bottom-nav { display: none !important; } }
+
+        /* ---------- MOBILE: swipeable pricing cards ---------- */
+        .price-dots { display: none; }
+
+        @media (max-width: 920px) {
+            .price-cards {
+                display: flex; grid-template-columns: none; gap: 14px;
+                position: relative;
+                overflow-x: auto; overflow-y: hidden;
+                scroll-snap-type: x mandatory;
+                -webkit-overflow-scrolling: touch;
+                overscroll-behavior-x: contain;
+                scrollbar-width: none;
+                /* bleed to the screen edges; top padding keeps the "La plus choisie" tag visible */
+                margin: 0 -32px; padding: 20px 32px 8px;
+                scroll-padding-inline: 32px;
+            }
+            .price-cards::-webkit-scrollbar { display: none; }
+            .price-card {
+                flex: 0 0 min(82%, 340px);
+                scroll-snap-align: center;
+                scroll-snap-stop: always;
+            }
+            .price-dots {
+                display: flex; justify-content: center; gap: 8px; margin-top: 14px;
+            }
+            .price-dots button {
+                width: 8px; height: 8px; padding: 0; border: none; border-radius: 100px;
+                background: rgba(19, 32, 25, 0.22); cursor: pointer;
+                transition: width .25s ease, background .25s ease;
+            }
+            .price-dots button.active { width: 24px; background: var(--emerald); }
+        }
+
+        @media (max-width: 600px) {
+            .price-cards { margin: 0 -20px; padding: 20px 20px 8px; scroll-padding-inline: 20px; }
+        }
     </style>
 </head>
 
@@ -33,20 +119,38 @@
             </div>
             <div style="display:flex; align-items:center; gap:18px;">
                 <a href="formulaire.html?offer=Standard" class="nav-cta">3 mois offerts</a>
-                <button class="nav-burger" id="burger"
-                    aria-label="Menu"><span></span><span></span><span></span></button>
             </div>
         </div>
     </nav>
 
-    <div class="mobile-menu" id="mobileMenu">
-        <a href="#comment">Comment ça marche</a>
-        <a href="#fonctionnalites">Fonctionnalités</a>
-        <a href="#tarifs">Tarifs</a>
-        <a href="#faq">FAQ</a>
-        <a href="formulaire.html?offer=Standard" class="nav-cta" style="text-align:center; margin-top:10px;">3 mois
-            offerts</a>
-    </div>
+    <!-- Mobile bottom tab bar (Instagram style) -->
+    <nav class="bottom-nav" id="bottomNav" aria-label="Navigation principale">
+        <a href="#top" data-target="top" class="active" aria-label="Accueil">
+            <span class="tab-pill">
+                <svg viewBox="0 0 24 24"><path d="M3.5 10.8 12 3.5l8.5 7.3V20a1 1 0 0 1-1 1H15v-6h-6v6H4.5a1 1 0 0 1-1-1z" /></svg>
+            </span>
+        </a>
+        <a href="#comment" data-target="comment" aria-label="Comment ça marche">
+            <span class="tab-pill">
+                <svg viewBox="0 0 24 24"><rect x="4.5" y="3.5" width="15" height="17.5" rx="3" /><path class="keep-stroke" d="M8.5 9h7M8.5 13h7M8.5 17h3.5" /></svg>
+            </span>
+        </a>
+        <a href="#fonctionnalites" data-target="fonctionnalites" aria-label="Fonctionnalités">
+            <span class="tab-pill">
+                <svg viewBox="0 0 24 24"><path d="M10 3.5 11.9 9l5.6 1.9-5.6 1.9L10 18.4 8.1 12.8 2.5 10.9 8.1 9z" /><path d="M18.5 14.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z" /></svg>
+            </span>
+        </a>
+        <a href="#tarifs" data-target="tarifs" aria-label="Tarifs">
+            <span class="tab-pill">
+                <svg viewBox="0 0 24 24"><path d="M3.5 12.2V4.5a1 1 0 0 1 1-1h7.7a1 1 0 0 1 .7.3l7.6 7.6a1 1 0 0 1 0 1.4l-7.7 7.7a1 1 0 0 1-1.4 0L3.8 12.9a1 1 0 0 1-.3-.7z" /><circle class="keep-stroke" cx="8.2" cy="8.2" r="1.3" /></svg>
+            </span>
+        </a>
+        <a href="#faq" data-target="faq" aria-label="FAQ">
+            <span class="tab-pill">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" /><path class="keep-stroke" d="M9.8 9.6a2.3 2.3 0 1 1 3.4 2c-.8.5-1.2 1-1.2 1.9M12 16.6v.1" /></svg>
+            </span>
+        </a>
+    </nav>
 
     <!-- HERO -->
     <section class="hero">
@@ -359,6 +463,11 @@
                     <button class="price-cta" data-offer="Premium">Choisir Premium</button>
                 </div>
             </div>
+            <div class="price-dots" id="priceDots">
+                <button type="button" aria-label="Formule Essentielle"></button>
+                <button type="button" class="active" aria-label="Formule Standard"></button>
+                <button type="button" aria-label="Formule Premium"></button>
+            </div>
 
             <div class="addons-wrap">
                 <div class="maint-box">
@@ -515,11 +624,78 @@
             nav.classList.toggle('scrolled', window.scrollY > 30);
         });
 
-        // Mobile menu
-        const burger = document.getElementById('burger');
-        const mobileMenu = document.getElementById('mobileMenu');
-        burger.addEventListener('click', () => mobileMenu.classList.toggle('open'));
-        mobileMenu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => mobileMenu.classList.remove('open')));
+        // Mobile bottom tab bar: highlight the tab of the section currently on screen
+        (function () {
+            const tabs = Array.from(document.querySelectorAll('#bottomNav a'));
+            if (!tabs.length) return;
+            const ids = ['comment', 'fonctionnalites', 'tarifs', 'faq'];
+
+            function setActive(id) {
+                tabs.forEach(t => t.classList.toggle('active', t.dataset.target === id));
+            }
+
+            function update() {
+                const line = window.innerHeight * 0.35;
+                let current = 'top';
+                ids.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el && el.getBoundingClientRect().top <= line) current = id;
+                });
+                setActive(current);
+            }
+
+            tabs.forEach(t => t.addEventListener('click', e => {
+                if (t.dataset.target === 'top') {
+                    e.preventDefault();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            }));
+
+            window.addEventListener('scroll', update, { passive: true });
+            window.addEventListener('resize', update);
+            update();
+        })();
+
+        // Mobile pricing carousel: start on the featured plan, keep the dots in sync
+        (function () {
+            const track = document.querySelector('.price-cards');
+            const cards = track ? Array.from(track.querySelectorAll('.price-card')) : [];
+            const dots = Array.from(document.querySelectorAll('#priceDots button'));
+            if (!track || !cards.length) return;
+            const mq = window.matchMedia('(max-width: 920px)');
+
+            function centerOn(card, smooth) {
+                const left = card.offsetLeft - (track.clientWidth - card.offsetWidth) / 2;
+                track.scrollTo({ left: left, behavior: smooth ? 'smooth' : 'auto' });
+            }
+
+            function currentIndex() {
+                const mid = track.scrollLeft + track.clientWidth / 2;
+                let best = 0, bestDist = Infinity;
+                cards.forEach((c, i) => {
+                    const d = Math.abs(c.offsetLeft + c.offsetWidth / 2 - mid);
+                    if (d < bestDist) { bestDist = d; best = i; }
+                });
+                return best;
+            }
+
+            function syncDots() {
+                const idx = currentIndex();
+                dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+            }
+
+            dots.forEach((d, i) => d.addEventListener('click', () => centerOn(cards[i], true)));
+            track.addEventListener('scroll', () => requestAnimationFrame(syncDots), { passive: true });
+
+            function init() {
+                if (!mq.matches) return;
+                const start = track.querySelector('.price-card.selected') || track.querySelector('.price-card.featured') || cards[0];
+                centerOn(start, false);
+                syncDots();
+            }
+            window.addEventListener('load', init);
+            if (mq.addEventListener) mq.addEventListener('change', init);
+        })();
 
         // Pricing switch: monthly / annual payment
         const toggleWrap = document.getElementById('toggleWrap');
