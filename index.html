@@ -103,6 +103,17 @@
         @media (max-width: 600px) {
             .price-cards { margin: 0 -20px; padding: 20px 20px 8px; scroll-padding-inline: 20px; }
         }
+
+        /* ---------- Added: caption, notes, longer FAQ answers ---------- */
+        .dash-caption {
+            margin-top: 10px; text-align: right; font-style: italic;
+            font-family: 'Manrope', sans-serif; font-size: 11px; color: var(--text-dim);
+        }
+        .payment-terms strong { color: var(--text-dark); }
+        .payment-terms + .payment-terms { margin-top: 12px; }
+        .pricing-notes { max-width: 760px; margin: 0 auto; }
+        /* the base rule caps answers at 200px, which would cut the longer ones */
+        .faq-item.open .faq-a { max-height: 700px; }
     </style>
 </head>
 
@@ -156,7 +167,7 @@
     <section class="hero">
         <div class="wrap">
             <div>
-                <div class="eyebrow-tag"><span class="pip">Nouveau</span> 3 mois d'abonnement offerts</div>
+                <div class="eyebrow-tag"><span class="pip">Nouveau</span> 3 mois d'abonnement offerts avec engagement de 12 mois</div>
                 <h1>Votre WhatsApp gère déjà tout. <span class="accent">RepliQ</span> s'en occupe pour vous.</h1>
                 <p class="hero-sub">Répondez à toutes les questions de vos clients, soyez alerté quand une commande
                     est prête à être finalisée et suivez vos discussions — sans quitter WhatsApp, sans changer vos
@@ -225,9 +236,9 @@
             </div>
             <div class="stat-grid">
                 <div class="stat-cell">
-                    <div class="stat-num">70<span class="unit">%</span></div>
-                    <div class="stat-desc">des échanges clients d'une PME sont des questions ou confirmations
-                        répétitives</div>
+                    <div class="stat-num">↻<span class="unit">répétitif</span></div>
+                    <div class="stat-desc">La majorité des échanges clients d'une PME sont des questions ou
+                        confirmations répétitives</div>
                 </div>
                 <div class="stat-cell">
                     <div class="stat-num">0<span class="unit">chgmt</span></div>
@@ -259,8 +270,9 @@
                 <div class="step">
                     <span class="step-num">01 — Connexion</span>
                     <h3>Vous connectez votre numéro</h3>
-                    <p>Votre numéro WhatsApp Business actuel se connecte à RepliQ en quelques minutes, avec l'aide de
-                        notre équipe. Vos clients ne remarquent aucun changement.</p>
+                    <p>Votre numéro WhatsApp Business actuel se connecte à RepliQ avec l'aide de notre équipe (délai
+                        selon la validation Meta, généralement quelques jours). Vos clients ne remarquent aucun
+                        changement, et vous gardez la propriété de votre compte et de votre numéro WhatsApp.</p>
                 </div>
                 <div class="step">
                     <span class="step-num">02 — Automatisation</span>
@@ -365,6 +377,7 @@
                             <div class="l">Conversions</div>
                         </div>
                     </div>
+                    <div class="dash-caption">Exemple illustratif</div>
                 </div>
             </div>
         </div>
@@ -382,8 +395,9 @@
                 <div class="t-left">
                     <span class="t-badge">Offre de lancement</span>
                     <div>
-                        <h4>3 mois d'abonnement offerts pour tout nouveau client</h4>
-                        <p>Vous réglez uniquement l'installation, puis vos 3 premiers mois sont offerts.</p>
+                        <h4>3 mois d'abonnement offerts pour tout nouveau client, avec engagement de 12 mois</h4>
+                        <p>Vous réglez uniquement l'installation, puis vos 3 premiers mois sont offerts. L'offre
+                            s'applique avec un engagement de 12 mois.</p>
                     </div>
                 </div>
                 <a href="formulaire.html?offer=Standard" class="btn-ghost-link">En profiter →</a>
@@ -404,10 +418,10 @@
                     <div class="price-desc">Pour répondre automatiquement à vos clients et ne manquer aucune commande.
                     </div>
                     <div class="price-amount" data-view="monthly">200 <span class="unit">MAD / mois</span></div>
-                    <div class="price-note" data-view="monthly">Installation : 400 MAD (une seule fois) · 3 mois offerts, puis 9 mois à 200
+                    <div class="price-note" data-view="monthly">Installation : 400 MAD (une seule fois) · 3 mois offerts avec engagement de 12 mois, puis 9 mois à 200
                         MAD/mois · hébergement inclus</div>
                     <div class="price-amount hide" data-view="annual">2 200 <span class="unit">MAD / an</span></div>
-                    <div class="price-note hide" data-view="annual">Installation incluse : 400 MAD (une seule fois) + 1 800 MAD d'abonnement (9 mois × 200 MAD, 3 mois offerts) · hébergement inclus</div>
+                    <div class="price-note hide" data-view="annual">Installation incluse : 400 MAD (une seule fois) + 1 800 MAD d'abonnement (9 mois × 200 MAD, 3 mois offerts avec engagement de 12 mois) · hébergement inclus</div>
                     <div class="price-note">Dès l'année 2 : de −15% jusqu'à −35% de réduction fidélité</div>
                     <ul class="price-features">
                         <li>Connexion de votre numéro WhatsApp Business</li>
@@ -415,6 +429,8 @@
                         <li>Alerte au responsable quand un client veut finaliser sa commande</li>
                         <li>Tableau de bord pour consulter toutes les discussions</li>
                         <li>Guide d'utilisation + formation (1h)</li>
+                        <li>Jusqu'à 500 conversations / mois</li>
+                        <li>1 mise à jour de contenu / mois</li>
                     </ul>
                     <button class="price-cta" data-offer="Essentielle">Choisir Essentielle</button>
                 </div>
@@ -426,10 +442,10 @@
                     <div class="price-desc">Pour présenter votre business en ligne et passer la main à un humain au bon
                         moment.</div>
                     <div class="price-amount" data-view="monthly">400 <span class="unit">MAD / mois</span></div>
-                    <div class="price-note" data-view="monthly">Installation : 600 MAD (une seule fois) · 3 mois offerts, puis 9 mois à 400
+                    <div class="price-note" data-view="monthly">Installation : 600 MAD (une seule fois) · 3 mois offerts avec engagement de 12 mois, puis 9 mois à 400
                         MAD/mois · hébergement inclus</div>
                     <div class="price-amount hide" data-view="annual">4 200 <span class="unit">MAD / an</span></div>
-                    <div class="price-note hide" data-view="annual">Installation incluse : 600 MAD (une seule fois) + 3 600 MAD d'abonnement (9 mois × 400 MAD, 3 mois offerts) · hébergement inclus</div>
+                    <div class="price-note hide" data-view="annual">Installation incluse : 600 MAD (une seule fois) + 3 600 MAD d'abonnement (9 mois × 400 MAD, 3 mois offerts avec engagement de 12 mois) · hébergement inclus</div>
                     <div class="price-note">Dès l'année 2 : de −20% jusqu'à −40% de réduction fidélité</div>
                     <ul class="price-features">
                         <li>Tout le contenu de la formule Essentielle</li>
@@ -437,6 +453,8 @@
                         <li>Transfert automatique vers un agent humain</li>
                         <li>Prise en main manuelle des conversations depuis le tableau de bord</li>
                         <li>Formation de l'équipe (2h)</li>
+                        <li>Jusqu'à 1 000 conversations / mois</li>
+                        <li>2 mises à jour de contenu / mois</li>
                     </ul>
                     <button class="price-cta" data-offer="Standard">Choisir Standard</button>
                 </div>
@@ -447,11 +465,11 @@
                     <div class="price-desc">Pour automatiser la prise de commande et piloter votre activité avec des
                         chiffres.</div>
                     <div class="price-amount" data-view="monthly">800 <span class="unit">MAD / mois</span></div>
-                    <div class="price-note" data-view="monthly">Installation : 1 000 MAD (une seule fois) · 3 mois offerts, puis 9 mois à
+                    <div class="price-note" data-view="monthly">Installation : 1 000 MAD (une seule fois) · 3 mois offerts avec engagement de 12 mois, puis 9 mois à
                         800
                         MAD/mois · hébergement inclus</div>
                     <div class="price-amount hide" data-view="annual">8 200 <span class="unit">MAD / an</span></div>
-                    <div class="price-note hide" data-view="annual">Installation incluse : 1 000 MAD (une seule fois) + 7 200 MAD d'abonnement (9 mois × 800 MAD, 3 mois offerts) · hébergement inclus</div>
+                    <div class="price-note hide" data-view="annual">Installation incluse : 1 000 MAD (une seule fois) + 7 200 MAD d'abonnement (9 mois × 800 MAD, 3 mois offerts avec engagement de 12 mois) · hébergement inclus</div>
                     <div class="price-note">Dès l'année 2 : de −25% jusqu'à −50% de réduction fidélité</div>
                     <ul class="price-features">
                         <li>Tout le contenu de la formule Standard</li>
@@ -459,6 +477,8 @@
                         <li>Fiches clients avec historique des commandes</li>
                         <li>Confirmation automatique des commandes</li>
                         <li>Tableau de statistiques (réponse, confirmation, conversions)</li>
+                        <li>Jusqu'à 2 000 conversations / mois</li>
+                        <li>4 mises à jour de contenu / mois</li>
                     </ul>
                     <button class="price-cta" data-offer="Premium">Choisir Premium</button>
                 </div>
@@ -473,7 +493,8 @@
                 <div class="maint-box">
                     <h3>Réduction fidélité</h3>
                     <p>Si vous renouvelez votre abonnement, la réduction s'applique au tarif mensuel de base pendant les
-                        12 mois de l'année, puis augmente de 5% chaque année jusqu'au plafond.</p>
+                        12 mois de l'année, puis augmente de 5% chaque année jusqu'au plafond. La réduction fidélité
+                        s'applique tant que votre volume reste dans la limite de votre formule.</p>
                     <div class="maint-tiers">
                     <div class="maint-tier">
                         <div class="mt-head"><span>Essentielle</span><span class="mt-price">170 MAD/mois en année
@@ -495,10 +516,21 @@
                 </div>
             </div>
 
-            <p class="payment-terms">Installation réglée à la signature · <span class="mono">3 mois</span> offerts ·
+            <p class="payment-terms">Installation réglée à la signature · <span class="mono">3 mois</span> offerts
+                avec engagement de <span class="mono">12 mois</span> ·
                 <span class="mono">9 mois</span> au tarif de base · réduction fidélité dès le renouvellement. En cas
                 de résiliation puis de retour, le niveau de fidélité repart à l'année 1.
             </p>
+
+            <div class="pricing-notes">
+                <p class="payment-terms"><strong>Limites de conversations :</strong> chaque formule inclut un volume
+                    mensuel de conversations. Au-delà, un supplément ou un changement de formule vous est proposé. Nous
+                    vous prévenons avant.</p>
+                <p class="payment-terms"><strong>Frais WhatsApp (Meta) :</strong> le compte WhatsApp Business et le
+                    numéro vous appartiennent. Meta peut facturer des frais par message, directement à vous, selon le
+                    type et le volume de messages. Ces frais ne sont pas inclus dans l'abonnement RepliQ. La plupart des
+                    petites entreprises restent dans le quota gratuit de Meta.</p>
+            </div>
         </div>
     </section>
 
@@ -524,7 +556,10 @@
                     <div class="faq-a">
                         <p>Vous réglez les frais d'installation à la signature (400, 600 ou 1 000 MAD selon la
                             formule). Les 3 premiers mois d'abonnement sont ensuite offerts, puis vous payez le tarif
-                            mensuel de base pendant les 9 mois restants de la première année.</p>
+                            mensuel de base pendant les 9 mois restants de la première année. Cette offre s'applique
+                            avec un engagement de 12 mois : vous vous engagez à garder votre abonnement pendant les 12
+                            premiers mois (3 mois offerts, puis 9 mois au tarif de base). Les conditions précises vous
+                            sont confirmées avant la signature.</p>
                     </div>
                 </div>
                 <div class="faq-item">
@@ -534,7 +569,34 @@
                         <p>Si vous gardez votre abonnement après la première année, une réduction s'applique au tarif
                             mensuel pendant les 12 mois suivants : 15% (Essentielle), 20% (Standard) ou 25% (Premium).
                             Elle augmente ensuite de 5% chaque année de renouvellement, jusqu'à 35%, 40% ou 50%
-                            maximum.</p>
+                            maximum. La réduction fidélité s'applique tant que votre volume reste dans la limite de
+                            votre formule.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-q"><span>Que se passe-t-il si je dépasse la limite de conversations ?</span><span
+                            class="plus"></span></div>
+                    <div class="faq-a">
+                        <p>Chaque formule inclut un volume mensuel de conversations : 500 (Essentielle), 1 000
+                            (Standard) ou 2 000 (Premium). Si vous le dépassez, nous vous prévenons avant et nous vous
+                            proposons un supplément ou un changement de formule.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-q"><span>Qui paie les frais WhatsApp ?</span><span class="plus"></span></div>
+                    <div class="faq-a">
+                        <p>Le compte WhatsApp Business et le numéro vous appartiennent. Meta peut facturer des frais par
+                            message, directement à vous, selon le type et le volume de messages. Ces frais ne sont pas
+                            inclus dans l'abonnement RepliQ. La plupart des petites entreprises restent dans le quota
+                            gratuit de Meta.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-q"><span>Que comprend le support ?</span><span class="plus"></span></div>
+                    <div class="faq-a">
+                        <p>Les mises à jour de contenu couvrent vos prix, vos produits, vos horaires et les réponses de
+                            votre FAQ : 1 par mois (Essentielle), 2 (Standard) ou 4 (Premium). Nous répondons sous 48
+                            heures les jours ouvrés.</p>
                     </div>
                 </div>
                 <div class="faq-item">
@@ -572,7 +634,7 @@
         <div class="wrap">
             <div class="final-cta-box">
                 <h2>Laissez WhatsApp continuer à travailler pour vous — pendant que vous vous occupez du reste.</h2>
-                <p>Installation dès 400 MAD · 3 mois d'abonnement offerts</p>
+                <p>Installation dès 400 MAD · 3 mois d'abonnement offerts avec engagement de 12 mois</p>
                 <div class="hero-cta-row">
                     <a href="formulaire.html?offer=Standard" class="btn-primary">Démarrer maintenant</a>
                     <a href="#tarifs" class="btn-ghost-link">Comparer les formules ↓</a>

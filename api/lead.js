@@ -53,7 +53,7 @@ export default async function handler(req, res) {
         return res.status(405).json({ error: "Method Not Allowed" });
     }
 
-    const { fullname, business, activity, phone, email, offer, mode, price, message, ref } =
+    const { fullname, business, activity, phone, email, offer, mode, price, message, ref, volume, acceptedTerms } =
         req.body || {};
 
     if (!fullname || !business || !phone) {
@@ -93,6 +93,12 @@ export default async function handler(req, res) {
         `Tarif : ${price || "—"}`,
         `Email : ${email || "—"}`,
     ];
+    if (volume !== undefined && volume !== null && String(volume).trim()) {
+        lines.push(`Clients / mois (estimation) : ${String(volume).trim()}`);
+    }
+    if (acceptedTerms) {
+        lines.push("Conditions acceptées : oui (engagement 12 mois, frais WhatsApp à la charge du client)");
+    }
     if (message && String(message).trim()) {
         lines.push("", `Message : ${String(message).trim()}`);
     }
