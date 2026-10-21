@@ -11,6 +11,14 @@
         href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <style>
+        /* 3-option pricing switch: keep it from overflowing on phones */
+        .toggle-btn { white-space: nowrap; }
+        @media (max-width: 600px) {
+            .toggle-wrap { max-width: 100%; }
+            .toggle-btn { padding: 10px 12px; font-size: 13px; }
+        }
+    </style>
 </head>
 
 <body>
@@ -25,7 +33,7 @@
                 <a href="#faq">FAQ</a>
             </div>
             <div style="display:flex; align-items:center; gap:18px;">
-                <a href="formulaire.html?offer=Standard" class="nav-cta">3 mois offerts</a>
+                <a href="formulaire.html?offer=Essai%20gratuit&mode=monthly" class="nav-cta">Essai gratuit</a>
                 <button class="nav-burger" id="burger"
                     aria-label="Menu"><span></span><span></span><span></span></button>
             </div>
@@ -37,26 +45,27 @@
         <a href="#fonctionnalites">Fonctionnalités</a>
         <a href="#tarifs">Tarifs</a>
         <a href="#faq">FAQ</a>
-        <a href="formulaire.html?offer=Standard" class="nav-cta" style="text-align:center; margin-top:10px;">3 mois
-            offerts</a>
+        <a href="formulaire.html?offer=Essai%20gratuit&mode=monthly" class="nav-cta"
+            style="text-align:center; margin-top:10px;">Essai gratuit</a>
     </div>
 
     <!-- HERO -->
     <section class="hero">
         <div class="wrap">
             <div>
-                <div class="eyebrow-tag"><span class="pip">Nouveau</span> 3 mois d'abonnement offerts</div>
+                <div class="eyebrow-tag"><span class="pip">Nouveau</span> 1 mois d'essai offert sur l'abonnement</div>
                 <h1>Votre WhatsApp gère déjà tout. <span class="accent">RepliQ</span> s'en occupe pour vous.</h1>
-                <p class="hero-sub">Répondez à toutes les questions de vos clients, soyez alerté quand une commande
-                    est prête à être finalisée et suivez vos discussions — sans quitter WhatsApp, sans changer vos
-                    habitudes.</p>
+                <p class="hero-sub">Confirmez les commandes, envoyez les rappels et répondez aux questions fréquentes
+                    automatiquement — sans quitter WhatsApp, sans changer vos habitudes.</p>
                 <div class="hero-cta-row">
-                    <a href="formulaire.html?offer=Standard" class="btn-primary">Démarrer maintenant</a>
+                    <a href="formulaire.html?offer=Essai%20gratuit&mode=monthly" class="btn-primary">Démarrer l'essai
+                        gratuit</a>
                     <a href="#comment" class="btn-ghost-link">Voir comment ça marche ↓</a>
                 </div>
                 <p class="hero-microcopy">Compatible avec votre numéro WhatsApp Business actuel · <span
                         class="mono">Darija · Français · Arabe · Anglais</span></p>
             </div>
+
             <div class="phone-stage">
                 <div class="phone">
                     <div class="phone-screen">
@@ -73,10 +82,10 @@
                                 NON.<span class="tick">✓✓ Lu</span></div>
                             <div class="bubble in b3">Oui c'est bon</div>
                             <div class="typing"><span></span><span></span><span></span></div>
-                            <div class="bubble out b4">Parfait, votre RDV est confirmé ✅<span class="tick">✓✓ Lu</span>
-                            </div>
-                            <div class="bubble out b5">À samedi 15h ! Une question avant votre venue ? Écrivez-moi
-                                ici.<span class="tick">✓✓ Envoyé</span></div>
+                            <div class="bubble out b4">Parfait, votre RDV est confirmé ✅ Un rappel vous sera envoyé
+                                vendredi.<span class="tick">✓✓ Lu</span></div>
+                            <div class="bubble out b5">Rappel : votre RDV est demain à 15h. À bientôt !<span
+                                    class="tick">✓✓ Envoyé</span></div>
                         </div>
                         <div class="phone-footer">
                             <span><span class="live-dot"></span>Statut : confirmé</span>
@@ -108,8 +117,8 @@
             <div>
                 <span class="section-tag">LE CONSTAT</span>
                 <h2>Vous gérez déjà toute la relation client sur WhatsApp.</h2>
-                <p class="insight-lead">Questions répétées, demandes de prix, prises de commande — tout passe déjà par
-                    là, à la main, message après message. RepliQ n'ajoute pas un outil de plus : il automatise celui
+                <p class="insight-lead">Confirmations, rappels, questions répétées, suivi des statuts — tout passe déjà
+                    par là, à la main, message après message. RepliQ n'ajoute pas un outil de plus : il automatise celui
                     que vous utilisez déjà.</p>
             </div>
             <div class="stat-grid">
@@ -154,14 +163,14 @@
                 <div class="step">
                     <span class="step-num">02 — Automatisation</span>
                     <h3>RepliQ prend le relais</h3>
-                    <p>Le chatbot répond à toutes les questions de vos clients, 24h/24, et vous alerte dès qu'un
-                        client veut finaliser sa commande.</p>
+                    <p>Confirmations, rappels programmés, réponses aux questions fréquentes : l'IA gère les échanges
+                        répétitifs, et transfère vers vous dès qu'une demande sort du cadre.</p>
                 </div>
                 <div class="step">
                     <span class="step-num">03 — Pilotage</span>
                     <h3>Vous gardez le contrôle</h3>
-                    <p>Toutes vos discussions sont visibles sur votre tableau de bord. Avec les formules Standard et
-                        Premium, vous pouvez aussi reprendre la main à tout moment, en un clic.</p>
+                    <p>Chaque conversation, chaque statut, chaque client est visible sur votre tableau de bord. Vous
+                        pouvez reprendre la main à tout moment, en un clic.</p>
                 </div>
             </div>
         </div>
@@ -176,40 +185,40 @@
             </div>
             <div class="feat-grid">
                 <div class="feat-card">
-                    <div class="feat-icon">💬</div>
-                    <h3>Chatbot WhatsApp 24h/24</h3>
-                    <p>L'IA répond à toutes les questions de vos clients (produits, prix, horaires, disponibilités) dans
-                        leur langue : darija, français, arabe ou anglais. Inclus dès Essentielle.</p>
+                    <div class="feat-icon">✓</div>
+                    <h3>Confirmation de commandes &amp; RDV</h3>
+                    <p>Vos clients confirment en répondant simplement OUI ou NON, sans appel ni saisie manuelle de votre
+                        côté.</p>
                 </div>
                 <div class="feat-card">
-                    <div class="feat-icon">🔔</div>
-                    <h3>Alerte de finalisation</h3>
-                    <p>Dès qu'un client veut finaliser sa commande, le responsable est prévenu immédiatement et peut
-                        conclure la vente. Inclus dès Essentielle.</p>
+                    <div class="feat-icon">⏰</div>
+                    <h3>Rappels automatiques</h3>
+                    <p>Rendez-vous, livraisons, relances de paiement : programmez-les une fois, RepliQ les envoie au bon
+                        moment.</p>
+                </div>
+                <div class="feat-card">
+                    <div class="feat-icon">💬</div>
+                    <h3>Réponses IA aux questions fréquentes</h3>
+                    <p>Horaires, tarifs, disponibilités : l'IA répond naturellement, et transfère à un agent humain si
+                        la demande est complexe.</p>
                 </div>
                 <div class="feat-card">
                     <div class="feat-icon">📊</div>
-                    <h3>Tableau de bord des discussions</h3>
-                    <p>Consultez toutes les conversations WhatsApp de vos clients au même endroit. Inclus dès
-                        Essentielle.</p>
+                    <h3>Suivi des statuts</h3>
+                    <p>En attente, confirmé, annulé, livré — chaque conversation garde un statut clair, mis à jour
+                        automatiquement.</p>
                 </div>
                 <div class="feat-card">
-                    <div class="feat-icon">🌐</div>
-                    <h3>Site web de votre business</h3>
-                    <p>Un site qui présente votre activité, vos produits ou services et vos coordonnées, avec un accès
-                        direct à votre WhatsApp. Inclus dès Standard.</p>
+                    <div class="feat-icon">🌍</div>
+                    <h3>Détection multi-langue</h3>
+                    <p>Darija, français, arabe ou anglais : RepliQ détecte la langue du client et répond dans la même
+                        langue.</p>
                 </div>
                 <div class="feat-card">
-                    <div class="feat-icon">🤝</div>
-                    <h3>Transfert automatique vers un humain</h3>
-                    <p>Quand une demande est complexe, l'IA passe la main à votre équipe sans perdre le fil de la
-                        conversation. Inclus dès Standard.</p>
-                </div>
-                <div class="feat-card">
-                    <div class="feat-icon">✓</div>
-                    <h3>Confirmation automatique des commandes</h3>
-                    <p>Vos commandes sont confirmées automatiquement, sans appel ni saisie manuelle de votre côté.
-                        Inclus avec Premium.</p>
+                    <div class="feat-icon">💳</div>
+                    <h3>Liens de paiement intégrés</h3>
+                    <p>Envoyez un lien de paiement directement dans la conversation WhatsApp, sans changer
+                        d'application.</p>
                 </div>
             </div>
         </div>
@@ -222,13 +231,13 @@
                 <div class="dash-copy">
                     <span class="section-tag">TABLEAU DE BORD</span>
                     <h2>Toutes vos conversations, en un seul endroit.</h2>
-                    <p>Visibilité sur chaque échange avec vos clients — et, selon votre formule, la possibilité de
-                        reprendre la main, de consulter les fiches clients et de suivre vos statistiques.</p>
+                    <p>Visibilité totale sur chaque échange, chaque statut et chaque client — avec la possibilité de
+                        reprendre la main manuellement à tout moment.</p>
                     <ul class="dash-list">
-                        <li>Vue de toutes les discussions WhatsApp (toutes les formules)</li>
-                        <li>Prise en main manuelle d'une conversation (Standard et Premium)</li>
-                        <li>Fiches clients avec historique des commandes (Premium)</li>
-                        <li>Statistiques : réponse, confirmation, conversions (Premium)</li>
+                        <li>Vue unifiée de toutes les conversations WhatsApp</li>
+                        <li>Temps de réponse, taux de confirmation, conversions</li>
+                        <li>Fiches clients avec historique des commandes</li>
+                        <li>Accès multi-utilisateurs pour votre équipe</li>
                     </ul>
                 </div>
                 <div class="dash-mock">
@@ -271,28 +280,41 @@
                 <div class="t-left">
                     <span class="t-badge">Offre de lancement</span>
                     <div>
-                        <h4>3 mois d'abonnement offerts pour tout nouveau client</h4>
-                        <p>Vous réglez uniquement l'installation, puis vos 3 premiers mois sont offerts.</p>
+                        <h4>1 mois d'essai gratuit sur l'abonnement mensuel</h4>
+                        <p>Testez RepliQ sans risque avant que l'engagement de 12 mois ne démarre.</p>
                     </div>
                 </div>
-                <a href="formulaire.html?offer=Standard" class="btn-ghost-link">En profiter →</a>
+                <a href="#" class="btn-ghost-link">En profiter →</a>
+            </div>
+
+            <div class="toggle-row">
+                <div class="toggle-wrap" id="toggleWrap">
+                    <div class="toggle-thumb"></div>
+                    <button class="toggle-btn active" data-mode="unique">Paiement unique</button>
+                    <button class="toggle-btn" data-mode="monthly">Abonnement mensuel</button>
+                    <button class="toggle-btn" data-mode="yearly">Abonnement annuel</button>
+                </div>
             </div>
 
             <div class="price-cards">
+
                 <!-- ESSENTIELLE -->
                 <div class="price-card">
                     <div class="price-name">Essentielle</div>
-                    <div class="price-desc">Pour répondre automatiquement à vos clients et ne manquer aucune commande.
+                    <div class="price-desc">Pour démarrer simplement l'automatisation de vos commandes et rendez-vous.
                     </div>
-                    <div class="price-amount">200 <span class="unit">MAD / mois</span></div>
-                    <div class="price-note">Installation : 400 MAD (une seule fois) · 3 mois offerts, puis 9 mois à 200
-                        MAD/mois · hébergement inclus</div>
-                    <div class="price-note">Dès l'année 2 : de −15% jusqu'à −35% de réduction fidélité</div>
+                    <div class="price-amount price-unique">12 000 <span class="unit">MAD</span></div>
+                    <div class="price-amount price-monthly hide">1 490 <span class="unit">MAD / mois</span></div>
+                    <div class="price-amount price-yearly hide">17 880 <span class="unit">MAD / an</span></div>
+                    <div class="price-note price-note-monthly hide">Engagement 12 mois · 1er mois offert · hébergement
+                        inclus</div>
+                    <div class="price-note price-note-yearly hide">Engagement 12 mois · payé en une fois (soit 1 490 MAD / mois) · hébergement inclus</div>
+                    <div class="price-note price-note-unique">Paiement unique · solution hébergée et maintenue</div>
                     <ul class="price-features">
                         <li>Connexion de votre numéro WhatsApp Business</li>
-                        <li>Chatbot WhatsApp qui répond à toutes les questions de vos clients</li>
-                        <li>Alerte au responsable quand un client veut finaliser sa commande</li>
-                        <li>Tableau de bord pour consulter toutes les discussions</li>
+                        <li>Confirmation automatique des commandes / RDV</li>
+                        <li>Rappels automatiques programmés</li>
+                        <li>Suivi des statuts (attente, confirmé, annulé, livré)</li>
                         <li>Guide d'utilisation + formation (1h)</li>
                     </ul>
                     <button class="price-cta" data-offer="Essentielle">Choisir Essentielle</button>
@@ -302,17 +324,20 @@
                 <div class="price-card featured">
                     <span class="featured-tag">La plus choisie</span>
                     <div class="price-name">Standard</div>
-                    <div class="price-desc">Pour présenter votre business en ligne et passer la main à un humain au bon
-                        moment.</div>
-                    <div class="price-amount">400 <span class="unit">MAD / mois</span></div>
-                    <div class="price-note">Installation : 600 MAD (une seule fois) · 3 mois offerts, puis 9 mois à 400
-                        MAD/mois · hébergement inclus</div>
-                    <div class="price-note">Dès l'année 2 : de −20% jusqu'à −40% de réduction fidélité</div>
+                    <div class="price-desc">La formule la plus complète pour une gestion client autonome.</div>
+                    <div class="price-amount price-unique">28 000 <span class="unit">MAD</span></div>
+                    <div class="price-amount price-monthly hide">2 890 <span class="unit">MAD / mois</span></div>
+                    <div class="price-amount price-yearly hide">34 680 <span class="unit">MAD / an</span></div>
+                    <div class="price-note price-note-monthly hide">Engagement 12 mois · 1er mois offert · hébergement
+                        inclus</div>
+                    <div class="price-note price-note-yearly hide">Engagement 12 mois · payé en une fois (soit 2 890 MAD / mois) · hébergement inclus</div>
+                    <div class="price-note price-note-unique">Paiement unique · solution hébergée et maintenue</div>
                     <ul class="price-features">
                         <li>Tout le contenu de la formule Essentielle</li>
-                        <li>Site web qui présente votre business</li>
+                        <li>Réponses automatiques par IA aux questions fréquentes</li>
                         <li>Transfert automatique vers un agent humain</li>
-                        <li>Prise en main manuelle des conversations depuis le tableau de bord</li>
+                        <li>Tableau de bord unifié de toutes vos conversations</li>
+                        <li>Prise en main manuelle à tout moment</li>
                         <li>Formation de l'équipe (2h)</li>
                     </ul>
                     <button class="price-cta" data-offer="Standard">Choisir Standard</button>
@@ -321,52 +346,59 @@
                 <!-- PREMIUM -->
                 <div class="price-card">
                     <div class="price-name">Premium</div>
-                    <div class="price-desc">Pour automatiser la prise de commande et piloter votre activité avec des
-                        chiffres.</div>
-                    <div class="price-amount">800 <span class="unit">MAD / mois</span></div>
-                    <div class="price-note">Installation : 1 000 MAD (une seule fois) · 3 mois offerts, puis 9 mois à
-                        800
-                        MAD/mois · hébergement inclus</div>
-                    <div class="price-note">Dès l'année 2 : de −25% jusqu'à −50% de réduction fidélité</div>
+                    <div class="price-desc">Pour une gestion avancée multi-équipe avec pilotage complet.</div>
+                    <div class="price-amount price-unique">55 000 <span class="unit">MAD</span></div>
+                    <div class="price-amount price-monthly hide">4 990 <span class="unit">MAD / mois</span></div>
+                    <div class="price-amount price-yearly hide">59 880 <span class="unit">MAD / an</span></div>
+                    <div class="price-note price-note-monthly hide">Engagement 12 mois · 1er mois offert · hébergement
+                        inclus</div>
+                    <div class="price-note price-note-yearly hide">Engagement 12 mois · payé en une fois (soit 4 990 MAD / mois) · hébergement inclus</div>
+                    <div class="price-note price-note-unique">Paiement unique · solution hébergée et maintenue</div>
                     <ul class="price-features">
                         <li>Tout le contenu de la formule Standard</li>
-                        <li>Nom de domaine personnalisé pour votre site web</li>
-                        <li>Fiches clients avec historique des commandes</li>
-                        <li>Confirmation automatique des commandes</li>
                         <li>Tableau de statistiques (réponse, confirmation, conversions)</li>
+                        <li>Accès multi-utilisateurs pour votre équipe</li>
+                        <li>Liens de paiement intégrés dans la conversation</li>
+                        <li>Détection automatique de la langue du client</li>
+                        <li>Fiches clients avec historique des commandes</li>
                     </ul>
                     <button class="price-cta" data-offer="Premium">Choisir Premium</button>
                 </div>
             </div>
 
             <div class="addons-wrap">
+                <div class="addons-box">
+                    <h3>Options additionnelles</h3>
+                    <p>À ajouter individuellement à la formule Essentielle ou Standard si vous n'avez pas besoin du
+                        Premium complet.</p>
+                    <div class="addon-row"><span>Réponses automatiques par IA</span><span class="p">5 000 MAD</span>
+                    </div>
+                    <div class="addon-row"><span>Tableau de statistiques</span><span class="p">4 000 MAD</span></div>
+                    <div class="addon-row"><span>Accès multi-utilisateurs</span><span class="p">3 200 MAD</span></div>
+                    <div class="addon-row"><span>Liens de paiement intégrés</span><span class="p">3 200 MAD</span></div>
+                    <div class="addon-row"><span>Détection multi-langue</span><span class="p">2 000 MAD</span></div>
+                    <div class="addon-row"><span>Fiches clients / historique</span><span class="p">4 000 MAD</span>
+                    </div>
+                </div>
+
                 <div class="maint-box">
-                    <h3>Réduction fidélité</h3>
-                    <p>Si vous renouvelez votre abonnement, la réduction s'applique au tarif mensuel de base pendant les
-                        12 mois de l'année, puis augmente de 5% chaque année jusqu'au plafond.</p>
+                    <h3>Maintenance &amp; support</h3>
+                    <p>Pour les clients en paiement unique — l'abonnement mensuel inclut déjà l'hébergement et la
+                        maintenance de base.</p>
                     <div class="maint-tier">
-                        <div class="mt-head"><span>Essentielle</span><span class="mt-price">170 MAD/mois en année
-                                2</span>
-                        </div>
-                        <p>−15% en année 2, +5% par an, plafond −35% (130 MAD/mois) dès l'année 6.</p>
+                        <div class="mt-head"><span>Standard</span><span class="mt-price">690 MAD/mois</span></div>
+                        <p>Hébergement, surveillance de la connexion, correction de bugs.</p>
                     </div>
                     <div class="maint-tier">
-                        <div class="mt-head"><span>Standard</span><span class="mt-price">320 MAD/mois en année 2</span>
-                        </div>
-                        <p>−20% en année 2, +5% par an, plafond −40% (240 MAD/mois) dès l'année 6.</p>
-                    </div>
-                    <div class="maint-tier">
-                        <div class="mt-head"><span>Premium</span><span class="mt-price">600 MAD/mois en année 2</span>
-                        </div>
-                        <p>−25% en année 2, +5% par an, plafond −50% (400 MAD/mois) dès l'année 7.</p>
+                        <div class="mt-head"><span>Avancée</span><span class="mt-price">1 490 MAD/mois</span></div>
+                        <p>Standard + ajustements des réponses IA + support prioritaire.</p>
                     </div>
                 </div>
             </div>
 
-            <p class="payment-terms">Installation réglée à la signature · <span class="mono">3 mois</span> offerts ·
-                <span class="mono">9 mois</span> au tarif de base · réduction fidélité dès le renouvellement. En cas
-                de résiliation puis de retour, le niveau de fidélité repart à l'année 1.
-            </p>
+            <p class="payment-terms">Paiement unique réglé en trois fois : <span class="mono">40%</span> à la signature
+                · <span class="mono">30%</span> à la validation d'une version intermédiaire · <span
+                    class="mono">30%</span> à la livraison finale.</p>
         </div>
     </section>
 
@@ -387,40 +419,29 @@
                     </div>
                 </div>
                 <div class="faq-item">
-                    <div class="faq-q"><span>Comment fonctionnent les 3 mois offerts ?</span><span class="plus"></span>
-                    </div>
-                    <div class="faq-a">
-                        <p>Vous réglez les frais d'installation à la signature (400, 600 ou 1 000 MAD selon la
-                            formule). Les 3 premiers mois d'abonnement sont ensuite offerts, puis vous payez le tarif
-                            mensuel de base pendant les 9 mois restants de la première année.</p>
-                    </div>
-                </div>
-                <div class="faq-item">
-                    <div class="faq-q"><span>Comment fonctionne la réduction fidélité ?</span><span class="plus"></span>
-                    </div>
-                    <div class="faq-a">
-                        <p>Si vous gardez votre abonnement après la première année, une réduction s'applique au tarif
-                            mensuel pendant les 12 mois suivants : 15% (Essentielle), 20% (Standard) ou 25% (Premium).
-                            Elle augmente ensuite de 5% chaque année de renouvellement, jusqu'à 35%, 40% ou 50%
-                            maximum.</p>
-                    </div>
-                </div>
-                <div class="faq-item">
-                    <div class="faq-q"><span>Que se passe-t-il si j'arrête puis reviens plus tard ?</span><span
+                    <div class="faq-q"><span>Comment fonctionne le mois d'essai gratuit ?</span><span
                             class="plus"></span></div>
                     <div class="faq-a">
-                        <p>Votre niveau de fidélité repart à l'année 1. Contactez-nous pour connaître les conditions
-                            exactes de reprise.</p>
+                        <p>Sur l'abonnement mensuel, le premier mois est offert. L'engagement de 12 mois démarre au
+                            deuxième mois, une fois que vous avez validé que la solution vous convient.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-q"><span>Quelle est la différence entre paiement unique et abonnement ?</span><span
+                            class="plus"></span></div>
+                    <div class="faq-a">
+                        <p>Le paiement unique correspond à une installation ferme, avec maintenance mensuelle en option.
+                            L'abonnement mensuel inclut déjà l'hébergement et la maintenance de base, avec un engagement
+                            de 12 mois. L'abonnement annuel est le même abonnement, réglé en une seule fois pour les
+                            12 mois.</p>
                     </div>
                 </div>
                 <div class="faq-item">
                     <div class="faq-q"><span>Puis-je reprendre la main sur une conversation ?</span><span
                             class="plus"></span></div>
                     <div class="faq-a">
-                        <p>Oui, avec les formules Standard et Premium : l'IA transfère automatiquement les demandes
-                            complexes à un humain, et vous pouvez aussi prendre la main à tout moment depuis le
-                            tableau de bord. Avec Essentielle, le tableau de bord permet de consulter les discussions
-                            et vous êtes alerté quand un client veut finaliser sa commande.</p>
+                        <p>Oui, à tout moment depuis le tableau de bord. L'IA transfère automatiquement les demandes
+                            complexes, mais vous pouvez toujours intervenir vous-même.</p>
                     </div>
                 </div>
                 <div class="faq-item">
@@ -440,9 +461,10 @@
         <div class="wrap">
             <div class="final-cta-box">
                 <h2>Laissez WhatsApp continuer à travailler pour vous — pendant que vous vous occupez du reste.</h2>
-                <p>Installation dès 400 MAD · 3 mois d'abonnement offerts</p>
+                <p>1 mois d'essai gratuit · aucune carte requise pour démarrer la discussion</p>
                 <div class="hero-cta-row">
-                    <a href="formulaire.html?offer=Standard" class="btn-primary">Démarrer maintenant</a>
+                    <a href="formulaire.html?offer=Essai%20gratuit&mode=monthly" class="btn-primary">Démarrer l'essai
+                        gratuit</a>
                     <a href="#tarifs" class="btn-ghost-link">Comparer les formules ↓</a>
                 </div>
             </div>
@@ -498,11 +520,44 @@
         burger.addEventListener('click', () => mobileMenu.classList.toggle('open'));
         mobileMenu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => mobileMenu.classList.remove('open')));
 
-        // Pricing CTA -> go to formulaire with the chosen plan
-        // (single subscription model now: no more "paiement unique" toggle)
+        // Pricing toggle (unique / monthly / yearly)
+        const toggleWrap = document.getElementById('toggleWrap');
+        const toggleBtns = toggleWrap.querySelectorAll('.toggle-btn');
+        const toggleThumb = toggleWrap.querySelector('.toggle-thumb');
+        let currentMode = 'unique';
+
+        function moveThumb() {
+            const active = toggleWrap.querySelector('.toggle-btn.active');
+            if (!active || !toggleThumb) return;
+            toggleThumb.style.transform = 'none';
+            toggleThumb.style.left = active.offsetLeft + 'px';
+            toggleThumb.style.width = active.offsetWidth + 'px';
+        }
+
+        function setPricingMode(mode) {
+            currentMode = mode;
+            toggleBtns.forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+            ['unique', 'monthly', 'yearly'].forEach(m => {
+                document.querySelectorAll('.price-' + m + ', .price-note-' + m)
+                    .forEach(el => el.classList.toggle('hide', m !== mode));
+            });
+            moveThumb();
+        }
+
+        toggleBtns.forEach(btn => btn.addEventListener('click', () => setPricingMode(btn.dataset.mode)));
+        setPricingMode('unique');
+        requestAnimationFrame(() => {
+            if (toggleThumb) toggleThumb.style.transition = 'left .3s ease, width .3s ease';
+        });
+        window.addEventListener('resize', moveThumb);
+        window.addEventListener('load', moveThumb);
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(moveThumb);
+
+        // Pricing CTA -> go to formulaire with chosen offer + mode
         document.querySelectorAll('.price-cta[data-offer]').forEach(btn => {
             btn.addEventListener('click', () => {
-                window.location.href = `formulaire.html?offer=${encodeURIComponent(btn.dataset.offer)}`;
+                const offer = btn.dataset.offer;
+                window.location.href = `formulaire.html?offer=${encodeURIComponent(offer)}&mode=${currentMode}`;
             });
         });
 
