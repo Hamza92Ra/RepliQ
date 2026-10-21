@@ -296,7 +296,7 @@
   .hide{display:none !important;}
 
   /* addons + maintenance */
-  .addons-wrap{margin-top:70px; display:grid; grid-template-columns:1.3fr 1fr; gap:20px;}
+  .addons-wrap{margin-top:70px; display:grid; grid-template-columns:1fr; gap:20px;}
   .addons-box, .maint-box{background:var(--mint-paler); border:1px solid var(--line-dark); border-radius:var(--radius-m); padding:32px;}
   .addons-box h3, .maint-box h3{font-size:17px; color:var(--text-dark); margin-bottom:6px;}
   .addons-box > p, .maint-box > p{font-size:13px; color:var(--text-dark-dim); margin-bottom:22px;}
@@ -308,6 +308,20 @@
   .maint-tier .mt-head{display:flex; justify-content:space-between; font-size:13.8px; font-weight:700; color:var(--text-dark); margin-bottom:4px; font-family:'Sora';}
   .maint-tier .mt-price{font-family:'IBM Plex Mono'; color:var(--emerald-deep); font-size:13px;}
   .maint-tier p{font-size:12.5px; color:var(--text-dark-dim); line-height:1.5;}
+
+  /* loyalty box: full width, intro on top, one card per plan */
+  .maint-box{padding:40px 44px;}
+  .maint-box h3{font-size:20px; font-family:'Sora'; margin-bottom:8px;}
+  .maint-box > p{max-width:720px; font-size:14px; line-height:1.6; margin-bottom:28px;}
+  .maint-tiers{display:grid; grid-template-columns:repeat(3,1fr); gap:20px;}
+  .maint-tiers .maint-tier{
+    margin-bottom:0; background:#fff; border:1px solid var(--line-dark); border-radius:var(--radius-m); padding:22px 22px 20px;
+    display:flex; flex-direction:column; gap:6px; transition:transform .2s ease, box-shadow .2s ease;
+  }
+  .maint-tiers .maint-tier:hover{transform:translateY(-2px); box-shadow:0 8px 22px rgba(19,32,25,0.07);}
+  .maint-tiers .mt-head{flex-direction:column; gap:6px; margin-bottom:0; font-size:15px;}
+  .maint-tiers .mt-price{font-size:15px; font-weight:600; line-height:1.3;}
+  .maint-tiers .maint-tier p{font-size:12.8px; padding-top:10px; border-top:1px dashed var(--line-dark);}
 
   .payment-terms{margin-top:26px; font-size:12.5px; color:var(--text-dark-dim); text-align:center;}
   .payment-terms .mono{color:var(--text-dark);}
@@ -359,6 +373,8 @@
     .dash-panel{grid-template-columns:1fr;}
     .price-cards{grid-template-columns:1fr;}
     .addons-wrap{grid-template-columns:1fr;}
+    .maint-tiers{grid-template-columns:1fr;}
+    .maint-box{padding:28px 24px;}
     .nav-links{display:none;}
     .nav-burger{display:flex;}
   }
