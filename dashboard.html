@@ -180,6 +180,7 @@
             width: 330px;
             background: var(--bg-soft);
             border-right: 1px solid var(--border);
+            overflow-x: hidden;
             overflow-y: auto;
             height: 100vh;
             flex-shrink: 0;
@@ -379,31 +380,49 @@
 
         .sidebar-tabs {
             display: flex;
-            gap: 6px;
-            padding: 12px 14px;
+            gap: 4px;
+            padding: 8px 10px;
             border-bottom: 1px solid var(--border);
             position: sticky;
             top: 115px;
             background: var(--bg-soft);
             z-index: 3;
+            overflow-x: auto;
+            overflow-y: hidden;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .sidebar-tabs::-webkit-scrollbar {
+            display: none;
         }
 
         .sidebar-tab {
-            flex: 1;
+            flex: 1 1 0;
+            min-width: 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 6px;
-            padding: 9px 8px;
+            gap: 4px;
+            padding: 8px 4px;
             border-radius: 9px;
             border: 1px solid var(--border);
             background: var(--panel);
             color: var(--text-dim);
-            font-size: 12.5px;
+            font-size: 11.5px;
             font-weight: 600;
             font-family: 'Manrope', sans-serif;
             cursor: pointer;
+            white-space: nowrap;
             transition: background .12s ease, color .12s ease, border-color .12s ease;
+        }
+
+        .sidebar-tab .tab-label {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         .sidebar-tab:hover {
@@ -422,6 +441,7 @@
             padding: 1px 6px;
             border-radius: 20px;
             background: rgba(255,255,255,0.06);
+            flex-shrink: 0;
         }
 
         .sidebar-tab.active .tab-count {
@@ -446,6 +466,9 @@
             overflow: hidden;
             text-overflow: ellipsis;
             padding-right: 20px;
+            direction: auto;
+            unicode-bidi: plaintext;
+            text-align: start;
         }
 
         .badge {
@@ -706,6 +729,114 @@
             white-space: pre-wrap;
             box-shadow: 0 6px 18px rgba(0,0,0,0.22);
             word-break: break-word;
+            direction: auto;
+            unicode-bidi: plaintext;
+            text-align: start;
+        }
+
+        .delivery-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            font-size: 10px;
+            font-family: 'IBM Plex Mono', monospace;
+            margin-left: 6px;
+            padding: 1px 5px;
+            border-radius: 4px;
+            vertical-align: middle;
+        }
+
+        .delivery-badge.sending { color: var(--text-faint); }
+        .delivery-badge.sent { color: var(--text-dim); }
+        .delivery-badge.delivered { color: var(--accent); }
+        .delivery-badge.read { color: #53bdeb; }
+        .delivery-badge.failed { color: var(--danger); background: var(--danger-bg); border: 1px solid rgba(255,107,107,0.3); }
+
+        .retry-inline-btn {
+            background: transparent;
+            border: 1px solid var(--amber-border);
+            color: var(--amber);
+            border-radius: 4px;
+            font-size: 10px;
+            padding: 1px 6px;
+            cursor: pointer;
+            margin-left: 6px;
+            font-family: 'IBM Plex Mono', monospace;
+            transition: background .12s ease;
+        }
+
+        .retry-inline-btn:hover {
+            background: var(--amber-bg);
+        }
+
+        .delivery-error-note {
+            font-size: 11px;
+            color: #ff9999;
+            margin-top: 4px;
+            background: rgba(255, 107, 107, 0.12);
+            border: 1px solid rgba(255, 107, 107, 0.25);
+            border-radius: 6px;
+            padding: 4px 8px;
+            max-width: 100%;
+            word-break: break-word;
+            text-align: left;
+        }
+
+        .window-warning {
+            margin: 0 16px 8px;
+            padding: 10px 14px;
+            border-radius: 12px;
+            background: rgba(240, 215, 123, 0.1);
+            border: 1px solid var(--amber-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .window-warning-content {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+            flex: 1;
+        }
+
+        .window-warning-icon {
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .window-warning-text {
+            display: flex;
+            flex-direction: column;
+            font-size: 12px;
+            line-height: 1.4;
+            color: #f7e7a9;
+        }
+
+        .window-warning-text strong {
+            color: var(--amber);
+            font-size: 12.5px;
+        }
+
+        .template-send-btn {
+            padding: 7px 12px;
+            border-radius: 9px;
+            border: 1px solid var(--accent);
+            background: rgba(37, 211, 102, 0.16);
+            color: var(--accent);
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background .12s ease;
+            font-family: 'Manrope', sans-serif;
+        }
+
+        .template-send-btn:hover {
+            background: rgba(37, 211, 102, 0.28);
         }
 
         .bubble strong {
@@ -1044,7 +1175,7 @@
             display: none;
         }
 
-        @media (max-width: 860px) {
+        @media (max-width: 900px) {
             body {
                 height: 100dvh;
             }
@@ -1340,8 +1471,10 @@
         .logout-btn { width: 38px; height: 38px; border-radius: 12px; background: rgba(255,255,255,.04); }
         .search-wrap { top: 72px; padding: 11px 14px; background: rgba(10,18,14,.9); backdrop-filter: blur(18px); }
         .search-box input { min-height: 44px; padding-left: 38px; border-radius: 14px; background: rgba(255,255,255,.055); }
-        .sidebar-tabs { top: 139px; padding: 8px 14px 12px; background: rgba(10,18,14,.9); backdrop-filter: blur(18px); }
-        .sidebar-tab { min-height: 40px; border-radius: 12px; background: rgba(255,255,255,.035); }
+        .sidebar-tabs { top: 139px; padding: 8px 10px 10px; background: rgba(10,18,14,.92); backdrop-filter: blur(18px); overflow-x: auto; overflow-y: hidden; scrollbar-width: none; -ms-overflow-style: none; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
+        .sidebar-tabs::-webkit-scrollbar { display: none; }
+        .sidebar-tab { min-height: 38px; border-radius: 10px; background: rgba(255,255,255,.035); flex: 1 1 0; min-width: 0; font-size: 11.5px; padding: 7px 4px; white-space: nowrap; }
+        .sidebar-tab .tab-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .sidebar-tab.active { color: var(--text); border-color: rgba(37,211,102,.35); background: linear-gradient(135deg, rgba(37,211,102,.23), rgba(5,150,105,.16)); }
         .convo-list { padding: 6px 10px 18px; }
         .convo-item { margin: 5px 0; padding: 14px 14px 14px 66px; min-height: 78px; border: 1px solid transparent; border-radius: 14px; }
@@ -1415,18 +1548,19 @@
         .empty-copy { display:block; color:var(--text-dim); font-size:13px; line-height:1.55; }
         .msg-row { max-width: min(72%, 640px); margin-bottom: 10px; }
         .sender-label { margin-bottom: 4px; }
-        .bubble { padding: 10px 13px 8px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,.16); }
+        .bubble { padding: 10px 13px 8px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,.16); direction: auto; unicode-bidi: plaintext; text-align: start; }
         .bubble.user, .bubble.lead { background: rgba(17,28,48,.9); border-color: rgba(174,191,214,.12); }
         .bubble.assistant { background: linear-gradient(135deg, #15803d, #065f46); }
         .bubble.agent { background: linear-gradient(135deg, #4a3d17, #372c11); border-color: var(--amber-border); color: #fff3d6; }
         .day-divider span { border: 1px solid var(--border); border-radius: 999px; background: rgba(17,28,48,.8); padding: 5px 12px; }
         .day-divider::before { display: none; }
-        .composer { padding: 12px 18px; background: rgba(10,18,14,.86); backdrop-filter: blur(18px); }
-        .composer textarea { min-height: 46px; border-radius: 16px; background: rgba(255,255,255,.06); }
+        .composer-container { display: flex; flex-direction: column; width: 100%; border-top: 1px solid var(--border); background: rgba(10,18,14,.86); backdrop-filter: blur(18px); padding-top: 8px; }
+        .composer { padding: 6px 18px 12px; background: transparent; }
+        .composer textarea { min-height: 46px; border-radius: 16px; background: rgba(255,255,255,.06); direction: auto; }
         .composer button { width: 46px; height: 46px; padding: 0; display: grid; place-items:center; border-radius: 15px; color:#05170c; background: linear-gradient(135deg, var(--accent), var(--accent-2)); }
         .composer button .send-label { display:none; }
 
-        @media (max-width: 860px) {
+        @media (max-width: 900px) {
             #app::before { width: 230px; height: 360px; right: -150px; top: -110px; opacity: .7; }
             #app::after { display:none; }
             .sidebar-head { min-height: 68px; padding: 12px 14px; }
@@ -1506,10 +1640,24 @@
             <div class="thread" id="thread">
                 <div class="empty"><span class="empty-visual"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 5.5h16v11H9l-5 3v-14Z"/><path d="M8 10h8M8 13h5"/></svg></span><span class="empty-title">Votre espace de conversation</span><span class="empty-copy">Sélectionnez un client dans la liste pour consulter son historique et lui répondre.</span></div>
             </div>
-            <div class="composer" id="composer" style="display:none;">
-                <textarea id="replyInput" rows="1" placeholder="Écrire un message…"
-                    onkeydown="handleComposerKey(event)" oninput="autoGrow(this)"></textarea>
-                <button id="replyBtn" onclick="sendReply()" aria-label="Envoyer"><span class="send-label">Envoyer</span><svg class="send-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m4 4 17 8-17 8 3-8-3-8Z"/><path d="M7 12h14"/></svg></button>
+            <div class="composer-container" id="composerContainer" style="display:none;">
+                <div id="windowWarning" class="window-warning" style="display:none;">
+                    <div class="window-warning-content">
+                        <span class="window-warning-icon">⚠️</span>
+                        <div class="window-warning-text">
+                            <strong>Fenêtre de 24h Meta expirée</strong>
+                            <span id="windowWarningDetail">Le dernier message du client date de plus de 24h. Meta bloque les messages libres hors de cette fenêtre.</span>
+                        </div>
+                    </div>
+                    <button class="template-send-btn" id="templateBtn" onclick="sendReengagementTemplate()">
+                        📨 Envoyer modèle WhatsApp (Template)
+                    </button>
+                </div>
+                <div class="composer" id="composer">
+                    <textarea id="replyInput" dir="auto" rows="1" placeholder="Écrire un message…"
+                        onkeydown="handleComposerKey(event)" oninput="autoGrow(this)"></textarea>
+                    <button id="replyBtn" onclick="sendReply()" aria-label="Envoyer"><span class="send-label">Envoyer</span><svg class="send-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m4 4 17 8-17 8 3-8-3-8Z"/><path d="M7 12h14"/></svg></button>
+                </div>
             </div>
         </div>
     </div>
@@ -1852,13 +2000,13 @@
 
             const tabs = `<div class="sidebar-tabs">
         <button class="sidebar-tab ${activeTab === 'chats' ? 'active' : ''}" onclick="setActiveTab('chats')">
-          Conversations <span class="tab-count">${chats.length}</span>
+          <span class="tab-label">Conversations</span> <span class="tab-count">${chats.length}</span>
         </button>
         <button class="sidebar-tab ${activeTab === 'leads' ? 'active' : ''}" onclick="setActiveTab('leads')">
-          Prospects <span class="tab-count">${leads.length}</span>
+          <span class="tab-label">Prospects</span> <span class="tab-count">${leads.length}</span>
         </button>
         <button class="sidebar-tab ${activeTab === 'orders' ? 'active' : ''}" onclick="setActiveTab('orders')">
-          Commandes <span class="tab-count">${orders.length}</span>
+          <span class="tab-label">Commandes</span> <span class="tab-count">${orders.length}</span>
         </button>
       </div>`;
 
@@ -1937,7 +2085,37 @@
             badge.style.display = "inline-block";
 
             document.getElementById("headerActions").style.display = "flex";
+            const composerContainer = document.getElementById("composerContainer");
+            if (composerContainer) composerContainer.style.display = "flex";
             document.getElementById("composer").style.display = "flex";
+
+            // 24-hour customer service window detection
+            const warningEl = document.getElementById("windowWarning");
+            const warningDetailEl = document.getElementById("windowWarningDetail");
+            let lastCustomerTs = 0;
+            if (convo && convo.messages) {
+                for (let i = convo.messages.length - 1; i >= 0; i--) {
+                    if (convo.messages[i].role === "user") {
+                        lastCustomerTs = convo.messages[i].ts ? new Date(convo.messages[i].ts).getTime() : 0;
+                        break;
+                    }
+                }
+            }
+            const now = Date.now();
+            const isOutside24h = !lastCustomerTs || (now - lastCustomerTs > 24 * 60 * 60 * 1000);
+            if (isOutside24h && warningEl && warningDetailEl) {
+                if (!lastCustomerTs) {
+                    warningDetailEl.textContent = "Aucun message client direct reçu. Meta bloque les messages libres hors de la fenêtre de 24h. Envoyez un modèle approuvé (Template) pour démarrer.";
+                } else {
+                    const diffHours = Math.round((now - lastCustomerTs) / (1000 * 60 * 60));
+                    const diffDays = Math.floor(diffHours / 24);
+                    const timeStr = diffDays > 0 ? `il y a ${diffDays} jour${diffDays > 1 ? 's' : ''}` : `il y a ${diffHours} heure${diffHours > 1 ? 's' : ''}`;
+                    warningDetailEl.textContent = `Le dernier message client date de ${timeStr}. Hors de la fenêtre de 24h, Meta bloque les messages libres. Utilisez le modèle de relance (Template) pour réengager le client.`;
+                }
+                warningEl.style.display = "flex";
+            } else if (warningEl) {
+                warningEl.style.display = "none";
+            }
 
             // Mark as seen locally so the unread dot clears.
             lastSeen[phone] = Date.now();
@@ -1963,12 +2141,36 @@
                     lastDate = dateObj;
                 }
 
+                let statusBadge = "";
+                if (role === "agent") {
+                    const st = m.status || "sent";
+                    if (st === "sending") {
+                        statusBadge = '<span class="delivery-badge sending" title="Envoi en cours…">⏳ En cours</span>';
+                    } else if (st === "sent") {
+                        statusBadge = '<span class="delivery-badge sent" title="Envoyé au serveur WhatsApp">✓ Envoyé</span>';
+                    } else if (st === "delivered") {
+                        statusBadge = '<span class="delivery-badge delivered" title="Reçu sur le WhatsApp du client">✓✓ Reçu</span>';
+                    } else if (st === "read") {
+                        statusBadge = '<span class="delivery-badge read" title="Lu par le client">✓✓ Vu</span>';
+                    } else if (st === "failed") {
+                        const errReason = m.error ? escapeHtml(m.error) : "Échec d'envoi WhatsApp";
+                        const safeMsg = escapeHtml(m.content || "").replace(/'/g, "\\'");
+                        statusBadge = `<span class="delivery-badge failed" title="${errReason}">⚠️ Échec</span><button class="retry-inline-btn" onclick="retryReply('${safeMsg}')" title="Réessayer">↻ Réessayer</button>`;
+                    }
+                }
+
+                let errorNote = "";
+                if (role === "agent" && m.status === "failed" && m.error) {
+                    errorNote = `<div class="delivery-error-note">⚠️ ${escapeHtml(m.error)}</div>`;
+                }
+
                 return divider + `<div class="msg-row ${role}${isNew ? " msg-new" : ""}">
         <div class="avatar ${role}">${ROLE_AVATARS[role]}</div>
         <div class="msg-col">
           <div class="sender-label ${role}">${ROLE_LABELS[role]}</div>
-          <div class="bubble ${role}">${formatContent(m.content)}</div>
-          <div class="bubble-time">${time}</div>
+          <div class="bubble ${role}" dir="auto">${formatContent(m.content)}</div>
+          <div class="bubble-time">${time}${statusBadge}</div>
+          ${errorNote}
         </div>
       </div>`;
             }).join("");
@@ -1999,7 +2201,11 @@
 
             document.getElementById("headerActions").style.display = "none";
             document.getElementById("orderActions").style.display = "flex";
+            const composerContainer = document.getElementById("composerContainer");
+            if (composerContainer) composerContainer.style.display = "none";
             document.getElementById("composer").style.display = "none";
+            const warningEl = document.getElementById("windowWarning");
+            if (warningEl) warningEl.style.display = "none";
 
             const itemsHtml = (order.items && order.items.length)
                 ? order.items.map(it => `<div class="bubble user" style="margin-bottom:10px; display:inline-block;">${it.quantity || 1}× ${escapeHtml(it.name || "Article")}${it.price != null ? ` — ${it.price} MAD` : ""}</div><br>`).join("")
@@ -2197,7 +2403,11 @@
                     document.getElementById("conversationStatus").textContent = "Choisissez un client pour commencer";
                     document.getElementById("modeBadge").style.display = "none";
                     document.getElementById("headerActions").style.display = "none";
+                    const composerContainer = document.getElementById("composerContainer");
+                    if (composerContainer) composerContainer.style.display = "none";
                     document.getElementById("composer").style.display = "none";
+                    const warningEl = document.getElementById("windowWarning");
+                    if (warningEl) warningEl.style.display = "none";
                     document.getElementById("thread").innerHTML = '<div class="empty"><span class="empty-visual"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 5.5h16v11H9l-5 3v-14Z"/><path d="M8 10h8M8 13h5"/></svg></span><span class="empty-title">Votre espace de conversation</span><span class="empty-copy">Sélectionnez un client dans la liste pour consulter son historique et lui répondre.</span></div>';
                 }
 
@@ -2246,7 +2456,10 @@
                 });
                 const data = await res.json();
                 if (!res.ok) {
-                    toast("Erreur : " + (data.details || data.error || res.status), "error");
+                    const errorMsg = data.details || data.error || `Erreur serveur (${res.status})`;
+                    toast("Erreur d'envoi : " + errorMsg, "error");
+                    // Reload to immediately show the failed message bubble state with retry button
+                    await loadConversations();
                     return;
                 }
                 input.value = "";
@@ -2258,6 +2471,52 @@
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = originalMarkup;
+            }
+        }
+
+        async function sendReengagementTemplate() {
+            if (!activePhone) return;
+            const btn = document.getElementById("templateBtn");
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = "Envoi du modèle…";
+            }
+            const activeConversation = conversations.find(c => c.phone === activePhone);
+            try {
+                const res = await fetch("/api/conversation?key=" + encodeURIComponent(SECRET), {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        phone: activePhone,
+                        phoneNumberId: activeConversation?.phoneNumberId || "",
+                        action: "template"
+                    })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    const errorMsg = data.details || data.error || `Erreur (${res.status})`;
+                    toast("Erreur modèle : " + errorMsg, "error");
+                    return;
+                }
+                toast("Modèle WhatsApp envoyé avec succès !", "success");
+                await loadConversations();
+            } catch (err) {
+                console.error(err);
+                toast("Erreur de connexion.", "error");
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = "📨 Envoyer modèle WhatsApp (Template)";
+                }
+            }
+        }
+
+        function retryReply(content) {
+            const input = document.getElementById("replyInput");
+            if (input) {
+                input.value = content;
+                autoGrow(input);
+                input.focus();
             }
         }
 

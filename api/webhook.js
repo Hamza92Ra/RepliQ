@@ -2,9 +2,11 @@ import { waitUntil } from "@vercel/functions";
 import { createOrder } from "../lib/orders.js";
 import {
   sendWhatsAppText,
+  sendWhatsAppTemplate,
   markAsRead,
   getMediaUrl,
   downloadMedia,
+  normalizeRecipient,
   isBsuid,
 } from "../lib/whatsapp.js";
 import { generateReply, transcribeAudio, extractOrder } from "../lib/ai.js";
@@ -14,10 +16,12 @@ import {
   getHistory,
   getConversationMode,
   setConversationMode,
+  getConversationOwner,
   setConversationOwner,
   getBusinessConfig,
   claimMessage,
   deleteConversation,
+  updateMessageStatus,
 } from "../lib/db.js";
 
 const FALLBACK_REPLY =
@@ -69,7 +73,7 @@ async function handleAdminAction(req, res) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 
-  const { phone, phoneNumberId: requestedPhoneNumberId, action, message } = req.body;
+  const { phone, phoneNumberId: requestedPhoneNumberId, action, message, templateName, languageCode } = req.body;
   if (!phone || !action) {
     return res.status(400).json({ error: "Missing phone or action" });
   }
@@ -85,52 +89,119 @@ async function handleAdminAction(req, res) {
       if (!text) {
         return res.status(400).json({ error: "Missing message" });
       }
-      // A dashboard reply must use the owner attached to this exact
-      // conversation. Do not silently use DEFAULT_PHONE_NUMBER_ID:
-      // that can send from the wrong WhatsApp Business number when
-      // several numbers are connected to the same deployment.
-      const phoneNumberId = String(requestedPhoneNumberId || "").trim();
+
+      let phoneNumberId = String(requestedPhoneNumberId || "").trim();
+      if (!phoneNumberId) {
+        phoneNumberId = await getConversationOwner(phone);
+      }
+      if (!phoneNumberId && process.env.DEFAULT_PHONE_NUMBER_ID) {
+        phoneNumberId = process.env.DEFAULT_PHONE_NUMBER_ID;
+      }
       if (!phoneNumberId) {
         return res.status(400).json({
-          error: "This conversation has no WhatsApp Business number assigned. Send a new customer message first so ownership can be recorded."
+          error: "Aucun numéro WhatsApp Business associé à cette conversation.",
+          details: "Définissez DEFAULT_PHONE_NUMBER_ID dans Vercel ou attendez un premier message client."
         });
       }
-      // BSUID-only conversations (username-only contacts, no known phone
-      // number) are stored under the BSUID string, e.g. "MA.1587668...".
-      // Stripping non-digits would mangle that into garbage, so only
-      // sanitize when it's actually a phone number.
-      const recipient = isBsuid(phone) ? phone : String(phone).replace(/\D/g, "");
+
+      const recipient = normalizeRecipient(phone);
       if (!recipient) {
-        return res.status(400).json({ error: "Invalid conversation phone number" });
+        return res.status(400).json({ error: "Format de numéro de destinataire invalide." });
       }
-      // Backfill the owner key for conversations created before owner
-      // tracking was added.
+
       setConversationOwner(phone, phoneNumberId).catch((e) =>
         console.error("Owner backfill failed:", e)
       );
-      await sendWhatsAppText(phoneNumberId, recipient, text);
-      // Save with role "agent" (NOT "assistant") so the takeover stays
-      // visible in the dashboard and, crucially, so the bot can tell —
-      // when the conversation is handed back to it — that a human spoke
-      // in the middle of the thread. getHistory() in lib/db.js folds
-      // this into a marked assistant turn for the AI, keeping the whole
-      // exchange as ONE continuous conversation under the same number.
+
+      let providerResponse;
       try {
-        await saveMessage(recipient, "agent", text, phoneNumberId);
+        providerResponse = await sendWhatsAppText(phoneNumberId, recipient, text);
+      } catch (sendErr) {
+        console.error("WhatsApp send failed for agent reply:", sendErr);
+        try {
+          await saveMessage(recipient, "agent", text, phoneNumberId, {
+            status: "failed",
+            error: sendErr.message,
+          });
+        } catch (saveErr) {
+          console.error("Failed to save failed message record:", saveErr);
+        }
+
+        const status = Number(sendErr?.status) || (sendErr?.code === 131047 || sendErr?.code === 131030 ? 400 : 502);
+        return res.status(status).json({
+          ok: false,
+          error: "Échec de l'envoi WhatsApp",
+          code: sendErr.code,
+          details: sendErr.message,
+        });
+      }
+
+      const wamid = providerResponse?.messages?.[0]?.id || null;
+      try {
+        await saveMessage(recipient, "agent", text, phoneNumberId, {
+          wamid,
+          status: "sent",
+        });
       } catch (dbErr) {
-        // The WhatsApp message has already been delivered. Do not
-        // report a false send failure that would make the dashboard
-        // resend the same message if Redis has a transient problem.
         console.error("Admin reply storage failed after send:", dbErr);
       }
-      return res.status(200).json({ ok: true });
+
+      return res.status(200).json({ ok: true, wamid, status: "sent" });
     }
 
-    // Permanently remove a conversation the dashboard's trash icon asked
-    // to delete. Wipes stored messages/mode/ownership for this phone so
-    // it disappears from the dashboard on the next poll.
+    if (action === "template") {
+      let phoneNumberId = String(requestedPhoneNumberId || "").trim();
+      if (!phoneNumberId) {
+        phoneNumberId = await getConversationOwner(phone);
+      }
+      if (!phoneNumberId && process.env.DEFAULT_PHONE_NUMBER_ID) {
+        phoneNumberId = process.env.DEFAULT_PHONE_NUMBER_ID;
+      }
+      if (!phoneNumberId) {
+        return res.status(400).json({
+          error: "Aucun numéro WhatsApp Business associé",
+          details: "Définissez DEFAULT_PHONE_NUMBER_ID dans Vercel."
+        });
+      }
+
+      const recipient = normalizeRecipient(phone);
+      if (!recipient) {
+        return res.status(400).json({ error: "Format de destinataire invalide." });
+      }
+
+      const chosenTemplate = templateName || process.env.WHATSAPP_TEMPLATE_NAME || "hello_world";
+      const chosenLang = languageCode || process.env.WHATSAPP_TEMPLATE_LANG || "en_US";
+
+      let providerResponse;
+      try {
+        providerResponse = await sendWhatsAppTemplate(phoneNumberId, recipient, chosenTemplate, chosenLang);
+      } catch (sendErr) {
+        console.error("WhatsApp template send failed:", sendErr);
+        const status = Number(sendErr?.status) || 400;
+        return res.status(status).json({
+          ok: false,
+          error: "Échec de l'envoi du modèle WhatsApp",
+          code: sendErr.code,
+          details: sendErr.message,
+        });
+      }
+
+      const wamid = providerResponse?.messages?.[0]?.id || null;
+      const content = `📨 Modèle WhatsApp envoyé : ${chosenTemplate} (${chosenLang})`;
+      try {
+        await saveMessage(recipient, "agent", content, phoneNumberId, {
+          wamid,
+          status: "sent",
+        });
+      } catch (dbErr) {
+        console.error("Admin template reply storage failed after send:", dbErr);
+      }
+
+      return res.status(200).json({ ok: true, wamid, status: "sent", template: chosenTemplate });
+    }
+
     if (action === "delete") {
-      const recipient = isBsuid(phone) ? phone : String(phone).replace(/\D/g, "");
+      const recipient = normalizeRecipient(phone);
       if (!recipient) {
         return res.status(400).json({ error: "Invalid conversation phone number" });
       }
@@ -141,16 +212,11 @@ async function handleAdminAction(req, res) {
     return res.status(400).json({ error: `Unknown action: ${action}` });
   } catch (err) {
     console.error("Admin action failed:", err);
-    const status = Number(err?.status);
-    const error = err?.message || "Action failed";
-    const responseStatus = err?.code === 131030
-      ? 400
-      : status >= 400 && status < 600
-        ? 502
-        : 500;
-    return res.status(responseStatus).json({
-      error: "WhatsApp message could not be sent",
-      details: error,
+    const status = Number(err?.status) || 500;
+    return res.status(status >= 400 && status < 600 ? status : 500).json({
+      ok: false,
+      error: "Action impossible",
+      details: err?.message || "Action failed",
     });
   }
 }
@@ -186,8 +252,24 @@ export default async function handler(req, res) {
       const value = change?.value;
       const message = value?.messages?.[0];
 
+      const statusUpdate = value?.statuses?.[0];
+      if (statusUpdate) {
+        const wamid = statusUpdate.id;
+        const status = statusUpdate.status; // "sent", "delivered", "read", "failed"
+        const recipientId = statusUpdate.recipient_id;
+        let errorDetail = null;
+        if (statusUpdate.errors && statusUpdate.errors.length > 0) {
+          const e = statusUpdate.errors[0];
+          errorDetail = e.title ? `${e.title} (${e.code}): ${e.message || ""}` : `Erreur ${e.code}: ${e.message || ""}`;
+        }
+        console.log(`WhatsApp delivery status update: wamid=${wamid}, status=${status}, recipient=${recipientId}, error=${errorDetail}`);
+        res.status(200).send("EVENT_RECEIVED");
+        waitUntil(updateMessageStatus(recipientId, wamid, status, errorDetail));
+        return;
+      }
+
       if (!message) {
-        // Status updates (delivered/read receipts) and other events — just ACK.
+        // Other events — just ACK.
         return res.status(200).send("EVENT_RECEIVED");
       }
 
