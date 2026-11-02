@@ -17,7 +17,7 @@ export default async function handler(req, res) {
             const lastB = b.messages[b.messages.length - 1]?.ts || 0;
             return lastB - lastA;
         });
-        return res.status(200).json({ conversations });
+        return res.status(200).json({ conversations, serverTime: Date.now() });
     } catch (err) {
         console.error("Dashboard fetch error:", err);
         return res.status(500).json({ error: "Failed to load conversations" });

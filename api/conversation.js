@@ -7,11 +7,21 @@ import {
     downloadMedia,
     normalizeRecipient,
 } from "../lib/whatsapp.js";
+import {
+    isWithin24hWindow,
+    isWindowExpiredError,
+    formatFriendlyError,
+} from "../lib/window.js";
+import {
+    getApprovedTemplates,
+    buildTemplateComponents,
+} from "../lib/templates.js";
 import { generateReply, transcribeAudio } from "../lib/ai.js";
 import { notifyTeam, looksLikeFinalizeIntent } from "../lib/notify.js";
 import {
     saveMessage,
     getHistory,
+    getConversation,
     getConversationMode,
     setConversationMode,
     getConversationOwner,
@@ -19,6 +29,7 @@ import {
     getBusinessConfig,
     claimMessage,
     deleteConversation,
+    deleteMessage,
     updateMessageStatus,
 } from "../lib/db.js";
 
@@ -105,6 +116,17 @@ async function handleAdminAction(req, res) {
                 return res.status(400).json({ error: "Format de numéro de destinataire invalide." });
             }
 
+            // Enforce Meta 24-hour customer service window on backend BEFORE calling Meta
+            const convo = await getConversation(recipient);
+            if (!isWithin24hWindow(convo)) {
+                return res.status(409).json({
+                    ok: false,
+                    code: "WINDOW_EXPIRED",
+                    error: "WINDOW_EXPIRED",
+                    details: "Fenêtre de 24h Meta expirée : Meta bloque les messages libres hors de cette fenêtre. Utilisez un modèle WhatsApp approuvé pour relancer ce client.",
+                });
+            }
+
             // Backfill owner key so future replies continue using this number
             setConversationOwner(phone, phoneNumberId).catch((e) =>
                 console.error("Owner backfill failed:", e)
@@ -115,22 +137,27 @@ async function handleAdminAction(req, res) {
                 providerResponse = await sendWhatsAppText(phoneNumberId, recipient, text);
             } catch (sendErr) {
                 console.error("WhatsApp send failed for agent reply:", sendErr);
-                // Save failed message so agent sees the failed state with retry button in dashboard
+                const is131047 = isWindowExpiredError(sendErr?.message, sendErr?.code || sendErr?.status);
+                const errCode = is131047 ? "WINDOW_EXPIRED" : (sendErr.code || "SEND_FAILED");
+                const friendlyErr = formatFriendlyError(sendErr?.message, sendErr?.code);
+
+                // Save failed message so agent sees the failed state in dashboard
                 try {
                     await saveMessage(recipient, "agent", text, phoneNumberId, {
                         status: "failed",
-                        error: sendErr.message,
+                        error: friendlyErr,
+                        errorCode: errCode,
                     });
                 } catch (saveErr) {
                     console.error("Failed to save failed message record:", saveErr);
                 }
 
-                const status = Number(sendErr?.status) || (sendErr?.code === 131047 || sendErr?.code === 131030 ? 400 : 502);
+                const status = is131047 ? 409 : (Number(sendErr?.status) || 502);
                 return res.status(status).json({
                     ok: false,
-                    error: "Échec de l'envoi WhatsApp",
-                    code: sendErr.code,
-                    details: sendErr.message,
+                    code: errCode,
+                    error: is131047 ? "WINDOW_EXPIRED" : "Échec de l'envoi WhatsApp",
+                    details: friendlyErr,
                 });
             }
 
@@ -170,9 +197,14 @@ async function handleAdminAction(req, res) {
             const chosenTemplate = templateName || process.env.WHATSAPP_TEMPLATE_NAME || "hello_world";
             const chosenLang = languageCode || process.env.WHATSAPP_TEMPLATE_LANG || "en_US";
 
+            let templateComponents = req.body.components || null;
+            if (!templateComponents && Array.isArray(req.body.variables) && req.body.variables.length > 0) {
+                templateComponents = buildTemplateComponents(req.body.variables);
+            }
+
             let providerResponse;
             try {
-                providerResponse = await sendWhatsAppTemplate(phoneNumberId, recipient, chosenTemplate, chosenLang);
+                providerResponse = await sendWhatsAppTemplate(phoneNumberId, recipient, chosenTemplate, chosenLang, templateComponents);
             } catch (sendErr) {
                 console.error("WhatsApp template send failed:", sendErr);
                 const status = Number(sendErr?.status) || 400;
@@ -185,17 +217,36 @@ async function handleAdminAction(req, res) {
             }
 
             const wamid = providerResponse?.messages?.[0]?.id || null;
-            const content = `📨 Modèle WhatsApp envoyé : ${chosenTemplate} (${chosenLang})`;
+            const content = req.body.previewText || `📨 Modèle WhatsApp envoyé : ${chosenTemplate} (${chosenLang})`;
             try {
                 await saveMessage(recipient, "agent", content, phoneNumberId, {
                     wamid,
                     status: "sent",
+                    template: chosenTemplate,
                 });
             } catch (dbErr) {
                 console.error("Admin template reply storage failed after send:", dbErr);
             }
 
             return res.status(200).json({ ok: true, wamid, status: "sent", template: chosenTemplate });
+        }
+
+        if (action === "get_templates" || action === "templates") {
+            let phoneNumberId = String(requestedPhoneNumberId || "").trim();
+            if (!phoneNumberId) {
+                phoneNumberId = await getConversationOwner(phone);
+            }
+            const templates = await getApprovedTemplates(phoneNumberId);
+            return res.status(200).json({ ok: true, templates });
+        }
+
+        if (action === "delete_message") {
+            const { messageId } = req.body;
+            if (!messageId) {
+                return res.status(400).json({ error: "Missing messageId" });
+            }
+            const removed = await deleteMessage(phone, messageId);
+            return res.status(200).json({ ok: true, removed });
         }
 
         // Permanently remove a conversation
@@ -257,13 +308,20 @@ export default async function handler(req, res) {
                 const status = statusUpdate.status; // "sent", "delivered", "read", "failed"
                 const recipientId = statusUpdate.recipient_id;
                 let errorDetail = null;
+                let errorCode = null;
                 if (statusUpdate.errors && statusUpdate.errors.length > 0) {
                     const e = statusUpdate.errors[0];
-                    errorDetail = e.title ? `${e.title} (${e.code}): ${e.message || ""}` : `Erreur ${e.code}: ${e.message || ""}`;
+                    if (isWindowExpiredError(e.message || e.title, e.code)) {
+                        errorDetail = "Fenêtre de 24h Meta expirée : envoyez un modèle WhatsApp pour réengager ce client.";
+                        errorCode = "WINDOW_EXPIRED";
+                    } else {
+                        errorDetail = formatFriendlyError(e.title ? `${e.title}: ${e.message || ""}` : e.message, e.code);
+                        errorCode = e.code;
+                    }
                 }
                 console.log(`WhatsApp delivery status update: wamid=${wamid}, status=${status}, recipient=${recipientId}, error=${errorDetail}`);
                 res.status(200).send("EVENT_RECEIVED");
-                waitUntil(updateMessageStatus(recipientId, wamid, status, errorDetail));
+                waitUntil(updateMessageStatus(recipientId, wamid, status, errorDetail, errorCode));
                 return;
             }
 
@@ -388,7 +446,8 @@ async function processMessage({ message, phoneNumberId }) {
         let history = [];
         try {
             const displayText = voiceNote ? `🎙️ Message vocal (transcription) : ${text}` : text;
-            await saveMessage(from, "user", displayText, phoneNumberId);
+            const inboundTs = message.timestamp ? Number(message.timestamp) * 1000 : Date.now();
+            await saveMessage(from, "user", displayText, phoneNumberId, { ts: inboundTs });
             history = await getHistory(from, 10);
             // getHistory includes the message we just saved — drop the last one
             // since generateReply adds the current message itself.
@@ -403,6 +462,13 @@ async function processMessage({ message, phoneNumberId }) {
             );
         }
 
+        // --- Bot auto-reply check: Meta 24-hour customer service window ---
+        const convo = await getConversation(from);
+        if (!isWithin24hWindow(convo)) {
+            console.warn(`[Bot] 24h Meta window is expired for ${from}. Free-text auto-reply blocked.`);
+            return;
+        }
+
         let reply;
         try {
             reply = await generateReply(text, history, systemPrompt);
@@ -411,7 +477,16 @@ async function processMessage({ message, phoneNumberId }) {
             reply = FALLBACK_REPLY;
         }
 
-        await sendWhatsAppText(phoneNumberId, from, reply);
+        try {
+            await sendWhatsAppText(phoneNumberId, from, reply);
+        } catch (sendErr) {
+            if (isWindowExpiredError(sendErr?.message, sendErr?.code)) {
+                console.warn(`[Bot] Send failed with 131047 (window expired) for ${from}`);
+                return;
+            }
+            console.error("Final WhatsApp send failed for", from, ":", sendErr);
+            return;
+        }
 
         saveMessage(from, "assistant", reply, phoneNumberId).catch((e) =>
             console.error("DB save (assistant) failed:", e)

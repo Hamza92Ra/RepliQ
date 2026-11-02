@@ -769,6 +769,172 @@
             background: var(--amber-bg);
         }
 
+        .retry-inline-btn.template-action-btn {
+            border-color: var(--accent) !important;
+            color: var(--accent) !important;
+            background: rgba(37, 211, 102, 0.12) !important;
+            font-weight: 600;
+        }
+
+        .retry-inline-btn.template-action-btn:hover {
+            background: rgba(37, 211, 102, 0.24) !important;
+        }
+
+        .delete-msg-inline-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            font-size: 10px;
+            padding: 1px 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: 5px;
+            font-family: 'IBM Plex Mono', monospace;
+            transition: all .12s ease;
+        }
+
+        .delete-msg-inline-btn:hover {
+            color: var(--danger);
+            border-color: var(--danger);
+            background: rgba(255, 107, 107, 0.12);
+        }
+
+        .composer textarea:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+            background: var(--panel-2);
+            border-color: var(--border);
+            color: var(--text-dim);
+        }
+
+        /* ---------- TEMPLATE MODAL ---------- */
+        .template-modal-card {
+            width: 500px;
+            max-width: calc(100vw - 32px);
+            padding: 24px;
+        }
+
+        .template-modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .template-close-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-dim);
+            font-size: 18px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: color .12s ease, background .12s ease;
+        }
+
+        .template-close-btn:hover {
+            color: var(--text);
+            background: var(--panel-3);
+        }
+
+        .form-group {
+            margin-bottom: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            text-align: left;
+        }
+
+        .form-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .form-select, .form-input {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: var(--panel-2);
+            color: var(--text);
+            font-family: 'Manrope', sans-serif;
+            font-size: 13.5px;
+            outline: none;
+            transition: border-color .15s ease;
+            box-sizing: border-box;
+        }
+
+        .form-select:focus, .form-input:focus {
+            border-color: var(--accent);
+        }
+
+        .template-meta-tags {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .template-tag {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 6px;
+            background: var(--panel-3);
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        .template-vars-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        .template-preview-box {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .template-preview-bubble {
+            max-width: 90%;
+            font-size: 13.5px;
+            line-height: 1.45;
+            padding: 10px 14px;
+            border-radius: 14px;
+            border-bottom-right-radius: 3px;
+            word-break: break-word;
+            text-align: left;
+        }
+
+        .template-preview-var-hl {
+            background: rgba(255, 255, 255, 0.22);
+            padding: 1px 4px;
+            border-radius: 4px;
+            font-weight: 700;
+        }
+
+        .template-preview-time {
+            font-size: 10px;
+            color: var(--text-faint);
+            margin-top: 4px;
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
         .delivery-error-note {
             font-size: 11px;
             color: #ff9999;
@@ -1649,7 +1815,7 @@
                             <span id="windowWarningDetail">Le dernier message du client date de plus de 24h. Meta bloque les messages libres hors de cette fenêtre.</span>
                         </div>
                     </div>
-                    <button class="template-send-btn" id="templateBtn" onclick="sendReengagementTemplate()">
+                    <button class="template-send-btn" id="templateBtn" onclick="openTemplateModal()">
                         📨 Envoyer modèle WhatsApp (Template)
                     </button>
                 </div>
@@ -1676,6 +1842,53 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="templateModalOverlay">
+        <div class="modal-card template-modal-card">
+            <div class="template-modal-header">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div class="modal-icon human" style="margin-bottom:0; width:36px; height:36px; font-size:18px;">📨</div>
+                    <div>
+                        <h3 class="modal-title" style="margin:0; text-align:left; font-size:16px;">Envoyer un modèle WhatsApp</h3>
+                        <span style="font-size:11.5px; color:var(--text-dim);">Modèles Meta approuvés hors de la fenêtre de 24h</span>
+                    </div>
+                </div>
+                <button class="template-close-btn" onclick="closeTemplateModal()" aria-label="Fermer">✕</button>
+            </div>
+
+            <div class="template-modal-body">
+                <div class="form-group">
+                    <label for="templateSelect" class="form-label">Sélectionner un modèle approuvé</label>
+                    <select id="templateSelect" class="form-select" onchange="onTemplateChange()">
+                        <option value="">Chargement des modèles…</option>
+                    </select>
+                </div>
+
+                <div id="templateMeta" class="template-meta-tags" style="display:none;">
+                    <span id="templateCatBadge" class="template-tag"></span>
+                    <span id="templateLangBadge" class="template-tag"></span>
+                </div>
+
+                <div id="templateVariablesContainer" style="display:none;">
+                    <label class="form-label">Variables du modèle</label>
+                    <div id="templateVariablesList" class="template-vars-list"></div>
+                </div>
+
+                <div class="form-group" style="margin-top:14px;">
+                    <label class="form-label">Aperçu en direct (WhatsApp)</label>
+                    <div class="template-preview-box">
+                        <div class="bubble assistant template-preview-bubble" id="templateLivePreview"></div>
+                        <div class="template-preview-time" id="templatePreviewTime">12:00 ✓✓</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-actions" style="margin-top:18px;">
+                <button onclick="closeTemplateModal()">Annuler</button>
+                <button id="sendTemplateSubmitBtn" class="confirm-bot" onclick="submitSendTemplate()">Envoyer le modèle</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         let SECRET = localStorage.getItem("repliq_dashboard_key") || "";
         let conversations = [];
@@ -1684,6 +1897,49 @@
         let activeOrderId = null;
         let activeTab = "chats"; // "chats" | "leads" | "orders" — which page of the sidebar is showing
         let searchQuery = "";
+        let serverSkew = 0; // Clock skew between client and server
+
+        function isWindowExpired(error, code) {
+            const str = String(error || "");
+            const c = Number(code);
+            return (
+                c === 131047 ||
+                code === "WINDOW_EXPIRED" ||
+                str.includes("131047") ||
+                str.includes("2494010") ||
+                str.includes("WINDOW_EXPIRED") ||
+                /re-engagement/i.test(str) ||
+                /fenêtre de 24h/i.test(str)
+            );
+        }
+
+        function isRetryable(error, code) {
+            if (isWindowExpired(error, code)) return false;
+            const str = String(error || "");
+            const c = Number(code);
+            if (c === 131030 || str.includes("131030")) return false;
+            if (c === 131026 || str.includes("131026")) return false;
+            return true;
+        }
+
+        function formatFriendlyError(error, code) {
+            if (isWindowExpired(error, code)) {
+                return "Fenêtre de 24h Meta expirée : envoyez un modèle pour réengager ce client.";
+            }
+            const str = String(error || "");
+            const c = Number(code);
+            if (c === 131030 || str.includes("131030")) {
+                return "Numéro non autorisé en mode test Meta. Ajoutez ce numéro dans WhatsApp Manager > Configuration de l'API.";
+            }
+            if (c === 131026 || str.includes("131026")) {
+                return "Numéro introuvable ou inactif sur WhatsApp.";
+            }
+            if (c === 130429 || c === 429 || str.includes("130429") || /rate limit/i.test(str)) {
+                return "Limite d'envoi atteinte. Veuillez patienter un instant avant de réessayer.";
+            }
+            if (str.length > 140) return str.slice(0, 137) + "…";
+            return str || "Échec d'envoi WhatsApp";
+        }
 
         // BSUID SUPPORT: Meta identifies WhatsApp-username-only customers by
         // a "business-scoped user ID" (format "XX.digits", e.g.
@@ -1782,6 +2038,9 @@
                     const message = data.error || `Erreur serveur (${convRes.status})`;
                     if (isLogin) document.getElementById("loginError").textContent = message;
                     throw new Error(message);
+                }
+                if (data.serverTime) {
+                    serverSkew = Date.now() - data.serverTime;
                 }
                 const newConversations = data.conversations || [];
                 const snapshot = JSON.stringify(newConversations);
@@ -2089,32 +2348,66 @@
             if (composerContainer) composerContainer.style.display = "flex";
             document.getElementById("composer").style.display = "flex";
 
-            // 24-hour customer service window detection
+            // 24-hour customer service window detection (server-provided state & clock skew)
             const warningEl = document.getElementById("windowWarning");
             const warningDetailEl = document.getElementById("windowWarningDetail");
+            const replyInput = document.getElementById("replyInput");
+            const replyBtn = document.getElementById("replyBtn");
+
+            const adjustedNow = Date.now() - serverSkew;
+            let isWindowOpen = false;
             let lastCustomerTs = 0;
-            if (convo && convo.messages) {
-                for (let i = convo.messages.length - 1; i >= 0; i--) {
-                    if (convo.messages[i].role === "user") {
-                        lastCustomerTs = convo.messages[i].ts ? new Date(convo.messages[i].ts).getTime() : 0;
-                        break;
+
+            if (convo) {
+                if (convo.windowExpiresAt) {
+                    isWindowOpen = adjustedNow <= convo.windowExpiresAt;
+                    lastCustomerTs = convo.lastInboundTs || 0;
+                } else if (convo.isWindowOpen !== undefined) {
+                    isWindowOpen = Boolean(convo.isWindowOpen);
+                    lastCustomerTs = convo.lastInboundTs || 0;
+                } else if (convo.messages) {
+                    for (let i = convo.messages.length - 1; i >= 0; i--) {
+                        if (convo.messages[i].role === "user") {
+                            lastCustomerTs = convo.messages[i].ts ? new Date(convo.messages[i].ts).getTime() : 0;
+                            break;
+                        }
                     }
+                    isWindowOpen = lastCustomerTs > 0 && (adjustedNow - lastCustomerTs <= 24 * 60 * 60 * 1000);
                 }
             }
-            const now = Date.now();
-            const isOutside24h = !lastCustomerTs || (now - lastCustomerTs > 24 * 60 * 60 * 1000);
-            if (isOutside24h && warningEl && warningDetailEl) {
-                if (!lastCustomerTs) {
-                    warningDetailEl.textContent = "Aucun message client direct reçu. Meta bloque les messages libres hors de la fenêtre de 24h. Envoyez un modèle approuvé (Template) pour démarrer.";
-                } else {
-                    const diffHours = Math.round((now - lastCustomerTs) / (1000 * 60 * 60));
-                    const diffDays = Math.floor(diffHours / 24);
-                    const timeStr = diffDays > 0 ? `il y a ${diffDays} jour${diffDays > 1 ? 's' : ''}` : `il y a ${diffHours} heure${diffHours > 1 ? 's' : ''}`;
-                    warningDetailEl.textContent = `Le dernier message client date de ${timeStr}. Hors de la fenêtre de 24h, Meta bloque les messages libres. Utilisez le modèle de relance (Template) pour réengager le client.`;
+
+            if (!isWindowOpen) {
+                if (replyInput) {
+                    replyInput.disabled = true;
+                    replyInput.placeholder = "Fenêtre de 24h expirée, utilisez un modèle WhatsApp";
                 }
-                warningEl.style.display = "flex";
-            } else if (warningEl) {
-                warningEl.style.display = "none";
+                if (replyBtn) {
+                    replyBtn.disabled = true;
+                }
+                if (warningEl) {
+                    warningEl.style.display = "flex";
+                    if (warningDetailEl) {
+                        if (!lastCustomerTs) {
+                            warningDetailEl.textContent = "Aucun message client direct reçu. Meta bloque les messages libres hors de la fenêtre de 24h. Envoyez un modèle approuvé (Template) pour démarrer.";
+                        } else {
+                            const diffHours = Math.max(24, Math.round((adjustedNow - lastCustomerTs) / (1000 * 60 * 60)));
+                            const diffDays = Math.floor(diffHours / 24);
+                            const timeStr = diffDays > 0 ? `il y a ${diffDays} jour${diffDays > 1 ? 's' : ''}` : `il y a ${diffHours} heure${diffHours > 1 ? 's' : ''}`;
+                            warningDetailEl.textContent = `Le dernier message client date de ${timeStr}. Hors de la fenêtre de 24h, Meta bloque les messages libres. Utilisez le modèle de relance (Template) pour réengager le client.`;
+                        }
+                    }
+                }
+            } else {
+                if (replyInput) {
+                    replyInput.disabled = false;
+                    replyInput.placeholder = "Écrire un message…";
+                }
+                if (replyBtn) {
+                    replyBtn.disabled = false;
+                }
+                if (warningEl) {
+                    warningEl.style.display = "none";
+                }
             }
 
             // Mark as seen locally so the unread dot clears.
@@ -2153,15 +2446,28 @@
                     } else if (st === "read") {
                         statusBadge = '<span class="delivery-badge read" title="Lu par le client">✓✓ Vu</span>';
                     } else if (st === "failed") {
-                        const errReason = m.error ? escapeHtml(m.error) : "Échec d'envoi WhatsApp";
+                        const isExpired = isWindowExpired(m.error, m.errorCode);
+                        const canRetry = !isExpired && isRetryable(m.error, m.errorCode);
                         const safeMsg = escapeHtml(m.content || "").replace(/'/g, "\\'");
-                        statusBadge = `<span class="delivery-badge failed" title="${errReason}">⚠️ Échec</span><button class="retry-inline-btn" onclick="retryReply('${safeMsg}')" title="Réessayer">↻ Réessayer</button>`;
+                        const safeId = escapeHtml(m.id || m.wamid || "");
+                        const friendlyErr = formatFriendlyError(m.error, m.errorCode);
+
+                        let actionBtn = "";
+                        if (isExpired) {
+                            actionBtn = `<button class="retry-inline-btn template-action-btn" onclick="openTemplateModal()" title="Envoyer un modèle WhatsApp">📨 Envoyer un modèle</button>`;
+                        } else if (canRetry) {
+                            actionBtn = `<button class="retry-inline-btn" onclick="retryReply('${safeMsg}')" title="Réessayer">↻ Réessayer</button>`;
+                        }
+
+                        const deleteBtn = safeId ? `<button class="delete-msg-inline-btn" onclick="deleteFailedMessage('${safeId}')" title="Supprimer ce message">🗑️</button>` : "";
+                        statusBadge = `<span class="delivery-badge failed" title="${escapeHtml(friendlyErr)}">⚠️ Échec</span>${actionBtn}${deleteBtn}`;
                     }
                 }
 
                 let errorNote = "";
                 if (role === "agent" && m.status === "failed" && m.error) {
-                    errorNote = `<div class="delivery-error-note">⚠️ ${escapeHtml(m.error)}</div>`;
+                    const friendlyErr = formatFriendlyError(m.error, m.errorCode);
+                    errorNote = `<div class="delivery-error-note">⚠️ ${escapeHtml(friendlyErr)}</div>`;
                 }
 
                 return divider + `<div class="msg-row ${role}${isNew ? " msg-new" : ""}">
@@ -2475,13 +2781,22 @@
         }
 
         async function sendReengagementTemplate() {
+            // Forward to template modal with selection and variable live preview
+            openTemplateModal();
+        }
+
+        let loadedTemplates = [];
+        let activeTemplate = null;
+
+        async function openTemplateModal(defaultName = null) {
             if (!activePhone) return;
-            const btn = document.getElementById("templateBtn");
-            if (btn) {
-                btn.disabled = true;
-                btn.textContent = "Envoi du modèle…";
-            }
+            const overlay = document.getElementById("templateModalOverlay");
+            if (overlay) overlay.classList.add("show");
+
             const activeConversation = conversations.find(c => c.phone === activePhone);
+            const selectEl = document.getElementById("templateSelect");
+            selectEl.innerHTML = '<option value="">Chargement des modèles…</option>';
+
             try {
                 const res = await fetch("/api/conversation?key=" + encodeURIComponent(SECRET), {
                     method: "POST",
@@ -2489,27 +2804,224 @@
                     body: JSON.stringify({
                         phone: activePhone,
                         phoneNumberId: activeConversation?.phoneNumberId || "",
-                        action: "template"
-                    })
+                        action: "get_templates",
+                    }),
                 });
+                const data = await res.json();
+                if (res.ok && Array.isArray(data.templates) && data.templates.length > 0) {
+                    loadedTemplates = data.templates;
+                } else {
+                    loadedTemplates = [
+                        {
+                            name: "hello_world",
+                            language: "en_US",
+                            category: "UTILITY",
+                            title: "Hello World (Meta Test)",
+                            body: "Welcome and congratulations! This message demonstrates your ability to send a WhatsApp message using the Cloud API.",
+                            variables: []
+                        },
+                        {
+                            name: "reengagement_fr",
+                            language: "fr",
+                            category: "UTILITY",
+                            title: "Relance suite à demande",
+                            body: "Bonjour {{1}}, nous n'avons pas eu de vos nouvelles concernant votre demande {{2}}. Souhaitez-vous continuer notre échange ?",
+                            variables: [
+                                { id: "1", label: "Nom du client", placeholder: "Ex: Mohamed" },
+                                { id: "2", label: "Objet / Détails", placeholder: "Ex: devis" }
+                            ]
+                        },
+                        {
+                            name: "relance_client",
+                            language: "fr",
+                            category: "MARKETING",
+                            title: "Offre & Accompagnement",
+                            body: "Bonjour {{1}}, l'équipe RepliQ reste à votre entière disposition pour {{2}}. Avez-vous besoin d'assistance supplémentaire ?",
+                            variables: [
+                                { id: "1", label: "Nom du client", placeholder: "Ex: Sarah" },
+                                { id: "2", label: "Sujet", placeholder: "Ex: finaliser votre souscription" }
+                            ]
+                        },
+                        {
+                            name: "suivi_commande",
+                            language: "fr",
+                            category: "UTILITY",
+                            title: "Suivi de commande / dossier",
+                            body: "Bonjour {{1}}, nous faisons suite à votre commande {{2}}. Notre équipe est à votre écoute directement ici pour toute question.",
+                            variables: [
+                                { id: "1", label: "Nom du client", placeholder: "Ex: Youssef" },
+                                { id: "2", label: "Référence commande", placeholder: "Ex: CMD-9842" }
+                            ]
+                        }
+                    ];
+                }
+            } catch (err) {
+                console.warn("Failed to load templates from server:", err);
+            }
+
+            selectEl.innerHTML = loadedTemplates.map(t => {
+                const label = `${t.title || t.name} (${t.language})`;
+                return `<option value="${t.name}:::${t.language}">${escapeHtml(label)}</option>`;
+            }).join("");
+
+            if (defaultName) {
+                const matchIndex = loadedTemplates.findIndex(t => t.name === defaultName);
+                if (matchIndex >= 0) selectEl.selectedIndex = matchIndex;
+            }
+
+            onTemplateChange();
+        }
+
+        function closeTemplateModal() {
+            const overlay = document.getElementById("templateModalOverlay");
+            if (overlay) overlay.classList.remove("show");
+        }
+
+        function onTemplateChange() {
+            const selectEl = document.getElementById("templateSelect");
+            const val = selectEl.value;
+            if (!val) return;
+            const [name, lang] = val.split(":::");
+            activeTemplate = loadedTemplates.find(t => t.name === name && t.language === lang) || loadedTemplates[0];
+            if (!activeTemplate) return;
+
+            // Meta tags
+            const metaEl = document.getElementById("templateMeta");
+            const catBadge = document.getElementById("templateCatBadge");
+            const langBadge = document.getElementById("templateLangBadge");
+            if (metaEl && catBadge && langBadge) {
+                metaEl.style.display = "flex";
+                catBadge.textContent = activeTemplate.category || "UTILITY";
+                langBadge.textContent = activeTemplate.language || "fr";
+            }
+
+            // Variables inputs
+            const varsContainer = document.getElementById("templateVariablesContainer");
+            const varsList = document.getElementById("templateVariablesList");
+            const vars = activeTemplate.variables || [];
+
+            if (vars.length > 0) {
+                varsContainer.style.display = "block";
+                varsList.innerHTML = vars.map((v, i) => {
+                    const label = v.label || `Variable {{${i + 1}}}`;
+                    const ph = v.placeholder || `Valeur {{${i + 1}}}`;
+                    return `<div class="form-group" style="margin-bottom:8px;">
+                        <label class="form-label">${escapeHtml(label)}</label>
+                        <input type="text" class="form-input var-input" data-var-index="${i}" placeholder="${escapeHtml(ph)}" oninput="updateTemplateLivePreview()">
+                    </div>`;
+                }).join("");
+            } else {
+                varsContainer.style.display = "none";
+                varsList.innerHTML = "";
+            }
+
+            updateTemplateLivePreview();
+        }
+
+        function updateTemplateLivePreview() {
+            if (!activeTemplate) return;
+            const previewEl = document.getElementById("templateLivePreview");
+            const timeEl = document.getElementById("templatePreviewTime");
+            const varInputs = document.querySelectorAll(".var-input");
+            const values = Array.from(varInputs).map(inp => inp.value);
+
+            let rendered = escapeHtml(activeTemplate.body || "");
+            rendered = rendered.replace(/\{\{(\d+)\}\}/g, (match, idx) => {
+                const num = parseInt(idx, 10);
+                const val = values[num - 1];
+                if (val && val.trim()) {
+                    return `<span class="template-preview-var-hl">${escapeHtml(val.trim())}</span>`;
+                }
+                const varDef = (activeTemplate.variables || [])[num - 1];
+                const ph = varDef ? varDef.label || `{{${num}}}` : `{{${num}}}`;
+                return `<span class="template-preview-var-hl" style="opacity:0.65;">[${escapeHtml(ph)}]</span>`;
+            });
+
+            previewEl.innerHTML = rendered.replace(/\n/g, "<br>");
+            const now = new Date();
+            timeEl.textContent = now.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }) + " ✓✓";
+        }
+
+        async function submitSendTemplate() {
+            if (!activePhone || !activeTemplate) return;
+            const submitBtn = document.getElementById("sendTemplateSubmitBtn");
+            const originalMarkup = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner light"></span>Envoi…';
+
+            const activeConversation = conversations.find(c => c.phone === activePhone);
+            const varInputs = document.querySelectorAll(".var-input");
+            const variables = Array.from(varInputs).map(inp => inp.value.trim());
+
+            // Compute human-readable preview for saving to conversation history
+            let previewText = activeTemplate.body || activeTemplate.name;
+            previewText = previewText.replace(/\{\{(\d+)\}\}/g, (match, idx) => {
+                const num = parseInt(idx, 10);
+                return variables[num - 1] || `{{${num}}}`;
+            });
+
+            try {
+                const res = await fetch("/api/conversation?key=" + encodeURIComponent(SECRET), {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        phone: activePhone,
+                        phoneNumberId: activeConversation?.phoneNumberId || "",
+                        action: "template",
+                        templateName: activeTemplate.name,
+                        languageCode: activeTemplate.language,
+                        variables,
+                        previewText: `📨 Modèle WhatsApp (${activeTemplate.name}) :\n${previewText}`,
+                    }),
+                });
+
                 const data = await res.json();
                 if (!res.ok) {
                     const errorMsg = data.details || data.error || `Erreur (${res.status})`;
-                    toast("Erreur modèle : " + errorMsg, "error");
+                    toast("Erreur d'envoi du modèle : " + errorMsg, "error");
                     return;
                 }
+
+                closeTemplateModal();
                 toast("Modèle WhatsApp envoyé avec succès !", "success");
+                await loadConversations();
+            } catch (err) {
+                console.error("Template send failed:", err);
+                toast("Erreur de connexion.", "error");
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalMarkup;
+            }
+        }
+
+        async function deleteFailedMessage(messageId) {
+            if (!activePhone || !messageId) return;
+            try {
+                const res = await fetch("/api/conversation?key=" + encodeURIComponent(SECRET), {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        phone: activePhone,
+                        action: "delete_message",
+                        messageId,
+                    }),
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    toast("Erreur lors de la suppression : " + (data.error || res.status), "error");
+                    return;
+                }
+                toast("Message supprimé", "success");
                 await loadConversations();
             } catch (err) {
                 console.error(err);
                 toast("Erreur de connexion.", "error");
-            } finally {
-                if (btn) {
-                    btn.disabled = false;
-                    btn.textContent = "📨 Envoyer modèle WhatsApp (Template)";
-                }
             }
         }
+
+        document.getElementById("templateModalOverlay").addEventListener("click", (e) => {
+            if (e.target.id === "templateModalOverlay") closeTemplateModal();
+        });
 
         function retryReply(content) {
             const input = document.getElementById("replyInput");
