@@ -109,6 +109,16 @@ export default async function handler(req, res) {
 
     const wamid = providerResponse?.messages?.[0]?.id || null;
 
+    // Automatically enable human takeover on manual message send
+    try {
+      await supabase
+        .from("conversations")
+        .update({ human_takeover: true, last_message_at: new Date().toISOString() })
+        .eq("id", conversationId);
+    } catch (takeoverErr) {
+      console.error("Failed to auto-enable human takeover on send:", takeoverErr);
+    }
+
     // 4. Store outbound message with sender = 'human'
     const storedMessage = await storeOutboundMessage({
       conversationId,

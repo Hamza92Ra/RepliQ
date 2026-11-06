@@ -2,6 +2,7 @@ import { waitUntil } from "@vercel/functions";
 import {
   sendWhatsAppText,
   sendWhatsAppTemplate,
+  sendSequentialWhatsAppTexts,
   markAsRead,
   getMediaUrl,
   downloadMedia,
@@ -16,8 +17,14 @@ import {
   getApprovedTemplates,
   buildTemplateComponents,
 } from "../lib/templates.js";
-import { generateReply, transcribeAudio } from "../lib/ai.js";
-import { notifyTeam, looksLikeFinalizeIntent } from "../lib/notify.js";
+import { generateReply, transcribeAudio, splitWhatsAppMessages } from "../lib/ai.js";
+import {
+  notifyTeam,
+  looksLikeFinalizeIntent,
+  notifyHandoff,
+  looksLikeHumanRequest,
+  getHandoffMessage,
+} from "../lib/notify.js";
 import {
   isSupabaseConfigured,
   upsertInboundConversation,
@@ -25,6 +32,7 @@ import {
   storeOutboundMessage,
   updateMessageStatusByWamid,
   getConversationHistoryForAI,
+  setConversationTakeover,
 } from "../lib/supabase.js";
 import {
   saveMessage as saveRedisMessage,
@@ -32,6 +40,8 @@ import {
   getConversation as getRedisConversation,
   getConversationMode as getRedisMode,
   setConversationMode as setRedisMode,
+  getTakeoverStatus as getRedisTakeoverStatus,
+  setTakeoverStatus as setRedisTakeoverStatus,
   getConversationOwner as getRedisOwner,
   setConversationOwner as setRedisOwner,
   getBusinessConfig,
@@ -57,7 +67,8 @@ const seenMessageIds = new Set();
 function claimMessageLocally(messageId) {
   if (seenMessageIds.has(messageId)) return false;
   seenMessageIds.add(messageId);
-  setTimeout(() => seenMessageIds.delete(messageId), 10 * 60 * 1000);
+  const timer = setTimeout(() => seenMessageIds.delete(messageId), 10 * 60 * 1000);
+  if (timer?.unref) timer.unref();
   return true;
 }
 
@@ -96,7 +107,15 @@ async function handleAdminAction(req, res) {
 
   try {
     if (VALID_MODES.has(action)) {
-      await setRedisMode(phone, action);
+      if (action === "human") {
+        await setRedisTakeoverStatus(phone, true);
+        if (isSupabaseConfigured()) await setConversationTakeover(phone, true).catch(() => {});
+      } else if (action === "bot") {
+        await setRedisTakeoverStatus(phone, false);
+        if (isSupabaseConfigured()) await setConversationTakeover(phone, false).catch(() => {});
+      } else {
+        await setRedisMode(phone, action);
+      }
       return res.status(200).json({ ok: true, mode: action });
     }
 
@@ -128,6 +147,13 @@ async function handleAdminAction(req, res) {
 
       const providerResponse = await sendWhatsAppText(phoneNumberId, recipient, text);
       const wamid = providerResponse?.messages?.[0]?.id || null;
+
+      // Automatically enable takeover on manual agent reply
+      await setRedisTakeoverStatus(recipient, true).catch(() => {});
+      if (isSupabaseConfigured()) {
+        await setConversationTakeover(recipient, true).catch(() => {});
+      }
+
       await saveRedisMessage(recipient, "agent", text, phoneNumberId, { wamid, status: "sent" }).catch(() => {});
       return res.status(200).json({ ok: true, wamid, status: "sent" });
     }
@@ -366,13 +392,26 @@ async function processIncomingMessage({ message, contact, phoneNumberId }) {
       }
     }
 
-    // 2. Human Takeover Check: if human_takeover = true, DO NOT call AI
-    const isHumanTakeover = conversation
-      ? Boolean(conversation.human_takeover)
-      : (await getRedisMode(from).catch(() => "bot")) === "human";
+    // 2. Human Takeover Check: Fail-Safe read BEFORE any AI call
+    let isHumanTakeover = false;
+    try {
+      if (isSupabaseConfigured() && conversation) {
+        isHumanTakeover = Boolean(conversation.human_takeover);
+      } else if (process.env.UPSTASH_REDIS_REST_URL) {
+        const takeoverStatus = await getRedisTakeoverStatus(from);
+        isHumanTakeover = Boolean(takeoverStatus?.human_takeover);
+      } else {
+        const takeoverStatus = await getRedisTakeoverStatus(from);
+        isHumanTakeover = Boolean(takeoverStatus?.human_takeover);
+      }
+    } catch (lookupErr) {
+      // FAIL SAFE: if the lookup fails, do not auto-reply, log the error
+      console.error(`[Fail-safe] Error checking takeover flag for ${from}. Halting bot to prevent accidental reply:`, lookupErr);
+      return;
+    }
 
     if (isHumanTakeover) {
-      console.log(`[Takeover] Human takeover enabled for conversation ${from}. Bot stays silent.`);
+      console.log(`[Takeover] Human takeover active for conversation ${from}. Bot stays silent.`);
       return;
     }
 
@@ -383,6 +422,47 @@ async function processIncomingMessage({ message, contact, phoneNumberId }) {
     }
 
     await markAsRead(phoneNumberId, message.id);
+
+    // 2b. Check if client explicitly asks for a human / advisor
+    if (looksLikeHumanRequest(text)) {
+      console.log(`[Handoff] Customer ${from} requested human advisor.`);
+      const handoffMsg = getHandoffMessage(text);
+      let sendRes = null;
+      try {
+        sendRes = await sendWhatsAppText(phoneNumberId, from, handoffMsg);
+      } catch (sendErr) {
+        console.error("Failed to send handoff message:", sendErr);
+      }
+      const handoffWamid = sendRes?.messages?.[0]?.id || null;
+
+      // Enable human takeover so bot stays silent
+      if (isSupabaseConfigured() && conversation?.id) {
+        await setConversationTakeover(conversation.id, true).catch(() => {});
+        await storeOutboundMessage({
+          conversationId: conversation.id,
+          waMessageId: handoffWamid,
+          sender: "bot",
+          type: "text",
+          body: handoffMsg,
+          status: "sent",
+        }).catch(() => {});
+      }
+      if (process.env.UPSTASH_REDIS_REST_URL) {
+        await setRedisTakeoverStatus(from, true).catch(() => {});
+        await saveRedisMessage(from, "assistant", handoffMsg, phoneNumberId, {
+          wamid: handoffWamid,
+          status: "sent",
+        }).catch(() => {});
+      }
+
+      notifyHandoff({
+        from,
+        message: text,
+        reason: "Le client a demandé à parler à un conseiller humain",
+      }).catch((e) => console.error("notifyHandoff error:", e));
+
+      return;
+    }
 
     // 3. Load conversation memory: last ~10 messages
     let history = [];
@@ -424,19 +504,69 @@ async function processIncomingMessage({ message, contact, phoneNumberId }) {
       console.error("Business config load failed:", cfgErr);
     }
 
-    // 5. Generate AI Reply
+    // 5. Generate AI Reply with Handoff Detection
     let reply;
+    let handoffRequired = false;
+    let handoffReason = null;
+
     try {
       reply = await generateReply(text, history, systemPrompt);
+      if (reply.includes("[HANDOFF]") || reply.toLowerCase().includes("transmets votre demande à un conseiller")) {
+        handoffRequired = true;
+        handoffReason = "Question hors contexte ou transfert conseiller";
+        reply = reply.replace(/\[HANDOFF\]/g, "").trim();
+        if (!reply) reply = getHandoffMessage(text);
+      }
     } catch (aiErr) {
-      console.error("generateReply failed, using fallback:", aiErr);
-      reply = FALLBACK_REPLY;
+      console.error("generateReply failed, triggering handoff:", aiErr);
+      handoffRequired = true;
+      handoffReason = `Erreur IA : ${aiErr.message}`;
+      reply = getHandoffMessage(text);
     }
 
-    // 6. Send bot reply via WhatsApp Cloud API
+    if (handoffRequired) {
+      let sendRes = null;
+      try {
+        sendRes = await sendWhatsAppText(phoneNumberId, from, reply);
+      } catch (sendErr) {
+        console.error("Failed to send handoff message:", sendErr);
+      }
+      const wamid = sendRes?.messages?.[0]?.id || null;
+
+      // Enable takeover and notify
+      if (isSupabaseConfigured() && conversation?.id) {
+        await setConversationTakeover(conversation.id, true).catch(() => {});
+        await storeOutboundMessage({
+          conversationId: conversation.id,
+          waMessageId: wamid,
+          sender: "bot",
+          type: "text",
+          body: reply,
+          status: "sent",
+        }).catch(() => {});
+      }
+      if (process.env.UPSTASH_REDIS_REST_URL) {
+        await setRedisTakeoverStatus(from, true).catch(() => {});
+        await saveRedisMessage(from, "assistant", reply, phoneNumberId, {
+          wamid,
+          status: "sent",
+        }).catch(() => {});
+      }
+
+      notifyHandoff({
+        from,
+        message: text,
+        reason: handoffReason || "Conseiller requis",
+      }).catch((e) => console.error("notifyHandoff error:", e));
+
+      return;
+    }
+
+    // 6. Send bot reply via WhatsApp Cloud API (split into short messages with ~1s delay if long)
+    const messageParts = splitWhatsAppMessages(reply);
     let providerResponse = null;
     try {
-      providerResponse = await sendWhatsAppText(phoneNumberId, from, reply);
+      providerResponse = await sendSequentialWhatsAppTexts(phoneNumberId, from, messageParts, 1000);
     } catch (sendErr) {
       if (isWindowExpiredError(sendErr?.message, sendErr?.code)) {
         console.warn(`[Bot] Send failed with 131047 (window expired) for ${from}`);

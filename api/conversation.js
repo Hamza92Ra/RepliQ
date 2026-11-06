@@ -2,6 +2,7 @@ import { waitUntil } from "@vercel/functions";
 import {
     sendWhatsAppText,
     sendWhatsAppTemplate,
+    sendSequentialWhatsAppTexts,
     markAsRead,
     getMediaUrl,
     downloadMedia,
@@ -16,14 +17,22 @@ import {
     getApprovedTemplates,
     buildTemplateComponents,
 } from "../lib/templates.js";
-import { generateReply, transcribeAudio } from "../lib/ai.js";
-import { notifyTeam, looksLikeFinalizeIntent } from "../lib/notify.js";
+import { generateReply, transcribeAudio, splitWhatsAppMessages } from "../lib/ai.js";
+import {
+    notifyTeam,
+    looksLikeFinalizeIntent,
+    notifyHandoff,
+    looksLikeHumanRequest,
+    getHandoffMessage,
+} from "../lib/notify.js";
 import {
     saveMessage,
     getHistory,
     getConversation,
     getConversationMode,
     setConversationMode,
+    getTakeoverStatus,
+    setTakeoverStatus,
     getConversationOwner,
     setConversationOwner,
     getBusinessConfig,
@@ -51,7 +60,8 @@ const seenMessageIds = new Set();
 function claimMessageLocally(messageId) {
     if (seenMessageIds.has(messageId)) return false;
     seenMessageIds.add(messageId);
-    setTimeout(() => seenMessageIds.delete(messageId), 10 * 60 * 1000);
+    const timer = setTimeout(() => seenMessageIds.delete(messageId), 10 * 60 * 1000);
+    if (timer?.unref) timer.unref();
     return true;
 }
 
@@ -87,7 +97,13 @@ async function handleAdminAction(req, res) {
 
     try {
         if (VALID_MODES.has(action)) {
-            await setConversationMode(phone, action);
+            if (action === "human") {
+                await setTakeoverStatus(phone, true);
+            } else if (action === "bot") {
+                await setTakeoverStatus(phone, false);
+            } else {
+                await setConversationMode(phone, action);
+            }
             return res.status(200).json({ ok: true, mode: action });
         }
 
@@ -162,6 +178,10 @@ async function handleAdminAction(req, res) {
             }
 
             const wamid = providerResponse?.messages?.[0]?.id || null;
+
+            // Automatically enable takeover on manual agent reply
+            await setTakeoverStatus(recipient, true).catch(() => {});
+
             try {
                 await saveMessage(recipient, "agent", text, phoneNumberId, {
                     wamid,
@@ -370,19 +390,18 @@ async function processMessage({ message, phoneNumberId }) {
             return;
         }
 
-        // --- Admin state check FIRST: the admin can complete or take over a
-        // conversation at any moment, and the bot must respect that instantly —
-        // even mid-thread. We still record the customer's message so the admin
-        // sees it in the dashboard, we just never auto-reply. ---
-        let convMode = "bot";
+        // --- Admin state check FIRST (Fail-Safe): read takeover BEFORE any AI call ---
+        let isHumanTakeover = false;
         try {
-            convMode = await getConversationMode(from);
+            const takeover = await getTakeoverStatus(from);
+            isHumanTakeover = Boolean(takeover.human_takeover);
         } catch (dbErr) {
-            // Fail open: if Redis hiccups we keep auto-replying rather than going silent.
-            console.error("Mode check failed, defaulting to bot:", dbErr);
+            // FAIL SAFE: if the lookup fails, do not auto-reply, log the error
+            console.error("[Fail-safe] Takeover check failed for " + from + ". Halting bot to prevent accidental reply:", dbErr);
+            return;
         }
 
-        if (convMode === "completed" || convMode === "human") {
+        if (isHumanTakeover) {
             try {
                 await saveMessage(from, "user", describeInbound(message), phoneNumberId);
             } catch (dbErr) {
@@ -424,6 +443,25 @@ async function processMessage({ message, phoneNumberId }) {
         }
 
         await markAsRead(phoneNumberId, message.id);
+
+        // --- Check if client asks for a human / advisor ---
+        if (looksLikeHumanRequest(text)) {
+            console.log(`[Handoff] Customer ${from} requested human advisor.`);
+            const handoffMsg = getHandoffMessage(text);
+            try {
+                await sendWhatsAppText(phoneNumberId, from, handoffMsg);
+            } catch (sendErr) {
+                console.error("Failed to send handoff message:", sendErr);
+            }
+            await setTakeoverStatus(from, true).catch(() => {});
+            await saveMessage(from, "assistant", handoffMsg, phoneNumberId, { status: "sent" }).catch(() => {});
+            notifyHandoff({
+                from,
+                message: text,
+                reason: "Le client a demandé à parler à un conseiller",
+            }).catch((e) => console.error("notifyHandoff error:", e));
+            return;
+        }
 
         // --- Load this business's own config (project + ideas) so one deployment
         // adapts to any customer instead of the one hardcoded prompt. ---
@@ -470,15 +508,44 @@ async function processMessage({ message, phoneNumberId }) {
         }
 
         let reply;
-        try {
-            reply = await generateReply(text, history, systemPrompt);
-        } catch (aiErr) {
-            console.error("generateReply failed, using fallback:", aiErr);
-            reply = FALLBACK_REPLY;
-        }
+        let handoffRequired = false;
+        let handoffReason = null;
 
         try {
-            await sendWhatsAppText(phoneNumberId, from, reply);
+            reply = await generateReply(text, history, systemPrompt);
+            if (reply.includes("[HANDOFF]") || reply.toLowerCase().includes("transmets votre demande à un conseiller")) {
+                handoffRequired = true;
+                handoffReason = "Question hors contexte ou transfert conseiller";
+                reply = reply.replace(/\[HANDOFF\]/g, "").trim();
+                if (!reply) reply = getHandoffMessage(text);
+            }
+        } catch (aiErr) {
+            console.error("generateReply failed, triggering handoff:", aiErr);
+            handoffRequired = true;
+            handoffReason = `Erreur IA : ${aiErr.message}`;
+            reply = getHandoffMessage(text);
+        }
+
+        if (handoffRequired) {
+            try {
+                await sendWhatsAppText(phoneNumberId, from, reply);
+            } catch (sendErr) {
+                console.error("Failed to send handoff message:", sendErr);
+            }
+            await setTakeoverStatus(from, true).catch(() => {});
+            await saveMessage(from, "assistant", reply, phoneNumberId, { status: "sent" }).catch(() => {});
+            notifyHandoff({
+                from,
+                message: text,
+                reason: handoffReason || "Conseiller requis",
+            }).catch((e) => console.error("notifyHandoff error:", e));
+            return;
+        }
+
+        const messageParts = splitWhatsAppMessages(reply);
+        let providerResponse = null;
+        try {
+            providerResponse = await sendSequentialWhatsAppTexts(phoneNumberId, from, messageParts, 1000);
         } catch (sendErr) {
             if (isWindowExpiredError(sendErr?.message, sendErr?.code)) {
                 console.warn(`[Bot] Send failed with 131047 (window expired) for ${from}`);
@@ -488,9 +555,11 @@ async function processMessage({ message, phoneNumberId }) {
             return;
         }
 
-        saveMessage(from, "assistant", reply, phoneNumberId).catch((e) =>
-            console.error("DB save (assistant) failed:", e)
-        );
+        const botWamid = providerResponse?.messages?.[0]?.id || null;
+        saveMessage(from, "assistant", reply, phoneNumberId, {
+            wamid: botWamid,
+            status: "sent",
+        }).catch((e) => console.error("DB save (assistant) failed:", e));
     } catch (bgErr) {
         console.error("Background webhook processing error:", bgErr);
     }

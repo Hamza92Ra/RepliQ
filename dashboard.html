@@ -1792,8 +1792,7 @@
                     <button class="actions-toggle" id="actionsToggle" onclick="toggleActionsMenu(event)" aria-label="Actions de la conversation" aria-expanded="false"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg></button>
                 </div>
                 <div class="header-actions" id="headerActions" style="display:none;">
-                    <button class="primary" onclick="setMode('human')">👤 <span class="btn-text">Prendre en charge</span></button>
-                    <button onclick="setMode('bot')">🤖 <span class="btn-text">Rendre au bot</span></button>
+                    <button id="takeoverToggleBtn" class="primary" onclick="toggleTakeover()">👤 <span class="btn-text">Prendre la main</span></button>
                     <button class="danger" onclick="setMode('completed')">✅ <span class="btn-text">Terminer</span></button>
                     <button class="danger icon-btn" onclick="confirmDelete(activePhone)" title="Supprimer la conversation" aria-label="Supprimer la conversation">🗑️</button>
                 </div>
@@ -2124,9 +2123,14 @@
             }
         });
 
-        function modeBadgeHtml(mode) {
-            const m = mode || "bot";
-            return `<span class="badge ${m}">${MODE_LABELS[m] || m}</span>`;
+        function modeBadgeHtml(convoOrMode) {
+            let isHuman = false;
+            if (typeof convoOrMode === "object" && convoOrMode !== null) {
+                isHuman = Boolean(convoOrMode.human_takeover || convoOrMode.mode === "human");
+            } else {
+                isHuman = convoOrMode === "human";
+            }
+            return `<span class="badge ${isHuman ? 'human' : 'bot'}">${isHuman ? 'Humain' : 'Bot'}</span>`;
         }
 
         // A conversation is a "pending lead" only until it has an actual
@@ -2240,7 +2244,7 @@
                 const preview = last ? last.content : "";
                 const badge = isPendingLead(c)
                     ? '<span class="badge lead">Nouvelle</span>'
-                    : modeBadgeHtml(c.mode);
+                    : modeBadgeHtml(c);
                 const unread = isUnread(c);
                 const time = timeAgo(lastMessageTs(c));
                 const initials = c.phone.slice(-2);
@@ -2337,11 +2341,25 @@
             document.getElementById("actionsToggle").setAttribute("aria-expanded", "false");
 
             const convo = conversations.find(c => c.phone === phone);
+            const isHuman = Boolean(convo?.human_takeover || convo?.mode === "human");
             const badge = document.getElementById("modeBadge");
             const mode = convo?.mode || "bot";
-            badge.textContent = MODE_LABELS[mode] || mode;
-            badge.className = "badge " + mode;
+            badge.textContent = isHuman ? "Humain" : (mode === "completed" ? "Terminée" : "Bot");
+            badge.className = "badge " + (isHuman ? "human" : mode);
             badge.style.display = "inline-block";
+
+            const toggleBtn = document.getElementById("takeoverToggleBtn");
+            if (toggleBtn) {
+                if (isHuman) {
+                    toggleBtn.innerHTML = '🤖 <span class="btn-text">Rendre au bot</span>';
+                    toggleBtn.className = "takeover-toggle-btn release";
+                    toggleBtn.setAttribute("title", "RepliQ reprendra les réponses automatiques");
+                } else {
+                    toggleBtn.innerHTML = '👤 <span class="btn-text">Prendre la main</span>';
+                    toggleBtn.className = "takeover-toggle-btn take primary";
+                    toggleBtn.setAttribute("title", "Le bot se taira et vous pourrez répondre manuellement");
+                }
+            }
 
             document.getElementById("headerActions").style.display = "flex";
             const composerContainer = document.getElementById("composerContainer");
@@ -2617,6 +2635,14 @@
         document.addEventListener("keydown", (e) => {
             if (e.key === "Escape") closeConfirmModal(false);
         });
+
+        async function toggleTakeover() {
+            if (!activePhone) return;
+            const convo = conversations.find(c => c.phone === activePhone);
+            const isHuman = Boolean(convo?.human_takeover || convo?.mode === "human");
+            const targetAction = isHuman ? "bot" : "human";
+            await setMode(targetAction);
+        }
 
         async function setMode(action) {
             if (!activePhone) return;
