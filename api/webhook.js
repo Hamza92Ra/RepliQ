@@ -6,6 +6,7 @@ import {
   markAsRead,
   getMediaUrl,
   downloadMedia,
+  normalizePhone,
   normalizeRecipient,
 } from "../lib/whatsapp.js";
 import {
@@ -27,6 +28,7 @@ import {
 } from "../lib/notify.js";
 import {
   isSupabaseConfigured,
+  getSupabaseAdmin,
   upsertInboundConversation,
   storeInboundMessage,
   storeOutboundMessage,
@@ -303,7 +305,7 @@ async function processIncomingMessage({ message, contact, phoneNumberId }) {
       return;
     }
 
-    const from = normalizeRecipient(rawFrom);
+    const from = normalizePhone(rawFrom);
     const contactName = contact?.profile?.name || null;
     const inboundTs = message.timestamp ? Number(message.timestamp) * 1000 : Date.now();
 
@@ -320,9 +322,60 @@ async function processIncomingMessage({ message, contact, phoneNumberId }) {
     }
 
     if (!claimed) {
-      console.log("Duplicate delivery detected for message, skipping:", message.id);
+      console.log(`[takeover=unknown] [${from}] Duplicate delivery detected for message, skipping: ${message.id}`);
       return;
     }
+
+    // 1. Human Takeover Check FIRST: Fail-Safe read BEFORE any AI call, voice transcription, or markAsRead
+    let isHumanTakeover = false;
+    try {
+      const takeoverStatus = await getRedisTakeoverStatus(from);
+      isHumanTakeover = Boolean(takeoverStatus?.human_takeover);
+    } catch (lookupErr) {
+      // FAIL SAFE: if the lookup fails, do not auto-reply, log the error
+      console.error(`[Fail-safe] [takeover=error] [${from}] Error checking takeover flag. Halting bot to prevent accidental reply:`, lookupErr);
+      return;
+    }
+
+    const initialDisplayBody = describeInbound(message);
+
+    // If takeover is active:
+    // Store message in database (Supabase + Redis) so dashboard sees it, and return immediately.
+    // DO NOT call AI, do not transcribe voice, do not send any message.
+    if (isHumanTakeover) {
+      console.log(`[takeover=true] [${from}] Bot silent (human takeover active)`);
+
+      if (isSupabaseConfigured()) {
+        try {
+          const conversation = await upsertInboundConversation(from, contactName, inboundTs);
+          await storeInboundMessage({
+            conversationId: conversation.id,
+            waMessageId: message.id,
+            type: message.type || "text",
+            body: initialDisplayBody,
+            createdAt: inboundTs,
+          });
+        } catch (dbErr) {
+          console.error(`[takeover=true] [${from}] Supabase store failed:`, dbErr);
+        }
+      }
+
+      if (process.env.UPSTASH_REDIS_REST_URL) {
+        try {
+          await saveRedisMessage(from, "user", initialDisplayBody, phoneNumberId, {
+            id: message.id,
+            wamid: message.id,
+            ts: inboundTs,
+          });
+        } catch (redisErr) {
+          console.error(`[takeover=true] [${from}] Redis store failed:`, redisErr);
+        }
+      }
+
+      return;
+    }
+
+    console.log(`[takeover=false] [${from}] Bot auto-reply processing`);
 
     // Extract message content: transcribe audio or use text/interactive
     let text = message.text?.body?.trim();
@@ -349,19 +402,19 @@ async function processIncomingMessage({ message, contact, phoneNumberId }) {
         "";
     }
 
-    const displayBody = text
-      ? (voiceNote ? `🎙️ Message vocal (transcription) : ${text}` : text)
-      : describeInbound(message);
+    // If message is unsupported media (e.g. image, video, doc) and no text could be extracted
+    if (!text) {
+      await sendWhatsAppText(phoneNumberId, from, UNSUPPORTED_REPLY);
+      return;
+    }
 
+    const displayBody = voiceNote ? `🎙️ Message vocal (transcription) : ${text}` : text;
     let conversation = null;
 
-    // 1. Supabase Storage & State
+    // Store inbound message now that text/transcription is complete
     if (isSupabaseConfigured()) {
       try {
-        // Upsert conversation: sets last_message_at, last_inbound_at, increments unread_count
         conversation = await upsertInboundConversation(from, contactName, inboundTs);
-
-        // Store inbound message (deduplicate by wa_message_id)
         const storeResult = await storeInboundMessage({
           conversationId: conversation.id,
           waMessageId: message.id,
@@ -379,7 +432,6 @@ async function processIncomingMessage({ message, contact, phoneNumberId }) {
       }
     }
 
-    // Optional Redis mirror for backwards compatibility
     if (process.env.UPSTASH_REDIS_REST_URL) {
       try {
         await saveRedisMessage(from, "user", displayBody, phoneNumberId, {
@@ -392,40 +444,11 @@ async function processIncomingMessage({ message, contact, phoneNumberId }) {
       }
     }
 
-    // 2. Human Takeover Check: Fail-Safe read BEFORE any AI call
-    let isHumanTakeover = false;
-    try {
-      if (isSupabaseConfigured() && conversation) {
-        isHumanTakeover = Boolean(conversation.human_takeover);
-      } else if (process.env.UPSTASH_REDIS_REST_URL) {
-        const takeoverStatus = await getRedisTakeoverStatus(from);
-        isHumanTakeover = Boolean(takeoverStatus?.human_takeover);
-      } else {
-        const takeoverStatus = await getRedisTakeoverStatus(from);
-        isHumanTakeover = Boolean(takeoverStatus?.human_takeover);
-      }
-    } catch (lookupErr) {
-      // FAIL SAFE: if the lookup fails, do not auto-reply, log the error
-      console.error(`[Fail-safe] Error checking takeover flag for ${from}. Halting bot to prevent accidental reply:`, lookupErr);
-      return;
-    }
-
-    if (isHumanTakeover) {
-      console.log(`[Takeover] Human takeover active for conversation ${from}. Bot stays silent.`);
-      return;
-    }
-
-    // If message is unsupported media (e.g. image, video, doc) and no text could be extracted
-    if (!text) {
-      await sendWhatsAppText(phoneNumberId, from, UNSUPPORTED_REPLY);
-      return;
-    }
-
     await markAsRead(phoneNumberId, message.id);
 
-    // 2b. Check if client explicitly asks for a human / advisor
+    // 2. Check if client explicitly asks for a human / advisor
     if (looksLikeHumanRequest(text)) {
-      console.log(`[Handoff] Customer ${from} requested human advisor.`);
+      console.log(`[takeover=false] [${from}] Customer requested human advisor -> handoff triggered`);
       const handoffMsg = getHandoffMessage(text);
       let sendRes = null;
       try {
@@ -553,6 +576,7 @@ async function processIncomingMessage({ message, contact, phoneNumberId }) {
         }).catch(() => {});
       }
 
+      console.log(`[takeover=false] [${from}] Handoff triggered by AI response -> takeover enabled (${handoffReason})`);
       notifyHandoff({
         from,
         message: text,
@@ -567,6 +591,7 @@ async function processIncomingMessage({ message, contact, phoneNumberId }) {
     let providerResponse = null;
     try {
       providerResponse = await sendSequentialWhatsAppTexts(phoneNumberId, from, messageParts, 1000);
+      console.log(`[takeover=false] [${from}] Bot replied successfully (${messageParts.length} message(s))`);
     } catch (sendErr) {
       if (isWindowExpiredError(sendErr?.message, sendErr?.code)) {
         console.warn(`[Bot] Send failed with 131047 (window expired) for ${from}`);

@@ -115,6 +115,11 @@ export default async function handler(req, res) {
         .from("conversations")
         .update({ human_takeover: true, last_message_at: new Date().toISOString() })
         .eq("id", conversationId);
+
+      if (process.env.UPSTASH_REDIS_REST_URL && conversation?.wa_contact_phone) {
+        const { setTakeoverStatus } = await import("../../lib/db.js");
+        await setTakeoverStatus(conversation.wa_contact_phone, true).catch(() => {});
+      }
     } catch (takeoverErr) {
       console.error("Failed to auto-enable human takeover on send:", takeoverErr);
     }

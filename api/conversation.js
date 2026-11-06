@@ -386,7 +386,7 @@ async function processMessage({ message, phoneNumberId }) {
             claimed = claimMessageLocally(message.id);
         }
         if (!claimed) {
-            console.log("Duplicate delivery for message, skipping:", message.id);
+            console.log(`[takeover=unknown] [${from}] Duplicate delivery for message, skipping: ${message.id}`);
             return;
         }
 
@@ -397,11 +397,12 @@ async function processMessage({ message, phoneNumberId }) {
             isHumanTakeover = Boolean(takeover.human_takeover);
         } catch (dbErr) {
             // FAIL SAFE: if the lookup fails, do not auto-reply, log the error
-            console.error("[Fail-safe] Takeover check failed for " + from + ". Halting bot to prevent accidental reply:", dbErr);
+            console.error(`[Fail-safe] [takeover=error] [${from}] Takeover check failed, halting bot to prevent accidental reply:`, dbErr);
             return;
         }
 
         if (isHumanTakeover) {
+            console.log(`[takeover=true] [${from}] Bot silent (human takeover active)`);
             try {
                 await saveMessage(from, "user", describeInbound(message), phoneNumberId);
             } catch (dbErr) {
@@ -409,6 +410,8 @@ async function processMessage({ message, phoneNumberId }) {
             }
             return;
         }
+
+        console.log(`[takeover=false] [${from}] Bot auto-reply processing`);
 
         // --- Extract text: voice notes get transcribed, everything else falls back ---
         let text = message.text?.body?.trim();
@@ -446,7 +449,7 @@ async function processMessage({ message, phoneNumberId }) {
 
         // --- Check if client asks for a human / advisor ---
         if (looksLikeHumanRequest(text)) {
-            console.log(`[Handoff] Customer ${from} requested human advisor.`);
+            console.log(`[takeover=false] [${from}] Customer requested human advisor -> handoff triggered`);
             const handoffMsg = getHandoffMessage(text);
             try {
                 await sendWhatsAppText(phoneNumberId, from, handoffMsg);
@@ -546,6 +549,7 @@ async function processMessage({ message, phoneNumberId }) {
         let providerResponse = null;
         try {
             providerResponse = await sendSequentialWhatsAppTexts(phoneNumberId, from, messageParts, 1000);
+            console.log(`[takeover=false] [${from}] Bot replied successfully (${messageParts.length} message(s))`);
         } catch (sendErr) {
             if (isWindowExpiredError(sendErr?.message, sendErr?.code)) {
                 console.warn(`[Bot] Send failed with 131047 (window expired) for ${from}`);
