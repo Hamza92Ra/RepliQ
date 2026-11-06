@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>RepliQ — Boîte de réception WhatsApp</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body class="dark-theme">
+
+  <!-- ================= 1. LOGIN SCREEN ================= -->
+  <div id="loginScreen" class="screen-view">
+    <div class="login-card">
+      <div class="brand-badge">
+        <span class="brand-icon">💬</span>
+        <span class="brand-name">RepliQ</span>
+      </div>
+      <h2>Boîte de réception Admin</h2>
+      <p class="login-desc">Connectez-vous pour consulter et répondre en direct aux conversations WhatsApp.</p>
+      
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="adminPassword">Mot de passe Administrateur</label>
+          <input type="password" id="adminPassword" placeholder="••••••••••••" required autocomplete="current-password">
+        </div>
+        <div id="loginError" class="error-banner" style="display:none;"></div>
+        <button type="submit" id="loginBtn" class="btn btn-primary btn-block">
+          <span>Connexion</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= 2. APP SCREEN ================= -->
+  <div id="appScreen" class="screen-view" style="display:none;">
+    <div class="inbox-layout" id="inboxLayout">
+
+      <!-- LEFT COLUMN: Conversation List -->
+      <aside class="sidebar" id="sidebar">
+        <!-- Sidebar Header -->
+        <div class="sidebar-header">
+          <div class="user-meta">
+            <span class="avatar-logo">💬</span>
+            <div class="brand-info">
+              <span class="brand-title">RepliQ Inbox</span>
+              <span id="realtimeIndicator" class="status-indicator">
+                <span class="dot"></span> <span class="status-text">Connexion...</span>
+              </span>
+            </div>
+          </div>
+          <button id="logoutBtn" class="btn-icon" title="Déconnexion" aria-label="Déconnexion">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="search-box">
+          <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" id="searchInput" placeholder="Rechercher numéro ou message...">
+        </div>
+
+        <!-- Conversation Items -->
+        <div class="conversation-list" id="conversationList" role="list">
+          <div class="empty-list-placeholder">Chargement des conversations...</div>
+        </div>
+      </aside>
+
+      <!-- RIGHT COLUMN: Active Chat -->
+      <main class="chat-pane" id="chatPane">
+        
+        <!-- Empty State (No conversation selected) -->
+        <div class="chat-placeholder" id="chatPlaceholder">
+          <div class="placeholder-content">
+            <div class="placeholder-icon">📱</div>
+            <h3>Sélectionnez une discussion</h3>
+            <p>Choisissez un contact dans la colonne de gauche pour afficher l'historique et prendre la main si nécessaire.</p>
+          </div>
+        </div>
+
+        <!-- Active Chat Container -->
+        <div class="chat-view" id="chatActive" style="display:none;">
+          
+          <!-- Chat Header -->
+          <header class="chat-header">
+            <div class="chat-header-left">
+              <button id="backToListBtn" class="btn-icon mobile-only" title="Retour" aria-label="Retour">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="19" y1="12" x2="5" y2="12"></line>
+                  <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+              </button>
+              <div class="contact-details">
+                <div class="contact-name" id="currentContactName">Contact</div>
+                <div class="contact-sub">
+                  <span id="currentContactPhone" class="mono-phone"></span>
+                  <span id="windowBadge" class="window-pill">Calcul fenêtre 24h...</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="chat-header-actions">
+              <button id="takeoverBtn" class="btn btn-takeover" title="Activer / Désactiver la prise en main">
+                <span class="takeover-icon">👤</span>
+                <span class="takeover-label">Prendre la main</span>
+              </button>
+            </div>
+          </header>
+
+          <!-- 24-Hour Expiration Warning Banner -->
+          <div id="windowExpiredBanner" class="window-warning-banner" style="display:none;">
+            <span class="warning-icon">⚠️</span>
+            <div class="warning-text">
+              <strong>Fenêtre de 24h Meta expirée :</strong> Meta bloque les réponses libres hors de la fenêtre de 24h. Le client doit envoyer un nouveau message pour pouvoir lui répondre en texte libre.
+            </div>
+          </div>
+
+          <!-- Message History -->
+          <div class="messages-container" id="messagesContainer">
+            <!-- Messages rendered dynamically -->
+          </div>
+
+          <!-- Message Composer -->
+          <footer class="chat-composer">
+            <form id="chatForm">
+              <textarea 
+                id="messageInput" 
+                rows="1" 
+                placeholder="Écrire un message en tant qu'humain..." 
+                required
+              ></textarea>
+              <button type="submit" id="sendBtn" class="btn btn-send" title="Envoyer">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="22" y1="2" x2="11" y2="13"></line>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+              </button>
+            </form>
+          </footer>
+
+        </div>
+      </main>
+
+    </div>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>

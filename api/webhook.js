@@ -1,5 +1,4 @@
 import { waitUntil } from "@vercel/functions";
-import { createOrder } from "../lib/orders.js";
 import {
   sendWhatsAppText,
   sendWhatsAppTemplate,
@@ -7,7 +6,6 @@ import {
   getMediaUrl,
   downloadMedia,
   normalizeRecipient,
-  isBsuid,
 } from "../lib/whatsapp.js";
 import {
   isWithin24hWindow,
@@ -18,21 +16,29 @@ import {
   getApprovedTemplates,
   buildTemplateComponents,
 } from "../lib/templates.js";
-import { generateReply, transcribeAudio, extractOrder } from "../lib/ai.js";
+import { generateReply, transcribeAudio } from "../lib/ai.js";
 import { notifyTeam, looksLikeFinalizeIntent } from "../lib/notify.js";
 import {
-  saveMessage,
-  getHistory,
-  getConversation,
-  getConversationMode,
-  setConversationMode,
-  getConversationOwner,
-  setConversationOwner,
+  isSupabaseConfigured,
+  upsertInboundConversation,
+  storeInboundMessage,
+  storeOutboundMessage,
+  updateMessageStatusByWamid,
+  getConversationHistoryForAI,
+} from "../lib/supabase.js";
+import {
+  saveMessage as saveRedisMessage,
+  getHistory as getRedisHistory,
+  getConversation as getRedisConversation,
+  getConversationMode as getRedisMode,
+  setConversationMode as setRedisMode,
+  getConversationOwner as getRedisOwner,
+  setConversationOwner as setRedisOwner,
   getBusinessConfig,
-  claimMessage,
-  deleteConversation,
-  deleteMessage,
-  updateMessageStatus,
+  claimMessage as claimRedisMessage,
+  deleteConversation as deleteRedisConversation,
+  deleteMessage as deleteRedisMessage,
+  updateMessageStatus as updateRedisMessageStatus,
 } from "../lib/db.js";
 
 const FALLBACK_REPLY =
@@ -46,9 +52,7 @@ const UNSUPPORTED_REPLY =
 
 const VALID_MODES = new Set(["bot", "human", "completed"]);
 
-// In-memory fallback only used if Redis is briefly unreachable — Redis
-// (claimMessage) is the real dedup, because Meta retries deliveries and
-// Vercel runs multiple instances of this function.
+// In-memory fallback dedup set
 const seenMessageIds = new Set();
 function claimMessageLocally(messageId) {
   if (seenMessageIds.has(messageId)) return false;
@@ -68,15 +72,16 @@ function describeInbound(message) {
   return `[${message.type || "message"}]`;
 }
 
+function runAsync(promise) {
+  try {
+    waitUntil(promise);
+  } catch {
+    promise.catch((err) => console.error("Unhandled async error:", err));
+  }
+}
+
 /**
- * Handles admin actions sent from dashboard.html:
- *   POST /api/conversation?key=DASHBOARD_SECRET
- *   body: { phone, action: "human"|"bot"|"completed"|"reply"|"delete", message? }
- * This is a completely different request shape from Meta's webhook payload
- * (which has no "phone"/"action" fields and no ?key=), so it's safe to
- * branch on that before touching any webhook logic. NOTE: this is served
- * from the SAME file as Meta's webhook — dashboard.html's /api/conversation
- * calls route here, not to a separate file.
+ * Handles legacy dashboard admin actions (for backwards compatibility).
  */
 async function handleAdminAction(req, res) {
   const key = req.query.key;
@@ -91,111 +96,49 @@ async function handleAdminAction(req, res) {
 
   try {
     if (VALID_MODES.has(action)) {
-      await setConversationMode(phone, action);
+      await setRedisMode(phone, action);
       return res.status(200).json({ ok: true, mode: action });
     }
 
     if (action === "reply") {
       const text = (message || "").trim();
-      if (!text) {
-        return res.status(400).json({ error: "Missing message" });
-      }
+      if (!text) return res.status(400).json({ error: "Missing message" });
 
-      let phoneNumberId = String(requestedPhoneNumberId || "").trim();
+      let phoneNumberId = String(requestedPhoneNumberId || "").trim() ||
+        (await getRedisOwner(phone)) ||
+        process.env.WHATSAPP_PHONE_NUMBER_ID ||
+        process.env.DEFAULT_PHONE_NUMBER_ID;
+
       if (!phoneNumberId) {
-        phoneNumberId = await getConversationOwner(phone);
-      }
-      if (!phoneNumberId && process.env.DEFAULT_PHONE_NUMBER_ID) {
-        phoneNumberId = process.env.DEFAULT_PHONE_NUMBER_ID;
-      }
-      if (!phoneNumberId) {
-        return res.status(400).json({
-          error: "Aucun numéro WhatsApp Business associé à cette conversation.",
-          details: "Définissez DEFAULT_PHONE_NUMBER_ID dans Vercel ou attendez un premier message client."
-        });
+        return res.status(400).json({ error: "Aucun numéro WhatsApp Business associé" });
       }
 
       const recipient = normalizeRecipient(phone);
-      if (!recipient) {
-        return res.status(400).json({ error: "Format de numéro de destinataire invalide." });
-      }
+      if (!recipient) return res.status(400).json({ error: "Numéro de destinataire invalide" });
 
-      // Enforce Meta 24-hour customer service window on backend BEFORE calling Meta
-      const convo = await getConversation(recipient);
+      const convo = await getRedisConversation(recipient);
       if (!isWithin24hWindow(convo)) {
         return res.status(409).json({
           ok: false,
           code: "WINDOW_EXPIRED",
           error: "WINDOW_EXPIRED",
-          details: "Fenêtre de 24h Meta expirée : Meta bloque les messages libres hors de cette fenêtre. Utilisez un modèle WhatsApp approuvé pour relancer ce client.",
+          details: "Fenêtre de 24h Meta expirée.",
         });
       }
 
-      setConversationOwner(phone, phoneNumberId).catch((e) =>
-        console.error("Owner backfill failed:", e)
-      );
-
-      let providerResponse;
-      try {
-        providerResponse = await sendWhatsAppText(phoneNumberId, recipient, text);
-      } catch (sendErr) {
-        console.error("WhatsApp send failed for agent reply:", sendErr);
-        const is131047 = isWindowExpiredError(sendErr?.message, sendErr?.code || sendErr?.status);
-        const errCode = is131047 ? "WINDOW_EXPIRED" : (sendErr.code || "SEND_FAILED");
-        const friendlyErr = formatFriendlyError(sendErr?.message, sendErr?.code);
-
-        try {
-          await saveMessage(recipient, "agent", text, phoneNumberId, {
-            status: "failed",
-            error: friendlyErr,
-            errorCode: errCode,
-          });
-        } catch (saveErr) {
-          console.error("Failed to save failed message record:", saveErr);
-        }
-
-        const status = is131047 ? 409 : (Number(sendErr?.status) || 502);
-        return res.status(status).json({
-          ok: false,
-          code: errCode,
-          error: is131047 ? "WINDOW_EXPIRED" : "Échec de l'envoi WhatsApp",
-          details: friendlyErr,
-        });
-      }
-
+      const providerResponse = await sendWhatsAppText(phoneNumberId, recipient, text);
       const wamid = providerResponse?.messages?.[0]?.id || null;
-      try {
-        await saveMessage(recipient, "agent", text, phoneNumberId, {
-          wamid,
-          status: "sent",
-        });
-      } catch (dbErr) {
-        console.error("Admin reply storage failed after send:", dbErr);
-      }
-
+      await saveRedisMessage(recipient, "agent", text, phoneNumberId, { wamid, status: "sent" }).catch(() => {});
       return res.status(200).json({ ok: true, wamid, status: "sent" });
     }
 
     if (action === "template") {
-      let phoneNumberId = String(requestedPhoneNumberId || "").trim();
-      if (!phoneNumberId) {
-        phoneNumberId = await getConversationOwner(phone);
-      }
-      if (!phoneNumberId && process.env.DEFAULT_PHONE_NUMBER_ID) {
-        phoneNumberId = process.env.DEFAULT_PHONE_NUMBER_ID;
-      }
-      if (!phoneNumberId) {
-        return res.status(400).json({
-          error: "Aucun numéro WhatsApp Business associé",
-          details: "Définissez DEFAULT_PHONE_NUMBER_ID dans Vercel."
-        });
-      }
+      let phoneNumberId = String(requestedPhoneNumberId || "").trim() ||
+        (await getRedisOwner(phone)) ||
+        process.env.WHATSAPP_PHONE_NUMBER_ID ||
+        process.env.DEFAULT_PHONE_NUMBER_ID;
 
       const recipient = normalizeRecipient(phone);
-      if (!recipient) {
-        return res.status(400).json({ error: "Format de destinataire invalide." });
-      }
-
       const chosenTemplate = templateName || process.env.WHATSAPP_TEMPLATE_NAME || "hello_world";
       const chosenLang = languageCode || process.env.WHATSAPP_TEMPLATE_LANG || "en_US";
 
@@ -204,139 +147,109 @@ async function handleAdminAction(req, res) {
         templateComponents = buildTemplateComponents(req.body.variables);
       }
 
-      let providerResponse;
-      try {
-        providerResponse = await sendWhatsAppTemplate(phoneNumberId, recipient, chosenTemplate, chosenLang, templateComponents);
-      } catch (sendErr) {
-        console.error("WhatsApp template send failed:", sendErr);
-        const status = Number(sendErr?.status) || 400;
-        return res.status(status).json({
-          ok: false,
-          error: "Échec de l'envoi du modèle WhatsApp",
-          code: sendErr.code,
-          details: sendErr.message,
-        });
-      }
-
+      const providerResponse = await sendWhatsAppTemplate(phoneNumberId, recipient, chosenTemplate, chosenLang, templateComponents);
       const wamid = providerResponse?.messages?.[0]?.id || null;
-      const content = req.body.previewText || `📨 Modèle WhatsApp envoyé : ${chosenTemplate} (${chosenLang})`;
-      try {
-        await saveMessage(recipient, "agent", content, phoneNumberId, {
-          wamid,
-          status: "sent",
-          template: chosenTemplate,
-        });
-      } catch (dbErr) {
-        console.error("Admin template reply storage failed after send:", dbErr);
-      }
-
       return res.status(200).json({ ok: true, wamid, status: "sent", template: chosenTemplate });
     }
 
     if (action === "get_templates" || action === "templates") {
-      let phoneNumberId = String(requestedPhoneNumberId || "").trim();
-      if (!phoneNumberId) {
-        phoneNumberId = await getConversationOwner(phone);
-      }
+      const phoneNumberId = String(requestedPhoneNumberId || "").trim() || process.env.WHATSAPP_PHONE_NUMBER_ID || process.env.DEFAULT_PHONE_NUMBER_ID;
       const templates = await getApprovedTemplates(phoneNumberId);
       return res.status(200).json({ ok: true, templates });
     }
 
     if (action === "delete_message") {
-      const { messageId } = req.body;
-      if (!messageId) {
-        return res.status(400).json({ error: "Missing messageId" });
-      }
-      const removed = await deleteMessage(phone, messageId);
+      const removed = await deleteRedisMessage(phone, req.body.messageId);
       return res.status(200).json({ ok: true, removed });
     }
 
     if (action === "delete") {
       const recipient = normalizeRecipient(phone);
-      if (!recipient) {
-        return res.status(400).json({ error: "Invalid conversation phone number" });
-      }
-      await deleteConversation(recipient);
+      await deleteRedisConversation(recipient);
       return res.status(200).json({ ok: true });
     }
 
     return res.status(400).json({ error: `Unknown action: ${action}` });
   } catch (err) {
     console.error("Admin action failed:", err);
-    const status = Number(err?.status) || 500;
-    return res.status(status >= 400 && status < 600 ? status : 500).json({
-      ok: false,
-      error: "Action impossible",
-      details: err?.message || "Action failed",
-    });
+    return res.status(500).json({ ok: false, error: err?.message || "Action failed" });
   }
 }
 
 export default async function handler(req, res) {
-  // --- 1. Webhook verification (Meta calls this once, with GET, when you save the webhook URL) ---
+  // 1. Webhook verification from Meta (GET request)
   if (req.method === "GET") {
     const mode = req.query["hub.mode"];
     const token = req.query["hub.verify_token"];
     const challenge = req.query["hub.challenge"];
 
     if (mode === "subscribe" && token === process.env.VERIFY_TOKEN) {
-      console.log("Webhook verified.");
+      console.log("Webhook verified successfully.");
       return res.status(200).send(challenge);
     }
     return res.status(403).send("Forbidden");
   }
 
+  // 2. Incoming Webhook Events from Meta (POST request)
   if (req.method === "POST") {
-    // --- Dashboard admin actions (Prendre en charge / Rendre au bot /
-    // Terminer / Supprimer / manual reply) arrive here with a
-    // { phone, action } body, never with "entry" (that's Meta's webhook
-    // shape). Branch on that first so these get real JSON responses
-    // instead of falling into the webhook's "EVENT_RECEIVED" ack path. ---
+    // Legacy dashboard actions
     if (req.body && typeof req.body === "object" && req.body.action && req.body.phone) {
       return handleAdminAction(req, res);
     }
 
-    // --- 2. Incoming messages (Meta calls this with POST every time a message arrives) ---
     try {
       const entry = req.body?.entry?.[0];
       const change = entry?.changes?.[0];
       const value = change?.value;
       const message = value?.messages?.[0];
+      const contact = value?.contacts?.[0];
 
+      // Handle delivery status webhooks (sent / delivered / read / failed)
       const statusUpdate = value?.statuses?.[0];
       if (statusUpdate) {
         const wamid = statusUpdate.id;
-        const status = statusUpdate.status; // "sent", "delivered", "read", "failed"
+        const status = statusUpdate.status;
         const recipientId = statusUpdate.recipient_id;
+
         let errorDetail = null;
-        let errorCode = null;
         if (statusUpdate.errors && statusUpdate.errors.length > 0) {
           const e = statusUpdate.errors[0];
-          if (isWindowExpiredError(e.message || e.title, e.code)) {
-            errorDetail = "Fenêtre de 24h Meta expirée : envoyez un modèle WhatsApp pour réengager ce client.";
-            errorCode = "WINDOW_EXPIRED";
-          } else {
-            errorDetail = formatFriendlyError(e.title ? `${e.title}: ${e.message || ""}` : e.message, e.code);
-            errorCode = e.code;
-          }
+          errorDetail = isWindowExpiredError(e.message || e.title, e.code)
+            ? "Fenêtre de 24h Meta expirée : envoyez un modèle WhatsApp pour réengager ce client."
+            : formatFriendlyError(e.title ? `${e.title}: ${e.message || ""}` : e.message, e.code);
         }
-        console.log(`WhatsApp delivery status update: wamid=${wamid}, status=${status}, recipient=${recipientId}, error=${errorDetail}`);
+
+        console.log(`WhatsApp delivery status update: wamid=${wamid}, status=${status}, error=${errorDetail}`);
+
+        // Acknowledge receipt to Meta immediately
         res.status(200).send("EVENT_RECEIVED");
-        waitUntil(updateMessageStatus(recipientId, wamid, status, errorDetail, errorCode));
+
+        runAsync(
+          (async () => {
+            if (isSupabaseConfigured()) {
+              await updateMessageStatusByWamid(wamid, status, errorDetail);
+            }
+            if (process.env.UPSTASH_REDIS_REST_URL) {
+              await updateRedisMessageStatus(recipientId, wamid, status, errorDetail).catch(() => {});
+            }
+          })()
+        );
         return;
       }
 
       if (!message) {
-        // Other events — just ACK.
         return res.status(200).send("EVENT_RECEIVED");
       }
 
-      const phoneNumberId = value.metadata.phone_number_id;
+      const phoneNumberId =
+        value?.metadata?.phone_number_id ||
+        process.env.WHATSAPP_PHONE_NUMBER_ID ||
+        process.env.DEFAULT_PHONE_NUMBER_ID;
 
-      // Respond to Meta immediately so it never times out and retries.
+      // Always return 200 quickly to Meta
       res.status(200).send("EVENT_RECEIVED");
 
-      waitUntil(processMessage({ message, phoneNumberId }));
+      runAsync(processIncomingMessage({ message, contact, phoneNumberId }));
     } catch (err) {
       console.error("Webhook handler error:", err);
       if (!res.headersSent) {
@@ -349,72 +262,43 @@ export default async function handler(req, res) {
   return res.status(405).send("Method Not Allowed");
 }
 
-async function processMessage({ message, phoneNumberId }) {
+/**
+ * Process inbound WhatsApp message:
+ * - Upsert conversation in Supabase
+ * - Store inbound message (dedup by wa_message_id)
+ * - Check human_takeover flag: if true, bot stays silent
+ * - Otherwise: load last ~10 messages as history, call generateReply(), and store bot reply
+ */
+async function processIncomingMessage({ message, contact, phoneNumberId }) {
   try {
-    // BSUID SUPPORT: Meta omits message.from (the phone number) for
-    // customers who've set a WhatsApp username and have no prior message
-    // history with this business number — only message.from_user_id (a
-    // BSUID like "MA.1587668549511396") is guaranteed in that case. Fall
-    // back to it so these customers aren't silently dropped. Everything
-    // downstream (Redis keys, dashboard display, outbound send) treats
-    // this the same as a phone number — lib/whatsapp.js's sendWhatsAppText
-    // detects the BSUID format and uses Meta's "recipient" field instead
-    // of "to" automatically.
-    const from = message.from || message.from_user_id;
-
-    // FIX: some inbound messages (e.g. system/referral/order-type events,
-    // or malformed payloads) can arrive without a top-level "from" or
-    // "from_user_id". If we don't catch this here, the code below silently
-    // burns an AI call, fails to save to the DB with a cryptic "null args"
-    // Redis error, then crashes trying to send a WhatsApp reply to an
-    // undefined recipient — and the customer never gets anything, with no
-    // useful log trail. Bail out immediately and dump the full raw message
-    // so we can see exactly what shape these payloads have.
-    if (!from) {
-      console.error(
-        "processMessage: message has no 'from' or 'from_user_id' field, cannot process. type=",
-        message.type,
-        "raw message=",
-        JSON.stringify(message)
-      );
+    const rawFrom = message.from || message.from_user_id;
+    if (!rawFrom) {
+      console.error("processIncomingMessage: message missing 'from' and 'from_user_id'", JSON.stringify(message));
       return;
     }
 
-    // --- Dedup: Meta retries deliveries, so the same message can arrive 2-3x ---
+    const from = normalizeRecipient(rawFrom);
+    const contactName = contact?.profile?.name || null;
+    const inboundTs = message.timestamp ? Number(message.timestamp) * 1000 : Date.now();
+
+    // Deduplication check via local cache & Redis if available
     let claimed = false;
-    try {
-      claimed = await claimMessage(message.id);
-    } catch (dbErr) {
-      console.error("Dedup via Redis failed, using memory fallback:", dbErr);
+    if (process.env.UPSTASH_REDIS_REST_URL) {
+      try {
+        claimed = await claimRedisMessage(message.id);
+      } catch (redisErr) {
+        claimed = claimMessageLocally(message.id);
+      }
+    } else {
       claimed = claimMessageLocally(message.id);
     }
+
     if (!claimed) {
-      console.log("Duplicate delivery for message, skipping:", message.id);
+      console.log("Duplicate delivery detected for message, skipping:", message.id);
       return;
     }
 
-    // --- Admin state check FIRST: the admin can complete or take over a
-    // conversation at any moment, and the bot must respect that instantly —
-    // even mid-thread. We still record the customer's message so the admin
-    // sees it in the dashboard, we just never auto-reply. ---
-    let convMode = "bot";
-    try {
-      convMode = await getConversationMode(from);
-    } catch (dbErr) {
-      // Fail open: if Redis hiccups we keep auto-replying rather than going silent.
-      console.error("Mode check failed, defaulting to bot:", dbErr);
-    }
-
-    if (convMode === "completed" || convMode === "human") {
-      try {
-        await saveMessage(from, "user", describeInbound(message), phoneNumberId);
-      } catch (dbErr) {
-        console.error("DB save (silent mode) failed:", dbErr);
-      }
-      return;
-    }
-
-    // --- Extract text: voice notes get transcribed, everything else falls back ---
+    // Extract message content: transcribe audio or use text/interactive
     let text = message.text?.body?.trim();
     let voiceNote = false;
 
@@ -432,8 +316,6 @@ async function processMessage({ message, phoneNumberId }) {
       }
     }
 
-    // Interactive replies (button / list buttons from templates) carry their
-    // answer in .title — treat them like a normal text message.
     if (!text && message.interactive) {
       text =
         message.interactive.button_reply?.title ||
@@ -441,6 +323,60 @@ async function processMessage({ message, phoneNumberId }) {
         "";
     }
 
+    const displayBody = text
+      ? (voiceNote ? `🎙️ Message vocal (transcription) : ${text}` : text)
+      : describeInbound(message);
+
+    let conversation = null;
+
+    // 1. Supabase Storage & State
+    if (isSupabaseConfigured()) {
+      try {
+        // Upsert conversation: sets last_message_at, last_inbound_at, increments unread_count
+        conversation = await upsertInboundConversation(from, contactName, inboundTs);
+
+        // Store inbound message (deduplicate by wa_message_id)
+        const storeResult = await storeInboundMessage({
+          conversationId: conversation.id,
+          waMessageId: message.id,
+          type: message.type || "text",
+          body: displayBody,
+          createdAt: inboundTs,
+        });
+
+        if (storeResult?.duplicate) {
+          console.log("Message already stored in database, skipping:", message.id);
+          return;
+        }
+      } catch (dbErr) {
+        console.error("Supabase storage error for inbound message:", dbErr);
+      }
+    }
+
+    // Optional Redis mirror for backwards compatibility
+    if (process.env.UPSTASH_REDIS_REST_URL) {
+      try {
+        await saveRedisMessage(from, "user", displayBody, phoneNumberId, {
+          id: message.id,
+          wamid: message.id,
+          ts: inboundTs,
+        });
+      } catch (redisErr) {
+        console.error("Redis mirror error:", redisErr);
+      }
+    }
+
+    // 2. Human Takeover Check: if human_takeover = true, DO NOT call AI
+    const isHumanTakeover = conversation
+      ? Boolean(conversation.human_takeover)
+      : (await getRedisMode(from).catch(() => "bot")) === "human";
+
+    if (isHumanTakeover) {
+      console.log(`[Takeover] Human takeover enabled for conversation ${from}. Bot stays silent.`);
+      return;
+    }
+
+    // If message is unsupported media (e.g. image, video, doc) and no text could be extracted
     if (!text) {
       await sendWhatsAppText(phoneNumberId, from, UNSUPPORTED_REPLY);
       return;
@@ -448,8 +384,33 @@ async function processMessage({ message, phoneNumberId }) {
 
     await markAsRead(phoneNumberId, message.id);
 
-    // --- Load this business's own config (project + ideas) so one deployment
-    // adapts to any customer instead of the one hardcoded prompt. ---
+    // 3. Load conversation memory: last ~10 messages
+    let history = [];
+    if (isSupabaseConfigured() && conversation?.id) {
+      try {
+        const fullHistory = await getConversationHistoryForAI(conversation.id, 10);
+        // Exclude the current message we just stored so generateReply doesn't duplicate it
+        history = fullHistory.slice(0, -1);
+      } catch (histErr) {
+        console.error("Error loading history from Supabase:", histErr);
+      }
+    } else if (process.env.UPSTASH_REDIS_REST_URL) {
+      try {
+        const fullHistory = await getRedisHistory(from, 10);
+        history = fullHistory.slice(0, -1);
+      } catch (histErr) {
+        console.error("Error loading history from Redis:", histErr);
+      }
+    }
+
+    // Team notification if intent detected
+    if (looksLikeFinalizeIntent(text)) {
+      notifyTeam({ from, message: text }).catch((e) =>
+        console.error("notifyTeam failed:", e)
+      );
+    }
+
+    // 4. Per-business prompt configuration (if configured)
     let systemPrompt;
     try {
       const config = await getBusinessConfig(phoneNumberId);
@@ -460,38 +421,10 @@ async function processMessage({ message, phoneNumberId }) {
         }
       }
     } catch (cfgErr) {
-      console.error("Business config load failed, using default prompt:", cfgErr);
+      console.error("Business config load failed:", cfgErr);
     }
 
-    // --- Save the customer's message and pull recent history so the bot
-    // actually remembers the conversation. Voice notes are labeled in the
-    // dashboard so the admin can see it was a transcription. ---
-    let history = [];
-    try {
-      const displayText = voiceNote ? `🎙️ Message vocal (transcription) : ${text}` : text;
-      const inboundTs = message.timestamp ? Number(message.timestamp) * 1000 : Date.now();
-      await saveMessage(from, "user", displayText, phoneNumberId, { ts: inboundTs });
-      history = await getHistory(from, 10);
-      // getHistory includes the message we just saved — drop the last one
-      // since generateReply adds the current message itself.
-      history = history.slice(0, -1);
-    } catch (dbErr) {
-      console.error("DB error (continuing without history):", dbErr);
-    }
-
-    if (looksLikeFinalizeIntent(text)) {
-      notifyTeam({ from, message: text }).catch((e) =>
-        console.error("notifyTeam failed:", e)
-      );
-    }
-
-    // --- Bot auto-reply check: Meta 24-hour customer service window ---
-    const convo = await getConversation(from);
-    if (!isWithin24hWindow(convo)) {
-      console.warn(`[Bot] 24h Meta window is expired for ${from}. Free-text auto-reply blocked.`);
-      return;
-    }
-
+    // 5. Generate AI Reply
     let reply;
     try {
       reply = await generateReply(text, history, systemPrompt);
@@ -500,12 +433,10 @@ async function processMessage({ message, phoneNumberId }) {
       reply = FALLBACK_REPLY;
     }
 
-    extractOrder(text, history, systemPrompt)
-      .then((order) => order && createOrder({ phone: from, phoneNumberId, items: order.items, amount: order.amount }))
-      .catch((e) => console.error("Order extraction/creation failed:", e));
-
+    // 6. Send bot reply via WhatsApp Cloud API
+    let providerResponse = null;
     try {
-      await sendWhatsAppText(phoneNumberId, from, reply);
+      providerResponse = await sendWhatsAppText(phoneNumberId, from, reply);
     } catch (sendErr) {
       if (isWindowExpiredError(sendErr?.message, sendErr?.code)) {
         console.warn(`[Bot] Send failed with 131047 (window expired) for ${from}`);
@@ -515,10 +446,31 @@ async function processMessage({ message, phoneNumberId }) {
       return;
     }
 
-    saveMessage(from, "assistant", reply, phoneNumberId).catch((e) =>
-      console.error("DB save (assistant) failed:", e)
-    );
-  } catch (bgErr) {
-    console.error("Background webhook processing error:", bgErr);
+    const botWamid = providerResponse?.messages?.[0]?.id || null;
+
+    // 7. Store outbound message with sender = 'bot'
+    if (isSupabaseConfigured() && conversation?.id) {
+      try {
+        await storeOutboundMessage({
+          conversationId: conversation.id,
+          waMessageId: botWamid,
+          sender: "bot",
+          type: "text",
+          body: reply,
+          status: "sent",
+        });
+      } catch (dbErr) {
+        console.error("Failed to store bot outbound reply in Supabase:", dbErr);
+      }
+    }
+
+    if (process.env.UPSTASH_REDIS_REST_URL) {
+      saveRedisMessage(from, "assistant", reply, phoneNumberId, {
+        wamid: botWamid,
+        status: "sent",
+      }).catch((e) => console.error("Redis save assistant reply failed:", e));
+    }
+  } catch (err) {
+    console.error("processIncomingMessage background error:", err);
   }
 }
