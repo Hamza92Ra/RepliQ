@@ -6,7 +6,9 @@ import {
     markAsRead,
     getMediaUrl,
     downloadMedia,
+    normalizePhone,
     normalizeRecipient,
+    extractCustomerIdentity,
 } from "../lib/whatsapp.js";
 import {
     isWithin24hWindow,
@@ -321,6 +323,7 @@ export default async function handler(req, res) {
             const change = entry?.changes?.[0];
             const value = change?.value;
             const message = value?.messages?.[0];
+            const contact = value?.contacts?.[0];
 
             const statusUpdate = value?.statuses?.[0];
             if (statusUpdate) {
@@ -355,7 +358,7 @@ export default async function handler(req, res) {
             // Respond to Meta immediately so it never times out and retries.
             res.status(200).send("EVENT_RECEIVED");
 
-            waitUntil(processMessage({ message, phoneNumberId }));
+            waitUntil(processMessage({ message, contact, phoneNumberId }));
         } catch (err) {
             console.error("Webhook handler error:", err);
             if (!res.headersSent) {
@@ -368,14 +371,14 @@ export default async function handler(req, res) {
     return res.status(405).send("Method Not Allowed");
 }
 
-async function processMessage({ message, phoneNumberId }) {
+async function processMessage({ message, contact, phoneNumberId }) {
     try {
-        const rawFrom = message.from || message.from_user_id;
-        if (!rawFrom) {
-            console.error("processMessage: message has no 'from' or 'from_user_id' field, skipping:", JSON.stringify(message));
+        const identity = extractCustomerIdentity(message, contact);
+        const from = identity.primaryId;
+        if (!from) {
+            console.error("processMessage: message has no identifiable recipient, skipping:", JSON.stringify(message));
             return;
         }
-        const from = normalizeRecipient(rawFrom);
 
         // --- Dedup: Meta retries deliveries, so the same message can arrive 2-3x ---
         let claimed = false;
@@ -404,7 +407,11 @@ async function processMessage({ message, phoneNumberId }) {
         if (isHumanTakeover) {
             console.log(`[takeover=true] [${from}] Bot silent (human takeover active)`);
             try {
-                await saveMessage(from, "user", describeInbound(message), phoneNumberId);
+                await saveMessage(from, "user", describeInbound(message), phoneNumberId, {
+                    userId: identity.userId,
+                    phone: identity.phone,
+                    profileName: identity.profileName,
+                });
             } catch (dbErr) {
                 console.error("DB save (silent mode) failed:", dbErr);
             }
@@ -457,7 +464,12 @@ async function processMessage({ message, phoneNumberId }) {
                 console.error("Failed to send handoff message:", sendErr);
             }
             await setTakeoverStatus(from, true).catch(() => {});
-            await saveMessage(from, "assistant", handoffMsg, phoneNumberId, { status: "sent" }).catch(() => {});
+            await saveMessage(from, "assistant", handoffMsg, phoneNumberId, {
+                status: "sent",
+                userId: identity.userId,
+                phone: identity.phone,
+                profileName: identity.profileName,
+            }).catch(() => {});
             notifyHandoff({
                 from,
                 message: text,
@@ -488,7 +500,12 @@ async function processMessage({ message, phoneNumberId }) {
         try {
             const displayText = voiceNote ? `🎙️ Message vocal (transcription) : ${text}` : text;
             const inboundTs = message.timestamp ? Number(message.timestamp) * 1000 : Date.now();
-            await saveMessage(from, "user", displayText, phoneNumberId, { ts: inboundTs });
+            await saveMessage(from, "user", displayText, phoneNumberId, {
+                ts: inboundTs,
+                userId: identity.userId,
+                phone: identity.phone,
+                profileName: identity.profileName,
+            });
             history = await getHistory(from, 10);
             // getHistory includes the message we just saved — drop the last one
             // since generateReply adds the current message itself.

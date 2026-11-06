@@ -8,6 +8,7 @@ import {
   downloadMedia,
   normalizePhone,
   normalizeRecipient,
+  extractCustomerIdentity,
 } from "../lib/whatsapp.js";
 import {
   isWithin24hWindow,
@@ -299,14 +300,16 @@ export default async function handler(req, res) {
  */
 async function processIncomingMessage({ message, contact, phoneNumberId }) {
   try {
-    const rawFrom = message.from || message.from_user_id;
-    if (!rawFrom) {
-      console.error("processIncomingMessage: message missing 'from' and 'from_user_id'", JSON.stringify(message));
+    const identity = extractCustomerIdentity(message, contact);
+    const from = identity.primaryId;
+    if (!from) {
+      console.error("processIncomingMessage: message missing identifiable recipient ('from', 'from_user_id', or contact id)", JSON.stringify(message));
       return;
     }
 
-    const from = normalizePhone(rawFrom);
-    const contactName = contact?.profile?.name || null;
+    const contactName = identity.profileName;
+    const userId = identity.userId;
+    const phone = identity.phone;
     const inboundTs = message.timestamp ? Number(message.timestamp) * 1000 : Date.now();
 
     // Deduplication check via local cache & Redis if available
@@ -347,7 +350,7 @@ async function processIncomingMessage({ message, contact, phoneNumberId }) {
 
       if (isSupabaseConfigured()) {
         try {
-          const conversation = await upsertInboundConversation(from, contactName, inboundTs);
+          const conversation = await upsertInboundConversation(from, contactName, inboundTs, { userId, phone });
           await storeInboundMessage({
             conversationId: conversation.id,
             waMessageId: message.id,
@@ -366,6 +369,9 @@ async function processIncomingMessage({ message, contact, phoneNumberId }) {
             id: message.id,
             wamid: message.id,
             ts: inboundTs,
+            userId,
+            phone,
+            profileName: contactName,
           });
         } catch (redisErr) {
           console.error(`[takeover=true] [${from}] Redis store failed:`, redisErr);
@@ -414,7 +420,7 @@ async function processIncomingMessage({ message, contact, phoneNumberId }) {
     // Store inbound message now that text/transcription is complete
     if (isSupabaseConfigured()) {
       try {
-        conversation = await upsertInboundConversation(from, contactName, inboundTs);
+        conversation = await upsertInboundConversation(from, contactName, inboundTs, { userId, phone });
         const storeResult = await storeInboundMessage({
           conversationId: conversation.id,
           waMessageId: message.id,
@@ -438,6 +444,9 @@ async function processIncomingMessage({ message, contact, phoneNumberId }) {
           id: message.id,
           wamid: message.id,
           ts: inboundTs,
+          userId,
+          phone,
+          profileName: contactName,
         });
       } catch (redisErr) {
         console.error("Redis mirror error:", redisErr);

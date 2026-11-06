@@ -458,6 +458,39 @@
             color: var(--text-dim);
         }
 
+        .convo-title-row {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .convo-profile-name {
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .convo-id-subtext, .id-subtext {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-family: 'IBM Plex Mono', monospace;
+            opacity: 0.85;
+            margin-top: 2px;
+        }
+
+        .badge.masked-badge {
+            background: rgba(148, 163, 184, 0.15);
+            color: #94a3b8;
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            font-size: 10px;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+        }
+
         .convo-preview {
             font-size: 12.5px;
             color: var(--text-dim);
@@ -1941,17 +1974,72 @@
         }
 
         // BSUID SUPPORT: Meta identifies WhatsApp-username-only customers by
-        // a "business-scoped user ID" (format "XX.digits", e.g.
-        // "MA.1587668549511396") instead of a phone number — see
-        // lib/whatsapp.js on the backend for the matching logic. Showing a
-        // "+" in front of one of these makes it look like a broken phone
-        // number, so we only prepend "+" for real phone numbers.
+        // a "business-scoped user ID" (format "XX.digits", e.g. "MA.1587668549511396")
+        // instead of a phone number.
         const BSUID_PATTERN = /^[A-Za-z]{2}\.[A-Za-z0-9]+$/;
         function isBsuidId(id) {
-            return typeof id === "string" && BSUID_PATTERN.test(id);
+            return typeof id === "string" && BSUID_PATTERN.test(id.trim());
         }
-        function displayIdentity(id) {
-            return isBsuidId(id) ? id : "+" + id;
+
+        function formatPhoneNumber(phone) {
+            if (!phone) return "";
+            const clean = String(phone).replace(/^whatsapp:/i, "").trim();
+            if (isBsuidId(clean)) return clean;
+            let digits = clean.replace(/\D/g, "");
+            if (digits.startsWith("00")) digits = digits.slice(2);
+            else if (digits.startsWith("0") && digits.length === 10) digits = "212" + digits.slice(1);
+            if (digits.startsWith("212") && digits.length === 12) {
+                return `+212 ${digits.slice(3, 6)} ${digits.slice(6)}`;
+            }
+            return digits ? `+${digits}` : "";
+        }
+
+        function getConvoIdentity(convoOrPhone) {
+            if (!convoOrPhone) return { hasPhone: false, mainLabel: "", subText: "", isMasked: false, profileName: "" };
+            let convo = null;
+            let rawId = "";
+            if (typeof convoOrPhone === "object") {
+                convo = convoOrPhone;
+                rawId = convo.phone || "";
+            } else {
+                rawId = String(convoOrPhone);
+                convo = (conversations || []).find(c => c.phone === rawId) || null;
+            }
+
+            const rawPhone = convo?.phoneNumber || (!isBsuidId(rawId) ? rawId : null);
+            const hasPhone = Boolean(rawPhone && !isBsuidId(rawPhone));
+            const profileName = convo?.profile_name || convo?.contact_name || "";
+            const userId = convo?.user_id || (isBsuidId(rawId) ? rawId : "");
+
+            if (hasPhone) {
+                return {
+                    hasPhone: true,
+                    phoneFormatted: formatPhoneNumber(rawPhone),
+                    mainLabel: formatPhoneNumber(rawPhone),
+                    subText: profileName,
+                    profileName,
+                    userId,
+                    isMasked: false,
+                };
+            }
+
+            return {
+                hasPhone: false,
+                phoneFormatted: "",
+                mainLabel: profileName || "Client WhatsApp",
+                subText: userId,
+                profileName,
+                userId,
+                isMasked: true,
+            };
+        }
+
+        function displayIdentity(idOrConvo) {
+            const ident = getConvoIdentity(idOrConvo);
+            if (ident.hasPhone) {
+                return ident.profileName ? `${ident.phoneFormatted} (${ident.profileName})` : ident.phoneFormatted;
+            }
+            return ident.profileName ? `${ident.profileName} (${ident.userId})` : (ident.userId || "Client");
         }
 
         // Per-conversation "last viewed" timestamps, kept locally per browser
@@ -2173,7 +2261,11 @@
         function matchesSearch(convo, q) {
             if (!q) return true;
             const needle = q.toLowerCase();
-            if (convo.phone.toLowerCase().includes(needle)) return true;
+            if ((convo.phone || "").toLowerCase().includes(needle)) return true;
+            if ((convo.phoneNumber || "").toLowerCase().includes(needle)) return true;
+            if ((convo.user_id || "").toLowerCase().includes(needle)) return true;
+            if ((convo.profile_name || "").toLowerCase().includes(needle)) return true;
+            if ((convo.contact_name || "").toLowerCase().includes(needle)) return true;
             return convo.messages.some(m => (m.content || "").toLowerCase().includes(needle));
         }
 
@@ -2220,6 +2312,11 @@
       </div>`;
         }
 
+        function escapeHtml(str) {
+            if (!str) return "";
+            return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
         function renderSidebar() {
             const sidebar = document.getElementById("sidebar");
             const head = `<div class="sidebar-head">
@@ -2247,11 +2344,33 @@
                     : modeBadgeHtml(c);
                 const unread = isUnread(c);
                 const time = timeAgo(lastMessageTs(c));
-                const initials = c.phone.slice(-2);
+                const ident = getConvoIdentity(c);
+                const initials = ident.profileName
+                    ? ident.profileName.slice(0, 2).toUpperCase()
+                    : (ident.hasPhone ? ident.phoneFormatted.slice(-2) : "ID");
+
+                let nameAndPhoneHtml = "";
+                if (ident.hasPhone) {
+                    nameAndPhoneHtml = `
+                        <div class="convo-title-row">
+                            <span class="convo-phone">${unread ? '<span class="unread-dot"></span>' : ''}${escapeHtml(ident.phoneFormatted)}</span>
+                            ${ident.profileName ? `<span class="convo-profile-name">${escapeHtml(ident.profileName)}</span>` : ''}
+                        </div>
+                    `;
+                } else {
+                    nameAndPhoneHtml = `
+                        <div class="convo-title-row">
+                            <span class="convo-phone">${unread ? '<span class="unread-dot"></span>' : ''}${escapeHtml(ident.mainLabel)}</span>
+                            <span class="badge masked-badge">Numéro masqué</span>
+                        </div>
+                        <div class="convo-id-subtext">${escapeHtml(ident.userId)}</div>
+                    `;
+                }
+
                 return `<div class="convo-item ${c.phone === activePhone ? 'active' : ''} ${unread ? 'unread' : ''}" data-initials="${initials}" onclick="renderThread('${c.phone}')">
         <button class="convo-delete" onclick="event.stopPropagation(); confirmDelete('${c.phone}')" title="Supprimer" aria-label="Supprimer la conversation">🗑️</button>
         <div class="convo-top-row">
-          <div class="convo-phone">${unread ? '<span class="unread-dot"></span>' : ''}${displayIdentity(c.phone)}</div>
+          ${nameAndPhoneHtml}
         </div>
         <div class="convo-top-row" style="margin-top:6px;">
           ${badge}
@@ -2333,9 +2452,27 @@
             activePhone = phone;
             activeOrderId = null;
             document.getElementById("orderActions").style.display = "none";
-            document.getElementById("activePhone").textContent = displayIdentity(phone);
-            document.getElementById("contactAvatar").textContent = phone.slice(-2);
-            document.getElementById("conversationStatus").textContent = "Conversation client";
+
+            const convo = conversations.find(c => c.phone === phone);
+            const ident = getConvoIdentity(convo || phone);
+
+            if (ident.hasPhone) {
+                document.getElementById("activePhone").textContent = ident.phoneFormatted;
+                document.getElementById("conversationStatus").textContent = ident.profileName
+                    ? `${ident.profileName} • Conversation client`
+                    : "Conversation client";
+            } else {
+                document.getElementById("activePhone").textContent = ident.mainLabel;
+                document.getElementById("conversationStatus").innerHTML = `
+                    <span class="id-subtext">${escapeHtml(ident.userId)}</span> • <span class="badge masked-badge">Numéro masqué</span>
+                `;
+            }
+
+            const avatarInitials = ident.profileName
+                ? ident.profileName.slice(0, 2).toUpperCase()
+                : (ident.hasPhone ? ident.phoneFormatted.slice(-2) : "ID");
+            document.getElementById("contactAvatar").textContent = avatarInitials;
+
             document.getElementById("app").classList.add("conversation-open");
             document.getElementById("headerActions").classList.remove("mobile-visible");
             document.getElementById("actionsToggle").setAttribute("aria-expanded", "false");
@@ -2703,9 +2840,13 @@
         // backend action, and local cleanup of any cached per-phone state.
         async function confirmDelete(phone) {
             if (!phone) return;
+            const ident = getConvoIdentity(phone);
+            const label = ident.hasPhone
+                ? `${ident.phoneFormatted}${ident.profileName ? ' (' + ident.profileName + ')' : ''}`
+                : `${ident.mainLabel} (${ident.userId})`;
             const confirmed = await openConfirmModal(
                 "delete",
-                `Tout l'historique de <strong>${displayIdentity(phone)}</strong> sera définitivement supprimé. Cette action est irréversible.`
+                `Tout l'historique de <strong>${escapeHtml(label)}</strong> sera définitivement supprimé. Cette action est irréversible.`
             );
             if (!confirmed) return;
 
