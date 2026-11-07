@@ -67,3 +67,29 @@ Public contacts verified: **7amzaraddi@gmail.com** and **+212712614398**. These 
 Only this report is added. The final response records the verification commit SHA, live remote SHA match and new Git-triggered Preview URL/build status after push. No automatic merge, direct deploy, environment mutation or Production promotion is performed. A successful Preview build is not a passing lead/Upstash integration test.
 
 Rollback of this documentation-only branch needs no database, settings or data action. Keep the existing application artifact and security guards; do not reset stores or weaken protection. Resume hosted lead testing only after an explicitly approved isolated setup exists.
+
+## Final time-bounded isolation check
+
+Read-only Marketplace inventory on the existing `hamza92ras-projects` session found `redis-cobalt-car` (`store_LIbBP9kCxOch9wSx`). Resource metadata reports **`uninstalled`**. No metadata establishing a dedicated non-production purpose was returned. The resource was not connected, queried or used. No authorized standalone Upstash connector was available in this session; this is not a claim that the owner's separate Upstash account contains no databases.
+
+Preview variable names/targets were rechecked: **none configured for Preview**; the 15 names above remain **Production-only**. No values were printed, compared or copied. There is therefore **no verified usable isolated Preview Redis through the available access**. Resource discovery stopped at this point. No resource was provisioned and no paid terms, billing, credential or environment changes were made.
+
+All six hosted lead cases remain **BLOCKED / NOT RUN**. Do not reinterpret the passing static/security checks or successful Preview builds as live Upstash verification. The prior **336 passing tests and seven-function check** remain applicable because application code is unchanged; that suite was deliberately not rerun in this documentation-only pass.
+
+### Exact manual setup — owner action required
+
+1. In the owner's Upstash account, select an existing Redis database confirmed to belong to RepliQ and dedicated exclusively to non-production synthetic testing. Do not reuse `redis-cobalt-car` without resolving its uninstalled state and proving its purpose. Do not select Production, a customer database, or a copy/backup of customer data. If no suitable database exists, the owner may create one **only after confirming the plan is explicitly free or separately approving any cost**; the agent has not created or purchased anything.
+2. In Vercel **`hamza92ras-projects` → `repli-q` → Settings → Environment Variables**, add **new, separate entries** for `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` using that test database's real REST credentials, privately in the UI. Select **Preview only** and restrict to Git branch **`release/us-hosted-verification`**. Leave Production unchecked and leave the existing Production-targeted entries untouched. Do not edit the Production rows to include Preview or use an auto-connect flow that changes all targets. Do not paste credentials into chat or reports.
+3. For this same Preview branch only, set the **non-secret synthetic fixture** `WHATSAPP_PHONE_NUMBER_ID=1001`. This is an existing local-test identifier, not a real Meta number or credential. Keep `DEFAULT_PHONE_NUMBER_ID`, `WHATSAPP_TOKEN`, `RESEND_API_KEY`, `NOTIFY_EMAIL_TO`, Supabase credentials, AI keys and bot-activation flags **unset in Preview**. This lets the lead path use its known fixture scope while actual WhatsApp/email delivery remains disabled. No real provider credentials are needed for the six lead tests.
+4. Confirm only the test resource name/ID, owning account/team and dedicated non-production purpose. Once that ownership/configuration is approved, an authorized follow-up can create synthetic fixtures **in that isolated database only**. A same-phone rate-limit fixture can use `conv:owner:15555550123 = 1001`; this is synthetic state and must never be written to a Production/customer store. The owner does not need to seed anything now.
+5. Changes to Vercel variables apply to a new deployment. After the setup is confirmed, authorize a **Preview-only** rebuild and the six synthetic tests. No lead is to be submitted until the new deployment's isolated bindings and absent delivery keys are confirmed. Any outage exercise must be reversible and restricted to this test setup; never pause/delete shared resources or remove Production credentials. Missing-configuration failure is not proof of a live Redis network-outage test.
+
+**Next single action for the owner:** configure and confirm the isolated, Preview-branch-only test environment in steps 1–3. Share only its resource identity/purpose confirmation, never secrets. Until then, further lead testing cannot safely proceed.
+
+### Final remaining gates
+
+- **BLOCKED:** isolated hosted acceptance, rate limiting, duplicate, honeypot, oversize and Redis outage integration evidence.
+- **PENDING OWNER FACTS:** legal/responsible business identity and roles; actual provider/logging/analytics/processing practices; retention/deletion/backup/request-handling procedures; final notice wording and effective date. The already-confirmed email/bot contacts and approved prices are not awaiting reapproval.
+- **UNCHANGED / OUT OF SCOPE:** positive hosted Meta HMAC needs an approved synthetic Preview secret; Production promotion, bot activation, multi-tenancy and SQL are not authorized by this task.
+
+**Final status: NO-GO for full US Production launch. GO only for review and explicitly approved isolated Preview testing once the owner completes the setup.** This session ends with the blocker documented; it does not wait for owner action or loop on discovery. The final response records the documentation SHA, verified remote match and resulting Preview build status.
