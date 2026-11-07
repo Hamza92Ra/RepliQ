@@ -20,7 +20,7 @@ const server = http.createServer(async (req, res) => {
 });
 await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
 const origin = `http://127.0.0.1:${server.address().port}`;
-const artifacts = "/tmp/repliq-us-launch-review"; await mkdir(artifacts, { recursive: true });
+const artifacts = "/tmp/repliq-us-final-cleanup-review"; await mkdir(artifacts, { recursive: true });
 let browser;
 try {
   browser = await chromium.launch({ headless: true });
@@ -44,6 +44,8 @@ try {
     await page.goto(origin); await page.addStyleTag({ content: "* { animation-delay: 0s !important; transition-delay: 0s !important; }" });
     assert.equal(await page.locator("html").getAttribute("lang"), "en");
     assert.equal(await page.locator(".price-card").count(), 1);
+    assert.equal(await page.locator('a[href="mailto:7amzaraddi@gmail.com"]').count(), 1);
+    for (const href of await page.locator('a[href*="wa.me/"]').evaluateAll(links => links.map(link => link.href))) assert.equal(new URL(href).pathname, "/212712614398");
     assert.ok(await page.locator(".phone-stage .bubble").evaluateAll(bubbles => bubbles.every(bubble => getComputedStyle(bubble).opacity === "1")), "Reduced-motion phone demo must remain visible");
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), `${label} landing overflows`);
     assert.ok(await page.locator(".phone-stage .chat-area").evaluate(chat => chat.scrollHeight <= chat.clientHeight), "Phone demo must not clip replies");
@@ -65,6 +67,7 @@ try {
     await page.locator("#activity").selectOption({ label: "Yacht charter" }); await page.locator("#phone").fill("+1 787 555 0123");
     await page.locator("#email").fill("fixture@example.invalid"); await page.locator("#terms").check();
     await page.locator("#submitRequest").click(); await page.locator("#receiptWrap").waitFor({ state: "visible" });
+    assert.equal(new URL(await page.locator("#waFollowUp").getAttribute("href")).pathname, "/212712614398");
     const sent = submissions.at(-1); assert.equal(sent.offer, "RepliQ Pro"); assert.equal(sent.intent, intent);
     assert.equal(sent.monthly, 99); assert.equal(sent.setup, 99); assert.equal(sent.mode, "monthly"); assert.equal(sent.phone, "+17875550123");
     assert.equal(await page.locator("#receiptTable img").count(), 0); assert.equal(await page.evaluate(() => window.fixtureXss), undefined);
@@ -87,15 +90,22 @@ try {
     assert.equal(await page.locator('a[href="privacy-en.html"]').count() > 0, true);
     await page.goto(`${origin}/privacy-en.html`);
     assert.equal(await page.locator("html").getAttribute("lang"), "en");
+    assert.equal(await page.locator('meta[name="robots"]').getAttribute("content"), "noindex");
+    assert.equal(await page.locator('a[href="mailto:7amzaraddi@gmail.com"]').count(), 1);
+    assert.equal(await page.locator('a[href="https://wa.me/212712614398"]').count(), 1);
     assert.match(await page.locator(".draft").innerText(), /pending business-owner review/);
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), `${label} privacy overflows`);
     await page.screenshot({ path: `${artifacts}/${label}-privacy.png`, fullPage: true });
     await page.locator('nav a[href="privacy.html"]').click();
     assert.equal(await page.locator("html").getAttribute("lang"), "fr");
+    assert.equal(await page.locator('a[href="mailto:7amzaraddi@gmail.com"]').count(), 1);
+    assert.match(await page.locator(".draft").innerText(), /en attente de validation/);
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), `${label} French notice overflows`);
+    await page.screenshot({ path: `${artifacts}/${label}-privacy-fr.png`, fullPage: true });
     await page.close();
   }
   assert.deepEqual(errors, []);
-  console.log("Browser checks passed: desktop/mobile layout, both CTAs, keyboard FAQ, English/French privacy, consent/phone, mocked submission, error handling, escaped receipt and real PDF downloads. No page errors.");
+  console.log("Browser checks passed: desktop/mobile layout, both CTAs, keyboard FAQ, official contacts, draft English/French privacy, consent/phone, mocked submission, error handling, escaped receipt and real PDF downloads. No page errors.");
   console.log(`Screenshots and synthetic PDFs: ${artifacts}`);
 } finally {
   await browser?.close(); await new Promise(resolve => server.close(resolve));

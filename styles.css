@@ -542,3 +542,6 @@
 }
 .public-site .phone-stage .chat-area{gap:8px;}
 @media(max-width:920px){.public-site .hero .phone-stage{order:0;}}
+
+/* Public contact links must wrap rather than widen narrow viewports. */
+.public-site footer .foot-links{flex-wrap:wrap;max-width:100%;min-width:0;row-gap:12px;}
