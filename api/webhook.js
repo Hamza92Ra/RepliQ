@@ -1,4 +1,4 @@
-import { assertDemoInboundScope, resolveBusinessPrompt } from "../lib/business-prompt.js";
+import { assertDemoInboundScope, assertDemoReceiptScope, resolveBusinessPrompt } from "../lib/business-prompt.js";
 import { authenticateMetaRequest } from "../lib/webhook-security.js";
 import { resolveWhatsAppCredentials } from "../lib/whatsapp-credentials.js";
 
@@ -115,6 +115,11 @@ export default async function handler(req, res) {
         const wamid = statusUpdate.id;
         const status = statusUpdate.status;
         const recipientId = statusUpdate.recipient_id;
+        await assertDemoReceiptScope({
+          phoneNumberId: value?.metadata?.phone_number_id,
+          authenticatedPhoneNumberId: value?.metadata?.phone_number_id,
+          recipientId, messageId: wamid,
+        });
 
         let errorDetail = null;
         if (statusUpdate.errors && statusUpdate.errors.length > 0) {

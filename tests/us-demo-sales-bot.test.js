@@ -183,3 +183,142 @@ it('checks canonical BSUID and phone ownership without foreign identity fallback
   await assert.rejects(assertDemoInboundScope({ phoneNumberId: NUMBER, authenticatedPhoneNumberId: NUMBER, identity: { primaryId: 'US.abc123', userId: 'US.abc123', phone: CUSTOMER } }));
   assert.equal(pipelines().some(([command]) => ['LRANGE','SET'].includes(command)), false);
 });
+
+function receiptEvent(number = NUMBER, recipient = CUSTOMER, messageId = 'synthetic-shared-wamid') {
+  const payload = event({ number });
+  const value = payload.entry[0].changes[0].value;
+  delete value.messages;
+  value.statuses = [{ id: messageId, recipient_id: recipient, status: 'delivered' }];
+  return payload;
+}
+function selectSyntheticBusiness(number) {
+  process.env.WHATSAPP_PHONE_NUMBER_ID = number;
+  process.env.DEFAULT_PHONE_NUMBER_ID = number;
+  enable({ ...binding(), phoneNumberId: number });
+}
+function assertNoHistoryOrStateWrites() {
+  assert.equal(pipelines().some(([command]) => ['LRANGE', 'RPUSH', 'SET', 'DEL'].includes(command)), false);
+  assert.equal(chats().length, 0); assert.equal(outbound().length, 0);
+}
+
+for (const [name, handler] of [['webhook', webhook], ['conversation', conversation]]) describe(`${name}: synthetic two-business isolation gates`, () => {
+  for (const [target, foreign] of [['1001', '2002'], ['2002', '1001']]) {
+    it(`blocks Supabase+Redis activation for ${target}, retaining the other business's colliding records`, async () => {
+      selectSyntheticBusiness(target);
+      process.env.SUPABASE_URL = 'https://shared-supabase.fixture.invalid';
+      process.env.SUPABASE_SERVICE_ROLE_KEY = 'synthetic-only';
+      // The legacy schema can hold only one row for this shared customer. Its
+      // ownership is review evidence outside that schema, NOT an actual column.
+      store.set(`conv:owner:${CUSTOMER}`, foreign);
+      store.set(`conv:${CUSTOMER}`, [JSON.stringify({ role: 'user', content: 'Other business synthetic history' })]);
+      store.set(`conv:mode:${CUSTOMER}`, 'human');
+      store.set(`business:${target}`, JSON.stringify({ systemPrompt: 'Target custom pricing stays intact' }));
+      store.set(`business:${foreign}`, JSON.stringify({ systemPrompt: 'Foreign MAD offer stays intact' }));
+      const before = structuredClone([...store]);
+      const result = await invoke(handler, event({ number: target }));
+      assert.equal(result.code, 200); // authenticated ACK is NOT activation
+      assert.equal(calls.length, 0); assert.deepEqual([...store], before);
+    });
+    it(`blocks Supabase status collisions for ${target} before any receipt mutation`, async () => {
+      selectSyntheticBusiness(target);
+      process.env.SUPABASE_URL = 'https://shared-supabase.fixture.invalid';
+      process.env.SUPABASE_SERVICE_ROLE_KEY = 'synthetic-only';
+      store.set(`conv:owner:${CUSTOMER}`, foreign);
+      store.set('msg:phone:synthetic-shared-wamid', CUSTOMER);
+      store.set(`conv:${CUSTOMER}`, [JSON.stringify({ wamid: 'synthetic-shared-wamid', role: 'assistant', status: 'sent', content: 'Synthetic foreign reply' })]);
+      const before = structuredClone([...store]);
+      await invoke(handler, receiptEvent(target));
+      assert.equal(calls.length, 0); assert.deepEqual([...store], before);
+    });
+    it(`rejects ${foreign} signed number on ${target}'s single-business credentials`, async () => {
+      selectSyntheticBusiness(target);
+      await invoke(handler, event({ number: foreign }));
+      await invoke(handler, receiptEvent(foreign));
+      assert.equal(calls.length, 0);
+    });
+    it(`does not inherit ${foreign}'s history or human takeover for an identical customer at ${target}`, async () => {
+      selectSyntheticBusiness(target);
+      store.set(`conv:owner:${CUSTOMER}`, foreign);
+      store.set(`conv:${CUSTOMER}`, [JSON.stringify({ role: 'user', content: 'Synthetic foreign context' })]);
+      store.set(`conv:takeover:${CUSTOMER}`, JSON.stringify({ human_takeover: true }));
+      store.set(`conv:mode:${CUSTOMER}`, 'human');
+      const before = structuredClone([...store]);
+      await invoke(handler, event({ number: target, audio: true }));
+      assertNoHistoryOrStateWrites(); assert.deepEqual([...store], before);
+      assert.equal(pipelines().some(([command, key]) => command === 'GET' && /conv:(?:mode|takeover):/.test(key)), false);
+      assert.equal(calls.some(call => call.url.includes('transcriptions')), false);
+    });
+    it(`does not merge ${foreign}'s BSUID into ${target}'s phone conversation`, async () => {
+      selectSyntheticBusiness(target);
+      store.set('conv:owner:US.fixture123', foreign);
+      store.set('conv:user_map:US.fixture123', CUSTOMER);
+      store.set('conv:US.fixture123', [JSON.stringify({ role: 'user', content: 'Synthetic foreign alias' })]);
+      store.set(`conv:owner:${CUSTOMER}`, target);
+      const before = structuredClone([...store]);
+      const payload = event({ number: target });
+      payload.entry[0].changes[0].value.messages[0].from_user_id = 'US.fixture123';
+      await invoke(handler, payload);
+      assertNoHistoryOrStateWrites(); assert.deepEqual([...store], before);
+    });
+    it(`does not update ${foreign}'s receipt via an identical customer or wamid at ${target}`, async () => {
+      selectSyntheticBusiness(target);
+      store.set(`conv:owner:${CUSTOMER}`, foreign);
+      store.set('msg:phone:synthetic-shared-wamid', CUSTOMER);
+      store.set(`conv:${CUSTOMER}`, [JSON.stringify({ wamid: 'synthetic-shared-wamid', status: 'sent' })]);
+      const before = structuredClone([...store]);
+      await invoke(handler, receiptEvent(target));
+      assertNoHistoryOrStateWrites(); assert.deepEqual([...store], before);
+    });
+  }
+  it('requires a known receipt mapping, not recipient/default-owner or alias fallback', async () => {
+    enable(); store.set(`conv:owner:${CUSTOMER}`, NUMBER);
+    store.set(`conv:${CUSTOMER}`, [JSON.stringify({ wamid: 'synthetic-shared-wamid', status: 'sent' })]);
+    await invoke(handler, receiptEvent()); assertNoHistoryOrStateWrites();
+    store.set('msg:phone:synthetic-shared-wamid', '15555550999');
+    await invoke(handler, receiptEvent()); assertNoHistoryOrStateWrites();
+    calls = []; store.set('msg:phone:synthetic-shared-wamid', CUSTOMER); store.delete(`conv:owner:${CUSTOMER}`);
+    await invoke(handler, receiptEvent()); assertNoHistoryOrStateWrites();
+  });
+  it('allows a mapped own-number Redis-only receipt without modifying another business history', async () => {
+    enable(); store.set(`conv:owner:${CUSTOMER}`, NUMBER); store.set('msg:phone:synthetic-shared-wamid', CUSTOMER);
+    store.set(`conv:${CUSTOMER}`, [JSON.stringify({ wamid: 'synthetic-shared-wamid', role: 'assistant', content: 'Synthetic own reply', status: 'sent' })]);
+    store.set('conv:owner:15555550999', '2002');
+    const foreignHistory = [JSON.stringify({ wamid: 'synthetic-shared-wamid', status: 'sent', content: 'Synthetic foreign reply' })];
+    store.set('conv:15555550999', foreignHistory);
+    await invoke(handler, receiptEvent());
+    assert.equal(JSON.parse(store.get(`conv:${CUSTOMER}`)[0]).status, 'delivered');
+    assert.deepEqual(store.get('conv:15555550999'), foreignHistory);
+    assert.equal(chats().length, 0); assert.equal(outbound().length, 0);
+  });
+  it('rejects unsigned receipts and missing signed receiving metadata before storage access', async () => {
+    enable(); assert.equal((await invoke(handler, receiptEvent(), { signed: false })).code, 401);
+    await invoke(handler, receiptEvent(null)); assert.equal(calls.length, 0);
+  });
+  it('does not enable Supabase from a new storage label or an owner-looking binding', async () => {
+    enable({ ...binding(), storageMode: 'isolated-supabase-redis' });
+    process.env.SUPABASE_URL = 'https://shared-supabase.fixture.invalid';
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'synthetic-only';
+    await invoke(handler); await invoke(handler, receiptEvent()); assert.equal(calls.length, 0);
+  });
+});
+
+for (const [name, handler] of [['webhook', webhook], ['conversation', conversation]]) it(`${name}: inactive path retains existing Supabase+Redis receipt behavior`, async () => {
+  process.env.SUPABASE_URL = 'https://supabase.compat.fixture.invalid';
+  process.env.SUPABASE_SERVICE_ROLE_KEY = 'synthetic-only';
+  store.set(`conv:owner:${CUSTOMER}`, NUMBER);
+  store.set(`conv:${CUSTOMER}`, [JSON.stringify({ wamid: 'synthetic-shared-wamid', role: 'assistant', content: 'Existing synthetic reply', status: 'sent' })]);
+  const fixtureFetch = globalThis.fetch;
+  globalThis.fetch = async (url, options = {}) => {
+    if (String(url).startsWith('https://supabase.compat.fixture.invalid/rest/v1/messages')) {
+      calls.push({ url: String(url), options });
+      assert.equal(options.method, 'PATCH'); assert.deepEqual(JSON.parse(options.body), { status: 'delivered' });
+      return Response.json([{ wa_message_id: 'synthetic-shared-wamid', status: 'delivered' }]);
+    }
+    return fixtureFetch(url, options);
+  };
+  await invoke(handler, receiptEvent());
+  assert.equal(JSON.parse(store.get(`conv:${CUSTOMER}`)[0]).status, 'delivered');
+  assert.equal(calls.filter(call => call.url.includes('/rest/v1/messages')).length, name === 'webhook' ? 1 : 0);
+  assert.equal(pipelines().some(([command, key]) => command === 'EXISTS' || (command === 'GET' && key.startsWith('conv:owner:'))), false);
+  assert.equal(chats().length, 0); assert.equal(outbound().length, 0);
+});

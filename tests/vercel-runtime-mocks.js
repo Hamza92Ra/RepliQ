@@ -15,6 +15,17 @@ if (process.env.REPLIQ_US_DEMO_SALES_ENABLED === "true") {
       return Response.json({ choices: [{ message: { content: "Synthetic RepliQ Pro reply" }, finish_reason: "stop" }] });
     }
     const result = await fixtureFetch(input, options);
+    if (url.endsWith("/pipeline") && options.body) {
+      const commands = JSON.parse(options.body);
+      if (commands.some(([command, key]) => command === "SET" && key === "msg:phone:wamid.fixture")) {
+        process.send?.({ type: "us-demo-receipt-mapping-probe", exact: true });
+      }
+      for (const [command, key, ...values] of commands) {
+        if (command === "RPUSH" && values.some(value => { try { return JSON.parse(value).status === "delivered"; } catch { return false; } })) {
+          process.send?.({ type: "us-demo-receipt-update-probe", exact: key === "conv:15555550123" });
+        }
+      }
+    }
     if (url.includes("graph.facebook.com") && options.body && JSON.parse(options.body).type === "text") {
       process.send?.({ type: "us-demo-send-probe", exact: url.includes("/1001/messages") });
     }

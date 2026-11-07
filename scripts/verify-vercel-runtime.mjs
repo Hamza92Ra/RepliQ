@@ -162,6 +162,13 @@ for (const entrypoint of ["api/webhook.js", "api/conversation.js"]) {
     status(await demo.request(path, "POST", body, signed(body)), 200);
     await demo.waitForProbe("us-demo-prompt-probe");
     await demo.waitForProbe("us-demo-send-probe");
+    await demo.waitForProbe("us-demo-receipt-mapping-probe");
+    const receipt = JSON.stringify({ object: "whatsapp_business_account", entry: [{ changes: [{ value: {
+      metadata: { phone_number_id: "1001" }, statuses: [{ id: "wamid.fixture", recipient_id: "15555550123", status: "delivered" }],
+    } }] }] });
+    status(await demo.request(path, "POST", receipt), 401);
+    status(await demo.request(path, "POST", receipt, signed(receipt)), 200);
+    await demo.waitForProbe("us-demo-receipt-update-probe");
   } finally { await demo.close(); }
 }
 const lead = await start("api/lead.js");
