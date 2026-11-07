@@ -1,3 +1,5 @@
+import { PUBLIC_OFFER } from "../public-offer.js";
+import { handlePublicProLead } from "../lib/public-pro-lead.js";
 import { saveMessage } from "../lib/db.js";
 import { sendWhatsAppText } from "../lib/whatsapp.js";
 import { notifyTeam } from "../lib/notify.js";
@@ -52,6 +54,10 @@ export default async function handler(req, res) {
     if (req.method !== "POST") {
         return res.status(405).json({ error: "Method Not Allowed" });
     }
+
+    // Only explicit new-offer inquiries use the US acquisition copy. Existing
+    // offers and all chatbot/customer configurations keep their legacy behavior.
+    if (req.body?.offer === PUBLIC_OFFER.name) return handlePublicProLead(req, res);
 
     const { fullname, business, activity, phone, email, offer, mode, price, message, ref, volume, acceptedTerms } =
         req.body || {};

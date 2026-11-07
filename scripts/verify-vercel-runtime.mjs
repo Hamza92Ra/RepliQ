@@ -134,4 +134,12 @@ for (const entrypoint of ["api/webhook.js", "api/conversation.js"]) {
     }
   } finally { await runtimeHandler.close(); }
 }
+const lead = await start("api/lead.js");
+try {
+  status(await lead.request("/api/lead"), 405);
+  const inquiry = { fullname: "Alex Fixture", business: "Charter Fixture", phone: "+1 305 555 0123", email: "fixture@example.invalid", offer: "RepliQ Pro", intent: "demo", acceptedTerms: true };
+  const saved = await lead.request("/api/lead", "POST", inquiry);
+  status(saved, 200); assert.equal(saved.json.ok, true);
+  status(await lead.request("/api/lead", "POST", { ...inquiry, acceptedTerms: false }), 400);
+} finally { await lead.close(); }
 console.log(`@vercel/node ${JSON.parse(readFileSync(nodePackage)).version}: ${assertions} real-runtime HTTP response checks passed, with external services mocked`);

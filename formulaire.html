@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Démarrer avec RepliQ</title>
+    <title>Get Started | RepliQ Pro</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -28,504 +28,90 @@
     </style>
 </head>
 
-<body>
+<body class="public-site">
     <nav class="nav scrolled" id="nav">
         <div class="wrap">
             <a href="index.html" class="logo"><span class="logo-dot"></span>RepliQ</a>
             <div class="nav-links">
-                <a href="index.html#comment">Comment ça marche</a>
-                <a href="index.html#fonctionnalites">Fonctionnalités</a>
-                <a href="index.html#tarifs">Tarifs</a>
+                <a href="index.html#comment">How It Works</a>
+                <a href="index.html#fonctionnalites">Features</a>
+                <a href="index.html#tarifs">Pricing</a>
                 <a href="index.html#faq">FAQ</a>
             </div>
             <div style="display:flex; align-items:center; gap:18px;">
-                <a href="https://wa.me/212712614398" target="_blank" rel="noopener" class="nav-cta">Nous écrire</a>
+                <a href="https://wa.me/212712614398" target="_blank" rel="noopener" class="nav-cta">Contact Us</a>
             </div>
         </div>
     </nav>
 
-    <section class="form-hero">
-        <div class="wrap">
-            <div class="eyebrow-tag"><span class="pip">Étape 2/2</span> Finalisez votre demande</div>
-            <h1>Démarrez avec RepliQ.</h1>
-            <p>Remplissez vos informations, nous revenons vers vous sous 24h pour connecter votre numéro WhatsApp
-                Business et activer votre formule.</p>
+
+    <main>
+    <section class="form-hero"><div class="wrap"><div class="eyebrow-tag"><span class="pip">RepliQ Pro</span> Tell us about your operation</div><h1 id="requestHeading">Get Started with RepliQ.</h1><p id="requestIntro">Share your details and our team will follow up about setup. This form does not take payment or activate a subscription.</p></div></section>
+    <section class="form-section"><div class="wrap">
+        <div class="form-layout" id="formLayout">
+            <div class="form-card"><form id="signupForm">
+                <div class="field-group"><div class="field-row">
+                    <div><label for="fullname">Full name</label><input type="text" id="fullname" name="fullname" placeholder="Your name" autocomplete="name" maxlength="120" required></div>
+                    <div><label for="business">Business name</label><input type="text" id="business" name="business" placeholder="Your charter company" autocomplete="organization" maxlength="160" required></div>
+                </div></div>
+                <div class="field-group"><label for="activity">Business type</label><select id="activity" name="activity" required><option value="" disabled selected>Select your operation</option><option>Yacht charter</option><option>Boat charter</option><option>Boat tour / private cruise</option><option>Other charter or marine service</option><option>Other business</option></select></div>
+                <div class="field-group"><div class="field-row">
+                    <div><label for="phone">WhatsApp phone number</label><input type="tel" id="phone" name="phone" placeholder="+1 305 555 0123" autocomplete="tel" maxlength="30" required aria-describedby="phoneHint"><p class="field-hint" id="phoneHint">Include + and your country code. US and Puerto Rico: +1.</p></div>
+                    <div><label for="email">Email</label><input type="email" id="email" name="email" placeholder="you@yourcharter.com" autocomplete="email" maxlength="254" required></div>
+                </div></div>
+                <div class="field-group"><label for="offer">Your plan</label><select id="offer" name="offer" required><option value="RepliQ Pro">RepliQ Pro — $99/month + $99 one-time setup fee (USD)</option></select></div>
+                <div class="field-group"><label for="billing">Billing</label><select id="billing" name="billing" required><option value="monthly">Monthly subscription (USD)</option></select></div>
+                <div class="field-group"><label for="volume">Approximate guest inquiries per month (optional)</label><input type="number" id="volume" name="volume" min="0" max="1000000" inputmode="numeric" placeholder="e.g. 150"></div>
+                <div class="field-group"><label for="message">What would you like us to know? (optional)</label><textarea id="message" name="message" maxlength="3000" placeholder="Your boats, departure locations, guest languages or questions..."></textarea></div>
+                <div class="field-group"><label class="check-row" for="terms"><input type="checkbox" id="terms" name="terms" required><span>I agree to be contacted by RepliQ by email or WhatsApp about this request. I understand this is not a payment or booking confirmation.</span></label></div>
+                <button type="submit" class="form-submit" id="submitRequest">Get Started</button>
+                <p class="form-note">Our team will arrange the next step. Any applicable WhatsApp platform fees and final terms will be confirmed before activation.</p>
+                <p id="formError" class="form-error" role="alert" hidden></p>
+            </form></div>
+            <aside class="offer-summary"><div class="chosen-flag"><span class="dot"></span>RepliQ Pro</div><h3>Your offer</h3><div class="offer-name">Multilingual AI WhatsApp receptionist</div><div class="offer-price">$99 <span class="unit">/month + $99 one-time setup fee · USD</span></div><ul id="summaryFeatures"><li>AI WhatsApp receptionist in English, Spanish and French</li><li>Answers based on your approved charter information</li><li>Conversation history and human takeover from your dashboard</li><li>Voice message handling and booking-intent notifications</li></ul><h3 style="margin-top:22px">Intended plan allowance</h3><ul><li>Up to 1,000 outbound replies per billing period</li><li>Up to 12 AI replies per customer per rolling 24 hours</li></ul><p class="field-hint">Intended plan limits. Usage caps are not enforced yet; terms will be confirmed before activation.</p></aside>
         </div>
-    </section>
-
-    <section class="form-section">
-        <div class="wrap">
-            <!-- FORM + SUMMARY -->
-            <div class="form-layout" id="formLayout">
-                <div class="form-card">
-                    <form id="signupForm">
-                        <div class="field-group">
-                            <div class="field-row">
-                                <div>
-                                    <label for="fullname">Nom complet</label>
-                                    <input type="text" id="fullname" name="fullname" placeholder="Votre nom et prénom"
-                                        required>
-                                </div>
-                                <div>
-                                    <label for="business">Nom de l'entreprise</label>
-                                    <input type="text" id="business" name="business" placeholder="Ex. Salon Nour"
-                                        required>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="field-group">
-                            <label for="activity">Type d'activité</label>
-                            <select id="activity" name="activity" required>
-                                <option value="" disabled selected>Sélectionnez votre secteur</option>
-                                <option>Commerce / boutique</option>
-                                <option>Clinique / cabinet</option>
-                                <option>Salon / institut</option>
-                                <option>Service de livraison</option>
-                                <option>Artisan / prestataire</option>
-                                <option>Autre</option>
-                            </select>
-                        </div>
-
-                        <div class="field-group">
-                            <div class="field-row">
-                                <div>
-                                    <label for="phone">Téléphone (WhatsApp)</label>
-                                    <input type="tel" id="phone" name="phone" placeholder="+212 6 12 34 56 78" required>
-                                </div>
-                                <div>
-                                    <label for="email">Email</label>
-                                    <input type="email" id="email" name="email" placeholder="vous@entreprise.com"
-                                        required>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="field-group">
-                            <label for="offer">Offre choisie</label>
-                            <select id="offer" name="offer" required>
-                                <option value="Essentielle">Essentielle — 400 MAD d'installation + 200 MAD/mois</option>
-                                <option value="Standard">Standard — 600 MAD d'installation + 400 MAD/mois</option>
-                                <option value="Premium">Premium — 1 000 MAD d'installation + 800 MAD/mois</option>
-                            </select>
-                        </div>
-
-                        <div class="field-group">
-                            <label for="billing">Mode de paiement</label>
-                            <select id="billing" name="billing" required>
-                                <option value="monthly">Paiement mensuel</option>
-                                <option value="annual">Paiement annuel (9 mois réglés en une fois, 3 mois offerts, engagement 12 mois)</option>
-                            </select>
-                        </div>
-
-                        <div class="field-group">
-                            <label for="volume">Nombre approximatif de clients qui vous écrivent par mois (optionnel)</label>
-                            <input type="number" id="volume" name="volume" min="0" inputmode="numeric"
-                                placeholder="Ex. 150">
-                        </div>
-
-                        <div class="field-group">
-                            <label for="message">Message (optionnel)</label>
-                            <textarea id="message" name="message"
-                                placeholder="Précisez un besoin particulier si nécessaire..."></textarea>
-                        </div>
-
-                        <div class="field-group">
-                            <label class="check-row" for="terms">
-                                <input type="checkbox" id="terms" name="terms" required>
-                                <span>J'accepte les conditions (engagement 12 mois pour l'offre 3 mois offerts, frais
-                                    WhatsApp à ma charge)</span>
-                            </label>
-                        </div>
-
-                        <button type="submit" class="form-submit">Envoyer ma demande</button>
-                        <p class="form-note">En envoyant ce formulaire, vous acceptez d'être contacté par RepliQ pour
-                            finaliser votre inscription.</p>
-                    </form>
-                </div>
-
-                <aside class="offer-summary">
-                    <div class="chosen-flag" id="chosenFlag"><span class="dot"></span><span id="chosenFlagText">Offre
-                            sélectionnée</span></div>
-                    <h3>Récapitulatif de votre offre</h3>
-                    <div class="offer-name" id="summaryName">Standard</div>
-                    <div class="offer-price" id="summaryPrice">600 <span class="unit">MAD d'installation</span></div>
-                    <ul id="summaryFeatures"></ul>
-                    <h3 style="margin-top:22px;">Facturation</h3>
-                    <ul id="summaryBilling"></ul>
-                </aside>
-            </div>
-
-            <!-- RECEIPT -->
-            <div class="receipt-wrap" id="receiptWrap">
-                <div class="receipt-card">
-                    <div class="receipt-check">✓</div>
-                    <h2 id="receiptTitle">Merci, votre demande est reçue</h2>
-                    <p>Notre équipe vous contacte sous 24h via WhatsApp ou email pour finaliser votre inscription.</p>
-                    <div class="receipt-ref" id="receiptRef">RÉF. —</div>
-                    <div class="receipt-table" id="receiptTable"></div>
-                    <div class="receipt-actions">
-                        <button class="receipt-btn primary" onclick="downloadReceiptPdf()">Télécharger le reçu (PDF)</button>
-                        <a class="receipt-btn ghost" id="waFollowUp" href="#" target="_blank" rel="noopener">Nous écrire
-                            sur WhatsApp</a>
-                        <a class="receipt-btn ghost" href="index.html">Retour à l'accueil</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
+        <div class="receipt-wrap" id="receiptWrap"><div class="receipt-card">
+            <div class="receipt-check">✓</div><h2 id="receiptTitle">Your request has been received.</h2><p>Our team will follow up to arrange a demo or discuss setup. This request summary is not an invoice, payment receipt or confirmed calendar booking.</p><div class="receipt-ref" id="receiptRef"></div><div class="receipt-table" id="receiptTable"></div>
+            <div class="receipt-actions"><button type="button" class="receipt-btn primary" id="downloadReceipt">Download request summary (PDF)</button><a class="receipt-btn ghost" id="waFollowUp" href="https://wa.me/212712614398" target="_blank" rel="noopener">Follow up on WhatsApp</a><a class="receipt-btn ghost" href="index.html">Back to RepliQ</a></div>
+        </div></div>
+    </div></section>
+    </main>
     <footer>
         <div class="wrap">
             <a href="index.html" class="logo"><span class="logo-dot"></span>RepliQ</a>
             <div class="foot-links">
-                <a href="index.html#comment">Comment ça marche</a>
-                <a href="index.html#tarifs">Tarifs</a>
-                <a href="index.html#faq">FAQ</a>
+                <a href="index.html#comment">How It Works</a>
+                <a href="index.html#tarifs">Pricing</a>
+                <a href="index.html#faq">FAQ</a><a href="privacy.html">Privacy policy (French)</a>
             </div>
             <div class="foot-socials">
                 <a href="https://www.instagram.com/re.pliq?stkn=MXY1Ym5jamJjb2xnMA==" target="_blank" rel="noopener"
-                    aria-label="RepliQ sur Instagram">
+                    aria-label="RepliQ on Instagram">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                         <rect x="3" y="3" width="18" height="18" rx="5" />
                         <circle cx="12" cy="12" r="4" />
                         <circle cx="17.2" cy="6.8" r="1" />
                     </svg>
                 </a>
-                <a href="https://wa.me/212712614398" target="_blank" rel="noopener" aria-label="RepliQ sur WhatsApp">
+                <a href="https://wa.me/212712614398" target="_blank" rel="noopener" aria-label="RepliQ on WhatsApp">
                     <svg viewBox="0 0 24 24" fill="currentColor">
                         <path
                             d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.39 1.26 4.81L2 22l5.4-1.35a9.83 9.83 0 0 0 4.64 1.17h.01c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2zm0 17.9h-.01a8.05 8.05 0 0 1-4.11-1.13l-.29-.17-3.05.77.81-2.98-.19-.3a8 8 0 1 1 6.84 3.81zm4.4-5.98c-.24-.12-1.43-.7-1.65-.79-.22-.08-.38-.12-.55.12-.16.24-.63.79-.77.95-.14.16-.28.18-.52.06-.24-.12-1.02-.38-1.94-1.2-.72-.64-1.2-1.43-1.34-1.67-.14-.24-.02-.37.11-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.55-1.33-.76-1.82-.2-.48-.4-.42-.55-.42h-.47c-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.32.98 2.48c.12.16 1.7 2.6 4.13 3.64.58.25 1.03.4 1.38.51.58.18 1.11.16 1.53.1.47-.07 1.43-.58 1.63-1.15.2-.56.2-1.04.14-1.15-.06-.1-.22-.16-.46-.28z" />
                     </svg>
                 </a>
             </div>
-            <div class="foot-note">© 2026 RepliQ — Automatisation WhatsApp Business</div>
+            <div class="foot-note">© 2026 RepliQ — AI WhatsApp Receptionist</div>
         </div>
     </footer>
 
     <a class="wa-float" href="https://wa.me/212712614398" target="_blank" rel="noopener"
-        aria-label="Discuter sur WhatsApp">
+        aria-label="Chat with RepliQ on WhatsApp">
         <svg viewBox="0 0 24 24">
             <path
                 d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.39 1.26 4.81L2 22l5.4-1.35a9.83 9.83 0 0 0 4.64 1.17h.01c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2zm0 17.9h-.01a8.05 8.05 0 0 1-4.11-1.13l-.29-.17-3.05.77.81-2.98-.19-.3a8 8 0 1 1 6.84 3.81zm4.4-5.98c-.24-.12-1.43-.7-1.65-.79-.22-.08-.38-.12-.55.12-.16.24-.63.79-.77.95-.14.16-.28.18-.52.06-.24-.12-1.02-.38-1.94-1.2-.72-.64-1.2-1.43-1.34-1.67-.14-.24-.02-.37.11-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.55-1.33-.76-1.82-.2-.48-.4-.42-.55-.42h-.47c-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.32.98 2.48c.12.16 1.7 2.6 4.13 3.64.58.25 1.03.4 1.38.51.58.18 1.11.16 1.53.1.47-.07 1.43-.58 1.63-1.15.2-.56.2-1.04.14-1.15-.06-.1-.22-.16-.46-.28z" />
         </svg>
     </a>
 
-    <script>
-        // ---- Pricing rules (single source of truth for this page) ----
-        // setup       : one-time installation fee, paid at signup
-        // base        : monthly price (MAD) after the free months
-        // discStart   : loyalty discount (%) applied in year 2
-        // discCap     : maximum loyalty discount (%)
-        // Year 1      : 3 months free, then 9 months at base price
-        // Year 2+     : base price minus discount for all 12 months; discount grows by
-        //               LOYALTY_STEP % each year until it hits discCap.
-        // If a client cancels and comes back, their loyalty level restarts at year 1.
-        const FREE_MONTHS = 3;
-        const PAID_MONTHS_Y1 = 12 - FREE_MONTHS;
-        const LOYALTY_STEP = 5;
-
-        const PLANS = {
-            "Essentielle": {
-                setup: 400, base: 200, discStart: 15, discCap: 35,
-                features: [
-                    "Connexion de votre numéro WhatsApp Business",
-                    "Chatbot WhatsApp qui répond à toutes les questions de vos clients",
-                    "Alerte au responsable quand un client veut finaliser sa commande",
-                    "Tableau de bord pour consulter toutes les discussions",
-                    "Guide d'utilisation + formation (1h)",
-                    "Jusqu'à 500 conversations / mois",
-                    "1 mise à jour de contenu / mois"
-                ]
-            },
-            "Standard": {
-                setup: 600, base: 400, discStart: 20, discCap: 40,
-                features: [
-                    "Tout le contenu de la formule Essentielle",
-                    "Site web qui présente votre business",
-                    "Transfert automatique vers un agent humain",
-                    "Prise en main manuelle des conversations depuis le tableau de bord",
-                    "Formation de l'équipe (2h)",
-                    "Jusqu'à 1 000 conversations / mois",
-                    "2 mises à jour de contenu / mois"
-                ]
-            },
-            "Premium": {
-                setup: 1000, base: 800, discStart: 25, discCap: 50,
-                features: [
-                    "Tout le contenu de la formule Standard",
-                    "Nom de domaine personnalisé pour votre site web",
-                    "Fiches clients avec historique des commandes",
-                    "Confirmation automatique des commandes",
-                    "Tableau de statistiques (réponse, confirmation, conversions)",
-                    "Jusqu'à 2 000 conversations / mois",
-                    "4 mises à jour de contenu / mois"
-                ]
-            }
-        };
-
-        function discountForYear(plan, year) {
-            if (year <= 1) return 0;
-            return Math.min(plan.discStart + (year - 2) * LOYALTY_STEP, plan.discCap);
-        }
-        function monthlyPriceForYear(plan, year) {
-            return Math.round(plan.base * (1 - discountForYear(plan, year) / 100));
-        }
-        function capYear(plan) {
-            return 2 + Math.ceil((plan.discCap - plan.discStart) / LOYALTY_STEP);
-        }
-        function year1Total(plan) {
-            return plan.setup + PAID_MONTHS_Y1 * plan.base;
-        }
-        // fr-FR uses a narrow no-break space that jsPDF's default font can't draw, so use a plain space.
-        const fmt = n => n.toLocaleString('fr-FR').replace(/[\u202f\u00a0]/g, ' ');
-        const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-
-        // ---- Page state ----
-        const params = new URLSearchParams(window.location.search);
-        const requested = params.get('offer');
-        const initialOffer = requested && PLANS[requested] ? requested : 'Standard';
-
-        const offerSelect = document.getElementById('offer');
-        const billingSelect = document.getElementById('billing');
-        const requestedBilling = params.get('billing');
-        const initialBilling = requestedBilling === 'annual' ? 'annual' : 'monthly';
-        // Annual payment = the 9 paid months of year 1 paid at once (3 months offered).
-        const annualPrice = plan => PAID_MONTHS_Y1 * plan.base;
-        const annualPriceForYear = (plan, year) => 12 * monthlyPriceForYear(plan, year);
-
-        function updateSummary() {
-            const offerName = offerSelect.value;
-            const p = PLANS[offerName];
-
-            const annualMode = billingSelect.value === 'annual';
-
-            // Keep the dropdown labels in sync with the chosen payment mode
-            Array.from(offerSelect.options).forEach(opt => {
-                const pl = PLANS[opt.value];
-                opt.textContent = opt.value + ' — ' + (annualMode ? 'installation incluse : ' : fmt(pl.setup) + ' MAD d\'installation + ') +
-                    (annualMode ? fmt(year1Total(pl)) + ' MAD (1re année)' : fmt(pl.base) + ' MAD/mois');
-            });
-
-            document.getElementById('summaryName').textContent = offerName;
-            document.getElementById('summaryPrice').innerHTML = annualMode
-                ? fmt(year1Total(p)) + ' <span class="unit">MAD / an · installation de ' + fmt(p.setup) + ' MAD incluse · 3 mois offerts avec engagement de 12 mois</span>'
-                : fmt(p.base) + ' <span class="unit">MAD / mois · + ' + fmt(p.setup) + ' MAD d\'installation · 3 mois offerts avec engagement de 12 mois</span>';
-            document.getElementById('chosenFlagText').textContent = 'Vous avez choisi : ' + offerName;
-
-            const list = document.getElementById('summaryFeatures');
-            list.innerHTML = '';
-            p.features.forEach(f => {
-                const li = document.createElement('li');
-                li.textContent = f;
-                list.appendChild(li);
-            });
-
-            const y2 = 2;
-            const isAnnual = billingSelect.value === 'annual';
-            const billing = isAnnual ? [
-                'Installation : ' + fmt(p.setup) + ' MAD (à la signature)',
-                'Mois 1 à ' + FREE_MONTHS + ' : offerts',
-                'Paiement annuel : ' + fmt(annualPrice(p)) + ' MAD (' + PAID_MONTHS_Y1 + ' mois × ' + fmt(p.base) + ' MAD, réglés en une fois)',
-                'Total année 1 : ' + fmt(year1Total(p)) + ' MAD',
-                'Année 2 : ' + fmt(annualPriceForYear(p, y2)) + ' MAD/an (−' + discountForYear(p, y2) + '%)',
-                'Puis −5% supplémentaires par an, plafond −' + p.discCap + '% (' + fmt(annualPriceForYear(p, capYear(p))) + ' MAD/an) dès l\'année ' + capYear(p),
-                'Si vous résiliez puis revenez, le niveau de fidélité repart à l\'année 1'
-            ] : [
-                'Installation : ' + fmt(p.setup) + ' MAD (à la signature)',
-                'Mois 1 à ' + FREE_MONTHS + ' : offerts',
-                'Mois ' + (FREE_MONTHS + 1) + ' à 12 : ' + fmt(p.base) + ' MAD/mois',
-                'Total année 1 : ' + fmt(year1Total(p)) + ' MAD',
-                'Année 2 : ' + fmt(monthlyPriceForYear(p, y2)) + ' MAD/mois (−' + discountForYear(p, y2) + '%)',
-                'Puis −5% supplémentaires par an, plafond −' + p.discCap + '% (' + fmt(monthlyPriceForYear(p, capYear(p))) + ' MAD/mois) dès l\'année ' + capYear(p),
-                'Si vous résiliez puis revenez, le niveau de fidélité repart à l\'année 1'
-            ];
-            billing.splice(2, 0, 'Engagement de 12 mois pour bénéficier des ' + FREE_MONTHS + ' mois offerts');
-            billing.push('Frais WhatsApp (Meta) non inclus : facturés directement par Meta selon le type et le volume de messages');
-            const bl = document.getElementById('summaryBilling');
-            bl.innerHTML = '';
-            billing.forEach(t => {
-                const li = document.createElement('li');
-                li.textContent = t;
-                bl.appendChild(li);
-            });
-        }
-
-        offerSelect.value = initialOffer;
-        billingSelect.value = initialBilling;
-        offerSelect.addEventListener('change', updateSummary);
-        billingSelect.addEventListener('change', updateSummary);
-        updateSummary();
-
-        // ---- Submit -> generate receipt ----
-        // Holds the data behind the currently-displayed receipt so the PDF
-        // download button can build a real file without re-reading the DOM.
-        let currentReceipt = null;
-
-        document.getElementById('signupForm').addEventListener('submit', function (e) {
-            e.preventDefault();
-
-            const fullname = document.getElementById('fullname').value.trim();
-            const business = document.getElementById('business').value.trim();
-            const activity = document.getElementById('activity').value;
-            const phone = document.getElementById('phone').value.trim();
-            const email = document.getElementById('email').value.trim();
-            const volume = document.getElementById('volume').value.trim();
-            const offerName = offerSelect.value;
-            const p = PLANS[offerName];
-
-            const setupLabel = fmt(p.setup) + ' MAD (une seule fois)';
-            const isAnnual = billingSelect.value === 'annual';
-            const billingLabel = isAnnual ? 'Paiement annuel' : 'Paiement mensuel';
-            const subLabel = isAnnual
-                ? FREE_MONTHS + ' mois offerts, puis ' + fmt(annualPrice(p)) + ' MAD pour ' + PAID_MONTHS_Y1 + ' mois (réglés en une fois)'
-                : FREE_MONTHS + ' mois offerts, puis ' + fmt(p.base) + ' MAD/mois pendant ' + PAID_MONTHS_Y1 + ' mois';
-            const total1Label = fmt(year1Total(p)) + ' MAD';
-            // Kept as a single string for /api/lead (which stores/uses "price")
-            const priceSummary = isAnnual
-                ? 'Installation ' + fmt(p.setup) + ' MAD + ' + fmt(annualPrice(p)) + ' MAD/an (' + FREE_MONTHS + ' mois offerts, engagement 12 mois)'
-                : 'Installation ' + fmt(p.setup) + ' MAD + ' + fmt(p.base) + ' MAD/mois (' + FREE_MONTHS + ' mois offerts, engagement 12 mois)';
-
-            const ref = 'RPLQ-' + Date.now().toString().slice(-6) + '-' + Math.floor(Math.random() * 900 + 100);
-            const today = new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
-
-            document.getElementById('receiptTitle').textContent = 'Merci ' + fullname.split(' ')[0] + ', votre demande est reçue';
-            document.getElementById('receiptRef').textContent = 'RÉF. ' + ref + ' · ' + today;
-
-            const rows = [
-                ['Entreprise', business],
-                ["Type d'activité", activity],
-                ['Offre choisie', offerName],
-                ['Mode de paiement', billingLabel],
-                ['Installation', setupLabel],
-                ['Abonnement', subLabel],
-                ['Engagement', '12 mois (offre ' + FREE_MONTHS + ' mois offerts)'],
-                ['Total année 1', total1Label],
-                ['Téléphone', phone],
-                ['Email', email]
-            ];
-
-            if (volume) rows.push(['Clients par mois (estimation)', volume]);
-            rows.push(['Conditions', 'Acceptées (frais WhatsApp à ma charge)']);
-
-            const table = document.getElementById('receiptTable');
-            table.innerHTML = rows.map(r => `<div class="receipt-row"><span class="k">${esc(r[0])}</span><span class="v">${esc(r[1])}</span></div>`).join('');
-
-            const waText = encodeURIComponent(`Bonjour RepliQ, je viens de faire une demande (réf. ${ref}) pour l'offre ${offerName} (${billingLabel.toLowerCase()}).`);
-            document.getElementById('waFollowUp').href = `https://wa.me/212712614398?text=${waText}`;
-
-            // Keep the raw data around for the PDF download button.
-            currentReceipt = { fullname, ref, today, rows };
-
-            // Register this submission in the dashboard (fire-and-forget:
-            // the receipt still shows to the client even if this fails, so
-            // a network hiccup here never blocks their confirmation).
-            // "mode" is 'monthly' or 'annual' (handled in api/lead.js).
-            fetch('/api/lead', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    fullname,
-                    business,
-                    activity,
-                    phone,
-                    email,
-                    offer: offerName,
-                    mode: isAnnual ? 'annual' : 'monthly',
-                    price: priceSummary,
-                    setup: p.setup,
-                    monthly: p.base,
-                    annual: isAnnual ? annualPrice(p) : null,
-                    message: document.getElementById('message').value.trim(),
-                    volume,
-                    acceptedTerms: document.getElementById('terms').checked,
-                    ref
-                })
-            }).catch(err => console.error('Lead submission failed:', err));
-
-            document.getElementById('formLayout').classList.add('hidden');
-            document.getElementById('receiptWrap').classList.add('show');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        });
-
-        // ---- Real PDF download (replaces window.print()) ----
-        // Builds an actual .pdf file client-side with jsPDF and triggers a
-        // download, instead of opening the browser's print dialog.
-        function downloadReceiptPdf() {
-            if (!currentReceipt || !window.jspdf) return;
-
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({ unit: 'pt', format: 'a4' });
-
-            const pageWidth = doc.internal.pageSize.getWidth();
-            const marginX = 56;
-            const accent = [37, 211, 102]; // RepliQ green
-            const dark = [17, 19, 24];
-            const gray = [110, 118, 130];
-
-            // Header band
-            doc.setFillColor(...dark);
-            doc.rect(0, 0, pageWidth, 96, 'F');
-            doc.setFillColor(...accent);
-            doc.circle(marginX + 4, 48, 4, 'F');
-            doc.setTextColor(255, 255, 255);
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(20);
-            doc.text('RepliQ', marginX + 16, 53);
-            doc.setFontSize(10);
-            doc.setFont('helvetica', 'normal');
-            doc.setTextColor(200, 205, 212);
-            doc.text('Reçu de demande', marginX + 16, 68);
-
-            let y = 140;
-
-            doc.setTextColor(...dark);
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(16);
-            doc.text(`Merci ${currentReceipt.fullname.split(' ')[0]}, votre demande est reçue`, marginX, y);
-
-            y += 22;
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(10.5);
-            doc.setTextColor(...gray);
-            doc.text('Notre équipe vous contacte sous 24h via WhatsApp ou email pour finaliser votre inscription.', marginX, y, { maxWidth: pageWidth - marginX * 2 });
-
-            y += 30;
-            doc.setFont('courier', 'bold');
-            doc.setFontSize(10);
-            doc.setTextColor(...accent);
-            doc.text(`RÉF. ${currentReceipt.ref}  ·  ${currentReceipt.today}`, marginX, y);
-
-            y += 24;
-            doc.setDrawColor(225, 228, 232);
-            doc.line(marginX, y, pageWidth - marginX, y);
-
-            y += 28;
-            currentReceipt.rows.forEach(([label, value]) => {
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(10.5);
-                doc.setTextColor(...gray);
-                doc.text(label, marginX, y);
-
-                doc.setFont('helvetica', 'bold');
-                doc.setTextColor(...dark);
-                doc.text(String(value), pageWidth - marginX, y, { align: 'right' });
-
-                y += 18;
-                doc.setDrawColor(240, 242, 245);
-                doc.line(marginX, y - 6, pageWidth - marginX, y - 6);
-                y += 10;
-            });
-
-            y += 20;
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(9);
-            doc.setTextColor(...gray);
-            doc.text('© ' + new Date().getFullYear() + ' RepliQ — Automatisation WhatsApp Business', marginX, doc.internal.pageSize.getHeight() - 40);
-
-            doc.save(`recu-${currentReceipt.ref}.pdf`);
-        }
-    </script>
+    <script type="module" src="signup.js"></script>
 </body>
-
 </html>
