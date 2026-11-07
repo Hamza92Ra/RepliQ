@@ -1,13 +1,14 @@
+import { adminRoute } from "./admin-router-request.js";
 // tests/admin-inbox.test.js
 import { describe, it, beforeEach, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import { signAdminToken, verifyAdminToken, extractAdminToken } from "../lib/admin-auth.js";
-import loginHandler from "../api/admin/login.js";
-import sendHandler from "../api/admin/send.js";
-import takeoverHandler from "../api/admin/takeover.js";
-import readHandler from "../api/admin/read.js";
-import conversationsHandler from "../api/admin/conversations.js";
-import messagesHandler from "../api/admin/messages.js";
+const loginHandler = adminRoute("login");
+const sendHandler = adminRoute("send");
+const takeoverHandler = adminRoute("takeover");
+const readHandler = adminRoute("read");
+const conversationsHandler = adminRoute("conversations");
+const messagesHandler = adminRoute("messages");
 
 // Helper to create mock response object
 function createMockRes() {

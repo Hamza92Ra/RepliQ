@@ -5,7 +5,9 @@
   "description": "Minimal WhatsApp Cloud API webhook + Claude-powered auto-replies, deployable on Vercel.",
   "type": "module",
   "scripts": {
-    "test": "node scripts/test.mjs"
+    "test": "node scripts/test.mjs",
+    "check:functions": "node scripts/check-function-count.mjs",
+    "test:vercel-runtime": "node scripts/verify-vercel-runtime.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",
