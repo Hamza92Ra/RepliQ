@@ -1,3 +1,4 @@
+import { assertDemoInboundScope, resolveBusinessPrompt } from "../lib/business-prompt.js";
 import { authenticateMetaRequest, readRawBody } from "../lib/webhook-security.js";
 import { resolveWhatsAppCredentials } from "../lib/whatsapp-credentials.js";
 
@@ -42,7 +43,6 @@ import {
     setTakeoverStatus,
     getConversationOwner,
     setConversationOwner,
-    getBusinessConfig,
     claimMessage,
     deleteConversation,
     deleteMessage,
@@ -380,7 +380,7 @@ export default async function handler(req, res) {
             // Respond to Meta immediately so it never times out and retries.
             res.status(200).send("EVENT_RECEIVED");
 
-            waitUntil(processMessage({ message, contact, phoneNumberId }));
+            waitUntil(processMessage({ message, contact, phoneNumberId, authenticatedPhoneNumberId: value?.metadata?.phone_number_id }));
         } catch (err) {
             console.error("conversation.js: Webhook handler error:");
             if (!res.headersSent) {
@@ -393,7 +393,7 @@ export default async function handler(req, res) {
     return res.status(405).send("Method Not Allowed");
 }
 
-async function processMessage({ message, contact, phoneNumberId }) {
+async function processMessage({ message, contact, phoneNumberId, authenticatedPhoneNumberId }) {
     try {
         const identity = extractCustomerIdentity(message, contact);
         const from = identity.primaryId;
@@ -401,6 +401,8 @@ async function processMessage({ message, contact, phoneNumberId }) {
             console.error("conversation.js: processMessage: message has no identifiable recipient, skipping:");
             return;
         }
+
+        await assertDemoInboundScope({ phoneNumberId, authenticatedPhoneNumberId, identity });
 
         // --- Dedup: Meta retries deliveries, so the same message can arrive 2-3x ---
         let claimed = false;
@@ -500,20 +502,8 @@ async function processMessage({ message, contact, phoneNumberId }) {
             return;
         }
 
-        // --- Load this business's own config (project + ideas) so one deployment
-        // adapts to any customer instead of the one hardcoded prompt. ---
-        let systemPrompt;
-        try {
-            const config = await getBusinessConfig(phoneNumberId);
-            if (config?.systemPrompt) {
-                systemPrompt = config.systemPrompt;
-                if (config.notes) {
-                    systemPrompt += `\n\nNotes / idées spécifiques du projet :\n${config.notes}`;
-                }
-            }
-        } catch (cfgErr) {
-            console.error("conversation.js: Business config load failed, using default prompt:");
-        }
+        // Shared server-controlled selection; enabled lookup errors stop processing.
+        const systemPrompt = await resolveBusinessPrompt({ phoneNumberId, authenticatedPhoneNumberId });
 
         // --- Save the customer's message and pull recent history so the bot
         // actually remembers the conversation. Voice notes are labeled in the

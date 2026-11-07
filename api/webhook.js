@@ -1,3 +1,4 @@
+import { assertDemoInboundScope, resolveBusinessPrompt } from "../lib/business-prompt.js";
 import { authenticateMetaRequest } from "../lib/webhook-security.js";
 import { resolveWhatsAppCredentials } from "../lib/whatsapp-credentials.js";
 
@@ -38,7 +39,6 @@ import {
   getHistory as getRedisHistory,
   getTakeoverStatus as getRedisTakeoverStatus,
   setTakeoverStatus as setRedisTakeoverStatus,
-  getBusinessConfig,
   claimMessage as claimRedisMessage,
   updateMessageStatus as updateRedisMessageStatus,
 } from "../lib/db.js";
@@ -154,7 +154,7 @@ export default async function handler(req, res) {
       // Always return 200 quickly to Meta
       res.status(200).send("EVENT_RECEIVED");
 
-      runAsync(processIncomingMessage({ message, contact, phoneNumberId }));
+      runAsync(processIncomingMessage({ message, contact, phoneNumberId, authenticatedPhoneNumberId: value?.metadata?.phone_number_id }));
     } catch (err) {
       console.error("webhook.js: Webhook handler error:");
       if (!res.headersSent) {
@@ -174,7 +174,7 @@ export default async function handler(req, res) {
  * - Check human_takeover flag: if true, bot stays silent
  * - Otherwise: load last ~10 messages as history, call generateReply(), and store bot reply
  */
-async function processIncomingMessage({ message, contact, phoneNumberId }) {
+async function processIncomingMessage({ message, contact, phoneNumberId, authenticatedPhoneNumberId }) {
   try {
     const identity = extractCustomerIdentity(message, contact);
     const from = identity.primaryId;
@@ -182,6 +182,8 @@ async function processIncomingMessage({ message, contact, phoneNumberId }) {
       console.error("webhook.js: processIncomingMessage: message missing identifiable recipient ('from', 'from_user_id', or contact id)");
       return;
     }
+
+    await assertDemoInboundScope({ phoneNumberId, authenticatedPhoneNumberId, identity });
 
     const contactName = identity.profileName;
     const userId = identity.userId;
@@ -398,19 +400,8 @@ async function processIncomingMessage({ message, contact, phoneNumberId }) {
       );
     }
 
-    // 4. Per-business prompt configuration (if configured)
-    let systemPrompt;
-    try {
-      const config = await getBusinessConfig(phoneNumberId);
-      if (config?.systemPrompt) {
-        systemPrompt = config.systemPrompt;
-        if (config.notes) {
-          systemPrompt += `\n\nNotes / idées spécifiques du projet :\n${config.notes}`;
-        }
-      }
-    } catch (cfgErr) {
-      console.error("webhook.js: Business config load failed:");
-    }
+    // Shared server-controlled selection; enabled lookup errors stop processing.
+    const systemPrompt = await resolveBusinessPrompt({ phoneNumberId, authenticatedPhoneNumberId });
 
     // 5. Generate AI Reply with Handoff Detection
     let reply;

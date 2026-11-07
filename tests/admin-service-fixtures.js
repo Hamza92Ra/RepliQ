@@ -28,6 +28,7 @@ export function installAdminFixtures() {
     }
     if (url.hostname === "fixture.upstash.test" && url.pathname === "/pipeline") {
       return Response.json(JSON.parse(options.body).map(([command, key, ...args]) => {
+        if (command === "EXISTS") return { result: [key, ...args].filter(key => state.redis.has(key)).length };
         if (command === "GET") return { result: state.redis.get(key) ?? null };
         if (command === "SET") {
           if (args.includes("NX") && state.redis.has(key)) return { result: null };

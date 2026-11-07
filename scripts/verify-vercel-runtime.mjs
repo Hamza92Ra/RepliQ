@@ -35,13 +35,14 @@ Object.assign(process.env, fixtureEnvironment);
 const token = signAdminToken();
 process.env = originalEnv;
 let assertions = 0;
-async function start(entrypoint) {
+async function start(entrypoint, environment = {}) {
   const child = fork(runtime, [], {
     cwd: root, silent: true,
     execArgv: ["--import", fileURLToPath(new URL("../tests/vercel-runtime-mocks.js", import.meta.url))],
     // Explicit synthetic-only environment: never inherit actual credentials.
-    env: { ...fixtureEnvironment, VERCEL_DEV_ENTRYPOINT: entrypoint, VERCEL_DEV_CONFIG: "{}" },
+    env: { ...fixtureEnvironment, ...environment, VERCEL_DEV_ENTRYPOINT: entrypoint, VERCEL_DEV_CONFIG: "{}" },
   });
+  const probes = []; child.on("message", value => { if (value?.type?.startsWith("us-demo-")) probes.push(value); });
   let log = "";
   child.stdout.on("data", value => { log += value; });
   child.stderr.on("data", value => { log += value; });
@@ -55,6 +56,16 @@ async function start(entrypoint) {
   } catch (error) { child.kill(); throw error; }
   assert.ok(Number.isInteger(address.port));
   return {
+    probes,
+    async waitForProbe(type) {
+      const deadline = Date.now() + 5000;
+      while (Date.now() < deadline) {
+        const probe = probes.find(value => value.type === type);
+        if (probe) { assert.equal(probe.exact, true); return; }
+        await new Promise(resolve => setTimeout(resolve, 20));
+      }
+      throw new Error(`Synthetic runtime probe missing: ${type}`);
+    },
     async request(path, method = "GET", body, headers = {}) {
       return new Promise((accept, reject) => {
         const bytes = body === undefined ? undefined : Buffer.from(typeof body === "string" ? body : JSON.stringify(body));
@@ -133,6 +144,25 @@ for (const entrypoint of ["api/webhook.js", "api/conversation.js"]) {
       status(await runtimeHandler.request(`${path}?key=dashboard-fixture`, "POST", { phone: "15555550123", action: "human" }), 401);
     }
   } finally { await runtimeHandler.close(); }
+}
+// Enabled path only in synthetic, Redis-only worker processes. No account access.
+for (const entrypoint of ["api/webhook.js", "api/conversation.js"]) {
+  const demo = await start(entrypoint, {
+    SUPABASE_URL: "", SUPABASE_SERVICE_ROLE_KEY: "", GROQ_API_KEY: "synthetic-ai",
+    REPLIQ_US_DEMO_SALES_ENABLED: "true",
+    REPLIQ_US_DEMO_SALES_BINDING: JSON.stringify({ purpose: "repliq-us-demo-sales", phoneNumberId: "1001", promptVersion: "repliq-pro-us-sales-v1", ownershipReview: "synthetic-review", isolationReview: "synthetic-isolation", storageMode: "isolated-redis-only" }),
+  });
+  const path = "/" + entrypoint.replace(/\.js$/, "");
+  const body = JSON.stringify({ object: "whatsapp_business_account", entry: [{ changes: [{ value: {
+    metadata: { phone_number_id: "1001" }, messages: [{ id: "synthetic-demo-inbound", from: "15555550123", timestamp: String(Math.floor(Date.now()/1000)), type: "text", text: { body: "Synthetic price inquiry" } }],
+  } }] }] });
+  try {
+    status(await demo.request(path, "POST", body), 401);
+    assert.equal(demo.probes.length, 0);
+    status(await demo.request(path, "POST", body, signed(body)), 200);
+    await demo.waitForProbe("us-demo-prompt-probe");
+    await demo.waitForProbe("us-demo-send-probe");
+  } finally { await demo.close(); }
 }
 const lead = await start("api/lead.js");
 try {
