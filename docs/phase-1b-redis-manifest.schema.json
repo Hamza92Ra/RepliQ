@@ -1,0 +1,157 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "RepliQ review-only Redis migration manifest",
+  "description": "Metadata only. Operational manifests are sensitive and must not be committed. Never embed history bodies or tokens. This schema does not authorize or execute a migration.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "batch_id",
+    "backup_sha256",
+    "freeze_started_at",
+    "reviewed_by",
+    "entries"
+  ],
+  "properties": {
+    "version": {
+      "const": 2
+    },
+    "batch_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "backup_sha256": {
+      "$ref": "#/$defs/checksum"
+    },
+    "freeze_started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "reviewed_by": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/entry"
+      }
+    }
+  },
+  "$defs": {
+    "checksum": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "legacy_key",
+        "source_sha256",
+        "redis_type",
+        "source_pttl_ms",
+        "observed_at",
+        "decision",
+        "evidence_ref"
+      ],
+      "properties": {
+        "legacy_key": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_sha256": {
+          "$ref": "#/$defs/checksum"
+        },
+        "redis_type": {
+          "enum": [
+            "string",
+            "list",
+            "set",
+            "hash",
+            "zset"
+          ]
+        },
+        "source_pttl_ms": {
+          "type": "integer",
+          "minimum": -1
+        },
+        "observed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "decision": {
+          "enum": [
+            "copy",
+            "quarantine",
+            "expired"
+          ]
+        },
+        "evidence_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "business_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "whatsapp_number_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "target_key": {
+          "type": "string",
+          "pattern": "^rq:v2:"
+        },
+        "target_sha256": {
+          "$ref": "#/$defs/checksum"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "decision": {
+                "const": "copy"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "business_id",
+              "whatsapp_number_id",
+              "target_key",
+              "target_sha256"
+            ]
+          },
+          "else": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "business_id"
+                  ]
+                },
+                {
+                  "required": [
+                    "whatsapp_number_id"
+                  ]
+                },
+                {
+                  "required": [
+                    "target_key"
+                  ]
+                },
+                {
+                  "required": [
+                    "target_sha256"
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}
