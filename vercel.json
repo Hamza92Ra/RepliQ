@@ -1,0 +1,33 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    {
+      "source": "/api/admin/conversations",
+      "destination": "/api/admin"
+    },
+    {
+      "source": "/api/admin/legacy",
+      "destination": "/api/admin"
+    },
+    {
+      "source": "/api/admin/login",
+      "destination": "/api/admin"
+    },
+    {
+      "source": "/api/admin/messages",
+      "destination": "/api/admin"
+    },
+    {
+      "source": "/api/admin/read",
+      "destination": "/api/admin"
+    },
+    {
+      "source": "/api/admin/send",
+      "destination": "/api/admin"
+    },
+    {
+      "source": "/api/admin/takeover",
+      "destination": "/api/admin"
+    }
+  ]
+}

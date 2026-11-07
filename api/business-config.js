@@ -1,3 +1,4 @@
+import { resolveWhatsAppCredentials } from "../lib/whatsapp-credentials.js";
 import { getBusinessConfig, saveBusinessConfig } from "../lib/db.js";
 
 // Per-business configuration so ONE deployment adapts to ANY project/idea:
@@ -24,6 +25,7 @@ export default async function handler(req, res) {
             if (!phoneNumberId) {
                 return res.status(400).json({ error: "Missing 'phoneNumberId' query param" });
             }
+            resolveWhatsAppCredentials(phoneNumberId, { requireToken: false });
             const config = await getBusinessConfig(phoneNumberId);
             return res.status(200).json({ config });
         }
@@ -35,6 +37,7 @@ export default async function handler(req, res) {
                     .status(400)
                     .json({ error: "Missing 'phoneNumberId' or 'systemPrompt'" });
             }
+            resolveWhatsAppCredentials(phoneNumberId, { requireToken: false });
             const config = {
                 businessName: businessName || "",
                 systemPrompt: systemPrompt.trim(),
@@ -47,7 +50,7 @@ export default async function handler(req, res) {
 
         return res.status(405).json({ error: "Method Not Allowed" });
     } catch (err) {
-        console.error("Business config error:", err);
+        console.error("business-config.js: Business config error:");
         return res.status(500).json({ error: "Business config failed" });
     }
 }

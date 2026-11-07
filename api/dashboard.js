@@ -28,7 +28,7 @@ export default async function handler(req, res) {
         });
         return res.status(200).json({ conversations, serverTime: Date.now() });
     } catch (err) {
-        console.error("Dashboard fetch error:", err);
+        console.error("dashboard.js: Dashboard fetch error:");
         return res.status(500).json({ error: "Failed to load conversations" });
     }
 }

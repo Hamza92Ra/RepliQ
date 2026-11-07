@@ -1,3 +1,8 @@
+import { authenticateMetaRequest, readRawBody } from "../lib/webhook-security.js";
+import { resolveWhatsAppCredentials } from "../lib/whatsapp-credentials.js";
+
+export const config = { api: { bodyParser: false } };
+
 import { waitUntil } from "@vercel/functions";
 import {
     sendWhatsAppText,
@@ -87,7 +92,7 @@ function describeInbound(message) {
  * branch on that before touching any webhook logic.
  */
 async function handleAdminAction(req, res) {
-    const key = req.query.key;
+    const key = req.query?.key;
     if (!process.env.DASHBOARD_SECRET || key !== process.env.DASHBOARD_SECRET) {
         return res.status(401).json({ error: "Unauthorized" });
     }
@@ -145,16 +150,18 @@ async function handleAdminAction(req, res) {
                 });
             }
 
+            resolveWhatsAppCredentials(phoneNumberId);
+
             // Backfill owner key so future replies continue using this number
             setConversationOwner(phone, phoneNumberId).catch((e) =>
-                console.error("Owner backfill failed:", e)
+                console.error("conversation.js: Owner backfill failed:")
             );
 
             let providerResponse;
             try {
                 providerResponse = await sendWhatsAppText(phoneNumberId, recipient, text);
             } catch (sendErr) {
-                console.error("WhatsApp send failed for agent reply:", sendErr);
+                console.error("conversation.js: WhatsApp send failed for agent reply:");
                 const is131047 = isWindowExpiredError(sendErr?.message, sendErr?.code || sendErr?.status);
                 const errCode = is131047 ? "WINDOW_EXPIRED" : (sendErr.code || "SEND_FAILED");
                 const friendlyErr = formatFriendlyError(sendErr?.message, sendErr?.code);
@@ -167,7 +174,7 @@ async function handleAdminAction(req, res) {
                         errorCode: errCode,
                     });
                 } catch (saveErr) {
-                    console.error("Failed to save failed message record:", saveErr);
+                    console.error("conversation.js: Failed to save failed message record:");
                 }
 
                 const status = is131047 ? 409 : (Number(sendErr?.status) || 502);
@@ -190,7 +197,7 @@ async function handleAdminAction(req, res) {
                     status: "sent",
                 });
             } catch (dbErr) {
-                console.error("Admin reply storage failed after send:", dbErr);
+                console.error("conversation.js: Admin reply storage failed after send:");
             }
 
             return res.status(200).json({ ok: true, wamid, status: "sent" });
@@ -228,7 +235,7 @@ async function handleAdminAction(req, res) {
             try {
                 providerResponse = await sendWhatsAppTemplate(phoneNumberId, recipient, chosenTemplate, chosenLang, templateComponents);
             } catch (sendErr) {
-                console.error("WhatsApp template send failed:", sendErr);
+                console.error("conversation.js: WhatsApp template send failed:");
                 const status = Number(sendErr?.status) || 400;
                 return res.status(status).json({
                     ok: false,
@@ -247,7 +254,7 @@ async function handleAdminAction(req, res) {
                     template: chosenTemplate,
                 });
             } catch (dbErr) {
-                console.error("Admin template reply storage failed after send:", dbErr);
+                console.error("conversation.js: Admin template reply storage failed after send:");
             }
 
             return res.status(200).json({ ok: true, wamid, status: "sent", template: chosenTemplate });
@@ -283,7 +290,7 @@ async function handleAdminAction(req, res) {
 
         return res.status(400).json({ error: `Unknown action: ${action}` });
     } catch (err) {
-        console.error("Admin action failed:", err);
+        console.error("conversation.js: Admin action failed:");
         const status = Number(err?.status) || 500;
         return res.status(status >= 400 && status < 600 ? status : 500).json({
             ok: false,
@@ -300,28 +307,43 @@ export default async function handler(req, res) {
         const token = req.query["hub.verify_token"];
         const challenge = req.query["hub.challenge"];
 
-        if (mode === "subscribe" && token === process.env.VERIFY_TOKEN) {
-            console.log("Webhook verified.");
+        if (mode === "subscribe" && process.env.VERIFY_TOKEN && token === process.env.VERIFY_TOKEN) {
+            console.log("conversation.js: Webhook verified.");
             return res.status(200).send(challenge);
         }
         return res.status(403).send("Forbidden");
     }
 
     if (req.method === "POST") {
+        // Plain Node/Vercel streams are read explicitly. Object bodies remain
+        // supported for direct admin handler callers; Meta always needs bytes.
+        if (typeof req.on === "function") {
+            try {
+                req.rawBody = await readRawBody(req);
+                req.body = JSON.parse(req.rawBody.toString("utf8"));
+            } catch (err) {
+                return res.status(err.status || 400).send("Invalid request body");
+            }
+        }
         // --- Dashboard admin actions (Prendre en charge / Rendre au bot /
         // Terminer / Supprimer / manual reply) arrive here with a
         // { phone, action } body, never with "entry" (that's Meta's webhook
         // shape). Branch on that first so these get real JSON responses
         // instead of falling into the webhook's "EVENT_RECEIVED" ack path. ---
-        if (req.body && typeof req.body === "object" && req.body.action && req.body.phone) {
+        if (req.body && typeof req.body === "object" && req.body.action && req.body.phone && !req.body.entry && !req.body.object) {
             return handleAdminAction(req, res);
         }
+
+        if (!(await authenticateMetaRequest(req, res))) return;
 
         // --- 2. Incoming messages (Meta calls this with POST every time a message arrives) ---
         try {
             const entry = req.body?.entry?.[0];
             const change = entry?.changes?.[0];
             const value = change?.value;
+            if (value?.metadata?.phone_number_id) {
+                resolveWhatsAppCredentials(value.metadata.phone_number_id, { requireToken: false });
+            }
             const message = value?.messages?.[0];
             const contact = value?.contacts?.[0];
 
@@ -342,7 +364,7 @@ export default async function handler(req, res) {
                         errorCode = e.code;
                     }
                 }
-                console.log(`WhatsApp delivery status update: wamid=${wamid}, status=${status}, recipient=${recipientId}, error=${errorDetail}`);
+                console.log("conversation.js: WhatsApp delivery status received");
                 res.status(200).send("EVENT_RECEIVED");
                 waitUntil(updateMessageStatus(recipientId, wamid, status, errorDetail, errorCode));
                 return;
@@ -360,7 +382,7 @@ export default async function handler(req, res) {
 
             waitUntil(processMessage({ message, contact, phoneNumberId }));
         } catch (err) {
-            console.error("Webhook handler error:", err);
+            console.error("conversation.js: Webhook handler error:");
             if (!res.headersSent) {
                 return res.status(200).send("EVENT_RECEIVED");
             }
@@ -376,7 +398,7 @@ async function processMessage({ message, contact, phoneNumberId }) {
         const identity = extractCustomerIdentity(message, contact);
         const from = identity.primaryId;
         if (!from) {
-            console.error("processMessage: message has no identifiable recipient, skipping:", JSON.stringify(message));
+            console.error("conversation.js: processMessage: message has no identifiable recipient, skipping:");
             return;
         }
 
@@ -385,11 +407,11 @@ async function processMessage({ message, contact, phoneNumberId }) {
         try {
             claimed = await claimMessage(message.id);
         } catch (dbErr) {
-            console.error("Dedup via Redis failed, using memory fallback:", dbErr);
+            console.error("conversation.js: Dedup via Redis failed, using memory fallback:");
             claimed = claimMessageLocally(message.id);
         }
         if (!claimed) {
-            console.log(`[takeover=unknown] [${from}] Duplicate delivery for message, skipping: ${message.id}`);
+            console.log("conversation.js: Duplicate inbound delivery skipped");
             return;
         }
 
@@ -400,12 +422,12 @@ async function processMessage({ message, contact, phoneNumberId }) {
             isHumanTakeover = Boolean(takeover.human_takeover);
         } catch (dbErr) {
             // FAIL SAFE: if the lookup fails, do not auto-reply, log the error
-            console.error(`[Fail-safe] [takeover=error] [${from}] Takeover check failed, halting bot to prevent accidental reply:`, dbErr);
+            console.error("conversation.js: Takeover state unavailable; bot stopped");
             return;
         }
 
         if (isHumanTakeover) {
-            console.log(`[takeover=true] [${from}] Bot silent (human takeover active)`);
+            console.log("conversation.js: Human takeover active");
             try {
                 await saveMessage(from, "user", describeInbound(message), phoneNumberId, {
                     userId: identity.userId,
@@ -413,12 +435,12 @@ async function processMessage({ message, contact, phoneNumberId }) {
                     profileName: identity.profileName,
                 });
             } catch (dbErr) {
-                console.error("DB save (silent mode) failed:", dbErr);
+                console.error("conversation.js: DB save (silent mode) failed:");
             }
             return;
         }
 
-        console.log(`[takeover=false] [${from}] Bot auto-reply processing`);
+        console.log("conversation.js: Bot processing event");
 
         // --- Extract text: voice notes get transcribed, everything else falls back ---
         let text = message.text?.body?.trim();
@@ -427,12 +449,12 @@ async function processMessage({ message, contact, phoneNumberId }) {
         if (!text && message.type === "audio" && message.audio?.id) {
             try {
                 await markAsRead(phoneNumberId, message.id);
-                const mediaUrl = await getMediaUrl(message.audio.id);
-                const audioBytes = await downloadMedia(mediaUrl);
+                const mediaUrl = await getMediaUrl(message.audio.id, phoneNumberId);
+                const audioBytes = await downloadMedia(mediaUrl, phoneNumberId);
                 text = await transcribeAudio(audioBytes, "voice.ogg");
                 voiceNote = true;
             } catch (audioErr) {
-                console.error("Voice message handling failed:", audioErr);
+                console.error("conversation.js: Voice message handling failed:");
                 await sendWhatsAppText(phoneNumberId, from, VOICE_FAIL_REPLY);
                 return;
             }
@@ -456,12 +478,12 @@ async function processMessage({ message, contact, phoneNumberId }) {
 
         // --- Check if client asks for a human / advisor ---
         if (looksLikeHumanRequest(text)) {
-            console.log(`[takeover=false] [${from}] Customer requested human advisor -> handoff triggered`);
+            console.log("conversation.js: Bot processing event");
             const handoffMsg = getHandoffMessage(text);
             try {
                 await sendWhatsAppText(phoneNumberId, from, handoffMsg);
             } catch (sendErr) {
-                console.error("Failed to send handoff message:", sendErr);
+                console.error("conversation.js: Failed to send handoff message:");
             }
             await setTakeoverStatus(from, true).catch(() => {});
             await saveMessage(from, "assistant", handoffMsg, phoneNumberId, {
@@ -474,7 +496,7 @@ async function processMessage({ message, contact, phoneNumberId }) {
                 from,
                 message: text,
                 reason: "Le client a demandé à parler à un conseiller",
-            }).catch((e) => console.error("notifyHandoff error:", e));
+            }).catch((e) => console.error("conversation.js: notifyHandoff error:"));
             return;
         }
 
@@ -490,7 +512,7 @@ async function processMessage({ message, contact, phoneNumberId }) {
                 }
             }
         } catch (cfgErr) {
-            console.error("Business config load failed, using default prompt:", cfgErr);
+            console.error("conversation.js: Business config load failed, using default prompt:");
         }
 
         // --- Save the customer's message and pull recent history so the bot
@@ -511,19 +533,19 @@ async function processMessage({ message, contact, phoneNumberId }) {
             // since generateReply adds the current message itself.
             history = history.slice(0, -1);
         } catch (dbErr) {
-            console.error("DB error (continuing without history):", dbErr);
+            console.error("conversation.js: DB error (continuing without history):");
         }
 
         if (looksLikeFinalizeIntent(text)) {
             notifyTeam({ from, message: text }).catch((e) =>
-                console.error("notifyTeam failed:", e)
+                console.error("conversation.js: notifyTeam failed:")
             );
         }
 
         // --- Bot auto-reply check: Meta 24-hour customer service window ---
         const convo = await getConversation(from);
         if (!isWithin24hWindow(convo)) {
-            console.warn(`[Bot] 24h Meta window is expired for ${from}. Free-text auto-reply blocked.`);
+            console.warn("conversation.js: [Bot] 24h Meta window is expired for ");
             return;
         }
 
@@ -540,7 +562,7 @@ async function processMessage({ message, contact, phoneNumberId }) {
                 if (!reply) reply = getHandoffMessage(text);
             }
         } catch (aiErr) {
-            console.error("generateReply failed, triggering handoff:", aiErr);
+            console.error("conversation.js: generateReply failed, triggering handoff:");
             handoffRequired = true;
             handoffReason = `Erreur IA : ${aiErr.message}`;
             reply = getHandoffMessage(text);
@@ -550,7 +572,7 @@ async function processMessage({ message, contact, phoneNumberId }) {
             try {
                 await sendWhatsAppText(phoneNumberId, from, reply);
             } catch (sendErr) {
-                console.error("Failed to send handoff message:", sendErr);
+                console.error("conversation.js: Failed to send handoff message:");
             }
             await setTakeoverStatus(from, true).catch(() => {});
             await saveMessage(from, "assistant", reply, phoneNumberId, { status: "sent" }).catch(() => {});
@@ -558,7 +580,7 @@ async function processMessage({ message, contact, phoneNumberId }) {
                 from,
                 message: text,
                 reason: handoffReason || "Conseiller requis",
-            }).catch((e) => console.error("notifyHandoff error:", e));
+            }).catch((e) => console.error("conversation.js: notifyHandoff error:"));
             return;
         }
 
@@ -566,13 +588,13 @@ async function processMessage({ message, contact, phoneNumberId }) {
         let providerResponse = null;
         try {
             providerResponse = await sendSequentialWhatsAppTexts(phoneNumberId, from, messageParts, 1000);
-            console.log(`[takeover=false] [${from}] Bot replied successfully (${messageParts.length} message(s))`);
+            console.log("conversation.js: Bot processing event");
         } catch (sendErr) {
             if (isWindowExpiredError(sendErr?.message, sendErr?.code)) {
-                console.warn(`[Bot] Send failed with 131047 (window expired) for ${from}`);
+                console.warn("conversation.js: [Bot] Send failed with 131047 (window expired) for ");
                 return;
             }
-            console.error("Final WhatsApp send failed for", from, ":", sendErr);
+            console.error("conversation.js: Final WhatsApp send failed for");
             return;
         }
 
@@ -580,8 +602,8 @@ async function processMessage({ message, contact, phoneNumberId }) {
         saveMessage(from, "assistant", reply, phoneNumberId, {
             wamid: botWamid,
             status: "sent",
-        }).catch((e) => console.error("DB save (assistant) failed:", e));
+        }).catch((e) => console.error("conversation.js: DB save (assistant) failed:"));
     } catch (bgErr) {
-        console.error("Background webhook processing error:", bgErr);
+        console.error("conversation.js: Background webhook processing error:");
     }
 }
