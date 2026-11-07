@@ -11,7 +11,7 @@ const tools = createRequire(join(resolve(process.argv[2]), "browser-check.cjs"))
 const { chromium } = tools("playwright");
 const pdfLibrary = await readFile(join(dirname(tools.resolve("jspdf/package.json")), "dist/jspdf.umd.min.js"));
 const root = fileURLToPath(new URL("../", import.meta.url));
-const files = new Set(["index.html", "formulaire.html", "styles.css", "signup.js", "marketing.js", "public-offer.js", "privacy.html"]);
+const files = new Set(["index.html", "formulaire.html", "styles.css", "signup.js", "marketing.js", "public-offer.js", "privacy.html", "privacy-en.html"]);
 const types = { ".html": "text/html", ".css": "text/css", ".js": "text/javascript" };
 const server = http.createServer(async (req, res) => {
   const name = new URL(req.url, "http://localhost").pathname.slice(1) || "index.html";
@@ -20,7 +20,7 @@ const server = http.createServer(async (req, res) => {
 });
 await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
 const origin = `http://127.0.0.1:${server.address().port}`;
-const artifacts = "/tmp/repliq-us-website-review"; await mkdir(artifacts, { recursive: true });
+const artifacts = "/tmp/repliq-us-launch-review"; await mkdir(artifacts, { recursive: true });
 let browser;
 try {
   browser = await chromium.launch({ headless: true });
@@ -54,9 +54,10 @@ try {
     await page.screenshot({ path: `${artifacts}/${label}-hero.png` });
     await page.locator("#tarifs").screenshot({ path: `${artifacts}/${label}-pricing.png` });
     const faq = page.locator(".faq-q"); await faq.nth(0).click(); assert.equal(await faq.nth(0).getAttribute("aria-expanded"), "true");
-    await faq.nth(1).click(); assert.equal(await faq.nth(0).getAttribute("aria-expanded"), "false");
+    await faq.nth(1).focus(); await page.keyboard.press("Enter"); assert.equal(await faq.nth(0).getAttribute("aria-expanded"), "false");
     await page.locator(`a[href*="intent=${intent}"]`).first().click();
-    await page.waitForFunction(() => document.getElementById("summaryFeatures").children.length === 4);
+    await page.waitForURL("**/formulaire.html?**");
+    await page.waitForFunction(() => document.getElementById("summaryFeatures")?.children.length === 4);
     assert.ok(page.url().includes("formulaire.html"));
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), `${label} form overflows`);
     await page.screenshot({ path: `${artifacts}/${label}-form.png`, fullPage: true });
@@ -83,10 +84,18 @@ try {
       assert.equal(await page.locator("#receiptWrap").isVisible(), false); assert.equal(await page.locator("#formError").isVisible(), true);
       failLead = false;
     }
+    assert.equal(await page.locator('a[href="privacy-en.html"]').count() > 0, true);
+    await page.goto(`${origin}/privacy-en.html`);
+    assert.equal(await page.locator("html").getAttribute("lang"), "en");
+    assert.match(await page.locator(".draft").innerText(), /pending business-owner review/);
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), `${label} privacy overflows`);
+    await page.screenshot({ path: `${artifacts}/${label}-privacy.png`, fullPage: true });
+    await page.locator('nav a[href="privacy.html"]').click();
+    assert.equal(await page.locator("html").getAttribute("lang"), "fr");
     await page.close();
   }
   assert.deepEqual(errors, []);
-  console.log("Browser checks passed: desktop/mobile layout, both CTAs, FAQ, consent/phone, mocked submission, error handling, escaped receipt and real PDF downloads. No page errors.");
+  console.log("Browser checks passed: desktop/mobile layout, both CTAs, keyboard FAQ, English/French privacy, consent/phone, mocked submission, error handling, escaped receipt and real PDF downloads. No page errors.");
   console.log(`Screenshots and synthetic PDFs: ${artifacts}`);
 } finally {
   await browser?.close(); await new Promise(resolve => server.close(resolve));

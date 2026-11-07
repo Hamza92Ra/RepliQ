@@ -14,5 +14,5 @@ export const PRO_FEATURES = Object.freeze([
   "AI WhatsApp receptionist in English, Spanish and French",
   "Answers based on your approved charter information",
   "Conversation history and human takeover from your dashboard",
-  "Voice message handling and booking-intent notifications",
+  "Voice message handling and team notifications",
 ]);
