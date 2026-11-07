@@ -128,10 +128,7 @@ async function handleAdminAction(req, res) {
                 phoneNumberId = process.env.DEFAULT_PHONE_NUMBER_ID;
             }
             if (!phoneNumberId) {
-                return res.status(400).json({
-                    error: "Aucun numéro WhatsApp Business associé à cette conversation.",
-                    details: "Définissez DEFAULT_PHONE_NUMBER_ID dans vos variables d'environnement Vercel ou attendez un message client."
-                });
+                return res.status(503).json({ error: "Service unavailable" });
             }
 
             const recipient = normalizeRecipient(phone);
@@ -212,10 +209,7 @@ async function handleAdminAction(req, res) {
                 phoneNumberId = process.env.DEFAULT_PHONE_NUMBER_ID;
             }
             if (!phoneNumberId) {
-                return res.status(400).json({
-                    error: "Aucun numéro WhatsApp Business associé",
-                    details: "Définissez DEFAULT_PHONE_NUMBER_ID dans Vercel."
-                });
+                return res.status(503).json({ error: "Service unavailable" });
             }
 
             const recipient = normalizeRecipient(phone);
@@ -241,7 +235,7 @@ async function handleAdminAction(req, res) {
                     ok: false,
                     error: "Échec de l'envoi du modèle WhatsApp",
                     code: sendErr.code,
-                    details: sendErr.message,
+                    details: "Template could not be sent",
                 });
             }
 
@@ -295,7 +289,7 @@ async function handleAdminAction(req, res) {
         return res.status(status >= 400 && status < 600 ? status : 500).json({
             ok: false,
             error: "Action impossible",
-            details: err?.message || "Action failed",
+            details: "Action failed",
         });
     }
 }

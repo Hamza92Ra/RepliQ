@@ -120,9 +120,44 @@ try {
     status(await admin.request(`/api/admin/${name}`, method, method === "POST" ? { phone: "15555550123", action: "human" } : undefined), 401);
   }
   for (const name of ["login", ...Object.keys(methods)]) status(await admin.request(`/api/admin/${name}`, "DELETE", undefined, auth), 405);
+  for (const [name, method] of [["login", "GET"], ["conversations", "GET"], ["send", "POST"]]) {
+    const rejected = await admin.request(`/api/admin/${name}`, method, method === "POST" ? { conversationId: "fixture-conversation", text: "Synthetic" } : undefined, { cookie: "admin_token=%E0%A4%A" });
+    status(rejected, 401); assert.doesNotMatch(rejected.text, /Missing|DASHBOARD_SECRET|SUPABASE_|URIError/);
+  }
   status(await admin.request("/api/admin"), 404);
   status(await admin.request("/api/admin/unknown"), 404);
 } finally { await admin.close(); }
+
+// Preview-like workers deliberately lack auth secrets; no real env is inherited.
+const missingAdmin = await start("api/admin.js", { DASHBOARD_SECRET: "", ADMIN_PASSWORD: "", ADMIN_JWT_SECRET: "" });
+try {
+  for (const [name, method] of [["login", "GET"], ["login", "POST"], ["conversations", "GET"], ["messages", "GET"], ["read", "POST"], ["send", "POST"], ["takeover", "POST"], ["legacy", "POST"]]) {
+    for (const headers of [{}, auth]) {
+      const denied = await missingAdmin.request(`/api/admin/${name}`, method, method === "POST" ? { password: "dashboard-fixture", phone: "15555550123", action: "human", conversationId: "fixture-conversation", text: "Synthetic" } : undefined, headers);
+      status(denied, 401); assert.deepEqual(denied.json, { error: "Unauthorized" }); assert.equal(denied.headers["set-cookie"], undefined);
+    }
+  }
+} finally { await missingAdmin.close(); }
+const missingData = await start("api/admin.js", { SUPABASE_URL: "", SUPABASE_SERVICE_ROLE_KEY: "" });
+try {
+  for (const [name, method] of [["conversations", "GET"], ["messages", "GET"], ["read", "POST"], ["send", "POST"], ["takeover", "POST"]]) {
+    const unavailable = await missingData.request(`/api/admin/${name}`, method, method === "POST" ? { conversationId: "fixture-conversation", enabled: true, text: "Synthetic" } : undefined, auth);
+    status(unavailable, 503); assert.deepEqual(unavailable.json, { error: "Service unavailable" });
+  }
+} finally { await missingData.close(); }
+const missingSender = await start("api/admin.js", { WHATSAPP_TOKEN: "" });
+try {
+  const unavailable = await missingSender.request("/api/admin/send", "POST", { conversationId: "fixture-conversation", text: "Synthetic" }, auth);
+  status(unavailable, 503); assert.deepEqual(unavailable.json, { error: "Service unavailable" });
+} finally { await missingSender.close(); }
+for (const entrypoint of ["api/webhook.js", "api/conversation.js"]) {
+  const missingMeta = await start(entrypoint, { META_APP_SECRET: "" });
+  const path = "/" + entrypoint.replace(/\.js$/, "");
+  try {
+    status(await missingMeta.request(`${path}?hub.mode=subscribe&hub.verify_token=wrong`), 403);
+    status(await missingMeta.request(path, "POST", { entry: [] }), 503);
+  } finally { await missingMeta.close(); }
+}
 
 const signed = body => ({ "x-hub-signature-256": "sha256=" + createHmac("sha256", fixtureEnvironment.META_APP_SECRET).update(body).digest("hex") });
 for (const entrypoint of ["api/webhook.js", "api/conversation.js"]) {
