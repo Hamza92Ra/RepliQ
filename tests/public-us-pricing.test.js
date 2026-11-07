@@ -1,3 +1,4 @@
+import { leadEval } from "./lead-service-fixtures.js";
 import { describe, it, beforeEach, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, existsSync } from "node:fs";
@@ -97,16 +98,24 @@ describe("Public US charter offer", () => {
 });
 
 describe("New-offer lead handling preserves legacy behavior", () => {
-  let env, originalFetch, calls, commands, failure;
+  let env, originalFetch, calls, commands, failure, store, expires;
   beforeEach(() => {
-    env = { ...process.env }; originalFetch = globalThis.fetch; calls = []; commands = []; failure = null;
+    env = { ...process.env }; originalFetch = globalThis.fetch; calls = []; commands = []; failure = null; store = new Map(); expires = new Map();
     process.env = { WHATSAPP_PHONE_NUMBER_ID: "1001", DEFAULT_PHONE_NUMBER_ID: "1001", WHATSAPP_TOKEN: "fixture", UPSTASH_REDIS_REST_URL: "https://fixture.upstash.test", UPSTASH_REDIS_REST_TOKEN: "fixture", RESEND_API_KEY: "fixture", NOTIFY_EMAIL_TO: "fixture@example.invalid" };
     globalThis.fetch = async (url, options) => {
       calls.push({ url: String(url), options });
       if (String(url).endsWith("/pipeline")) {
         const batch = JSON.parse(options.body); commands.push(...batch);
         if (failure === "redis") throw new Error("fixture failure");
-        return Response.json(batch.map(() => ({ result: "OK" })));
+        return Response.json(batch.map(([command,key,...args]) => {
+          if(command==='EVAL') return {result:leadEval([command,key,...args],store,expires)};
+          if(command==='GET') return {result:store.get(key) ?? null};
+          if(command==='LLEN') return {result:(store.get(key)||[]).length};
+          if(command==='EXISTS') return {result:[key,...args].filter(key=>store.has(key)).length};
+          if(command==='SET') store.set(key,args[0]);
+          if(command==='RPUSH') store.set(key,[...(store.get(key)||[]),...args]);
+          return {result:'OK'};
+        }));
       }
       if (String(url).includes("graph.facebook.com")) {
         if (failure === "meta") return Response.json({ error: { message: "fixture failure" } }, { status: 502 });
@@ -118,7 +127,7 @@ describe("New-offer lead handling preserves legacy behavior", () => {
   });
   afterEach(() => { process.env = env; globalThis.fetch = originalFetch; });
   it("uses canonical US pricing and copy in storage, acknowledgements and notifications", async () => {
-    const request = { ...buildLeadRequest(values, "?intent=demo", "fixture"), price: "$1", mode: "annual", phoneNumberId: "foreign-number" };
+    const request = { ...buildLeadRequest(values, "?intent=demo", "fixture"), price: "$1", mode: "annual" };
     const result = response(); await lead({ method: "POST", body: request }, result);
     assert.equal(result.statusCode, 200); assert.equal(result.body.ok, true);
     const stored = commands.filter(([cmd]) => cmd === "RPUSH").map(([, , value]) => JSON.parse(value));
@@ -155,6 +164,6 @@ describe("New-offer lead handling preserves legacy behavior", () => {
   it("returns an error before sending when the lead cannot be persisted", async () => {
     failure = "redis";
     const result = response(); await lead({ method: "POST", body: buildLeadRequest(values) }, result);
-    assert.equal(result.statusCode, 500); assert.equal(calls.some(call => call.url.includes("graph.facebook.com")), false);
+    assert.equal(result.statusCode, 503); assert.equal(calls.some(call => call.url.includes("graph.facebook.com")), false);
   });
 });

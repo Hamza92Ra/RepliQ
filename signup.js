@@ -4,7 +4,7 @@ export function normalizePublicPhone(value) {
   const raw = String(value || "").trim();
   if (!/^\+[0-9\s().-]+$/.test(raw)) throw new Error("Please include + and your country code, e.g. +1 305 555 0123.");
   const digits = raw.replace(/\D/g, "");
-  if (!/^[1-9]\d{7,14}$/.test(digits)) throw new Error("Please enter a valid international WhatsApp number.");
+  if (!/^[1-9]\d{6,14}$/.test(digits)) throw new Error("Please enter a valid international WhatsApp number.");
   return `+${digits}`;
 }
 export function buildLeadRequest(values, search = "", reference = "") {
@@ -15,7 +15,7 @@ export function buildLeadRequest(values, search = "", reference = "") {
     phone: normalizePublicPhone(values.phone), email: values.email.trim(),
     offer: PUBLIC_OFFER.name, mode: "monthly", price: PRICE_SUMMARY,
     setup: PUBLIC_OFFER.setup, monthly: PUBLIC_OFFER.monthly, annual: null,
-    message: values.message.trim(), volume: values.volume, acceptedTerms: true, ref: reference, intent,
+    message: values.message.trim(), volume: values.volume, acceptedTerms: true, ref: reference, intent, website: String(values.website || ""),
   };
 }
 export function receiptRows(request) {
@@ -73,16 +73,18 @@ export function initSignup(document, window, send = window.fetch.bind(window)) {
     try {
       const values = Object.fromEntries(["fullname", "business", "activity", "phone", "email", "message", "volume"].map(id => [id, get(id).value]));
       values.acceptedTerms = get("terms").checked;
+      values.website = get("website")?.value || "";
       const reference = `RPLQ-${window.crypto.randomUUID()}`;
       const request = buildLeadRequest(values, window.location.search, reference);
       get("submitRequest").disabled = true;
       const response = await send("/api/lead", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(request) });
       const result = await response.json();
       if (!response.ok || !result.ok) throw new Error("We couldn't confirm your request. Please try again or contact us on WhatsApp.");
+      const confirmedReference = result.reference || reference;
       const rows = receiptRows(request);
-      receipt = { ref: reference, today: new Date().toLocaleDateString("en-US"), rows };
+      receipt = { ref: confirmedReference, today: new Date().toLocaleDateString("en-US"), rows };
       get("receiptTitle").textContent = `Thanks ${request.fullname.split(" ")[0]}, your request is received.`;
-      get("receiptRef").textContent = reference;
+      get("receiptRef").textContent = confirmedReference;
       get("receiptTable").replaceChildren();
       for (const [label, value] of rows) {
         const row = document.createElement("div"); row.className = "receipt-row";
@@ -90,7 +92,7 @@ export function initSignup(document, window, send = window.fetch.bind(window)) {
         const text = document.createElement("span"); text.className = "v"; text.textContent = value;
         row.append(key, text); get("receiptTable").appendChild(row);
       }
-      const followUp = encodeURIComponent(`Hi RepliQ, I submitted a ${demo ? "demo request" : "setup inquiry"} for RepliQ Pro. Reference: ${reference}.`);
+      const followUp = encodeURIComponent(`Hi RepliQ, I submitted a ${demo ? "demo request" : "setup inquiry"} for RepliQ Pro. Reference: ${confirmedReference}.`);
       get("waFollowUp").href = `https://wa.me/212712614398?text=${followUp}`;
       get("formLayout").classList.add("hidden"); get("receiptWrap").classList.add("show");
       window.scrollTo({ top: 0, behavior: "smooth" });

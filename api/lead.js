@@ -1,3 +1,7 @@
+import { randomUUID } from "node:crypto";
+import { readLeadBody, validateLead } from "../lib/lead-validation.js";
+import { admitLead } from "../lib/lead-abuse.js";
+export const config = { api: { bodyParser: false } };
 import { PUBLIC_OFFER } from "../public-offer.js";
 import { handlePublicProLead } from "../lib/public-pro-lead.js";
 import { saveMessage } from "../lib/db.js";
@@ -55,6 +59,27 @@ export default async function handler(req, res) {
         return res.status(405).json({ error: "Method Not Allowed" });
     }
 
+    res.setHeader?.("Cache-Control", "no-store");
+    try {
+        const body = await readLeadBody(req);
+        const origin = req.headers?.origin;
+        if (origin) {
+            let originHost; try { originHost = new URL(origin).host; } catch { return res.status(403).json({ error: "Request not allowed" }); }
+            if (originHost !== req.headers.host) return res.status(403).json({ error: "Request not allowed" });
+        }
+        req.body = validateLead(body);
+        req.body.ref ||= `RPLQ-${randomUUID()}`;
+        req.leadSecurity = await admitLead(req, req.body);
+        if (req.leadSecurity.duplicate) return res.status(200).json({ ok: true, whatsapp_error: null, reference: req.leadSecurity.reference });
+        return await processLead(req, res);
+    } catch (error) {
+        const status = [400,403,409,413,415,429,503].includes(error.status) ? error.status : 503;
+        if (error.retryAfter) res.setHeader?.("Retry-After", String(error.retryAfter));
+        return res.status(status).json({ error: status === 429 ? "Too many requests. Please try again later." : status === 413 ? "Request too large" : status === 503 ? "Service unavailable" : "Could not accept request" });
+    }
+}
+
+async function processLead(req, res) {
     // Only explicit new-offer inquiries use the US acquisition copy. Existing
     // offers and all chatbot/customer configurations keep their legacy behavior.
     if (req.body?.offer === PUBLIC_OFFER.name) return handlePublicProLead(req, res);
@@ -117,22 +142,17 @@ export default async function handler(req, res) {
         // number — that gets attached automatically (setConversationOwner)
         // the first time they actually message in on WhatsApp, or below if
         // we successfully send the congrats message from our own number.
-        await saveMessage(cleanPhone, "lead", lines.join("\n"));
+        await saveMessage(cleanPhone, "lead", lines.join("\n"), undefined, { source: "public-lead", signal: AbortSignal.timeout(3000) });
+        await req.leadSecurity.complete();
     } catch (err) {
         console.error("lead.js: Lead save failed:");
-        return res.status(500).json({ error: "Failed to save lead" });
+        return res.status(503).json({ error: "Service unavailable" });
     }
 
-    // Everything below is best-effort: the lead is already saved and the
-    // client already sees their receipt in the browser, so a WhatsApp or
-    // notification hiccup here should never turn into an error response —
-    // it just gets logged. TEMP DEBUG: we also attach the raw error into
-    // the JSON response (whatsapp_error / whatsapp_error_code below) so it
-    // shows up directly in the browser's Network tab, no Vercel log
-    // digging required. Remove this once the send is confirmed working.
+    // Optional notifications are attempted once, after durable dedup completion.
     let whatsappError = null;
     const phoneNumberId = process.env.DEFAULT_PHONE_NUMBER_ID;
-    if (phoneNumberId) {
+    if (phoneNumberId && req.leadSecurity.acknowledge) {
         try {
             const firstName = String(fullname).trim().split(/\s+/)[0];
             const highlights = OFFER_HIGHLIGHTS[offer] || OFFER_HIGHLIGHTS["Essai gratuit"];
@@ -143,29 +163,30 @@ export default async function handler(req, res) {
                 `\n\n💰 Tarif : ${price || "—"} (${modeLabel})\n\n` +
                 `Un membre de notre équipe va vous contacter très prochainement pour connecter votre numéro WhatsApp Business et activer votre offre. En attendant, n'hésitez pas à poser vos questions ici, je suis là pour vous aider ! 🙌`;
 
-            await sendWhatsAppText(phoneNumberId, cleanPhone, congratsText);
+            await sendWhatsAppText(phoneNumberId, cleanPhone, congratsText, { signal: AbortSignal.timeout(4000) });
 
             // Record it in the same conversation, and set phoneNumberId so
             // this becomes the recognized owner of the thread — this is
             // what lets a dashboard admin reply to this person later.
-            await saveMessage(cleanPhone, "assistant", congratsText, phoneNumberId);
+            await saveMessage(cleanPhone, "assistant", congratsText, phoneNumberId, { source: "public-lead", signal: AbortSignal.timeout(3000) });
         } catch (waErr) {
             console.error("lead.js: Lead congrats WhatsApp message failed:");
-            whatsappError = { message: waErr.message, code: waErr.code || null, status: waErr.status || null };
+            whatsappError = { message: "WhatsApp acknowledgement unavailable; request saved" };
         }
     } else {
-        whatsappError = { message: "DEFAULT_PHONE_NUMBER_ID not set" };
+        whatsappError = { message: "WhatsApp acknowledgement unavailable; request saved" };
         console.warn("lead.js: DEFAULT_PHONE_NUMBER_ID not set — skipping lead congrats WhatsApp message.");
     }
 
     try {
         await notifyTeam({
             from: cleanPhone,
+            signal: AbortSignal.timeout(4000),
             message: `Nouvelle commande via le formulaire — ${fullname} (${business}) a choisi l'offre "${offer}" (${modeLabel}, ${price || "—"}). À contacter dès que possible.`,
         });
     } catch (notifyErr) {
         console.error("lead.js: Lead team notification failed:");
     }
 
-    return res.status(200).json({ ok: true, whatsapp_error: whatsappError });
+    return res.status(200).json({ ok: true, whatsapp_error: whatsappError, reference: ref });
 }

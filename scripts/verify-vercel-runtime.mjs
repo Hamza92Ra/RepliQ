@@ -209,9 +209,31 @@ for (const entrypoint of ["api/webhook.js", "api/conversation.js"]) {
 const lead = await start("api/lead.js");
 try {
   status(await lead.request("/api/lead"), 405);
-  const inquiry = { fullname: "Alex Fixture", business: "Charter Fixture", phone: "+1 305 555 0123", email: "fixture@example.invalid", offer: "RepliQ Pro", intent: "demo", acceptedTerms: true };
+  const inquiry = { fullname: "Alex Fixture", business: "Charter Fixture", activity: "Yacht charter", phone: "+1 305 555 0123", email: "fixture@example.invalid", offer: "RepliQ Pro", intent: "demo", acceptedTerms: true };
   const saved = await lead.request("/api/lead", "POST", inquiry);
   status(saved, 200); assert.equal(saved.json.ok, true);
   status(await lead.request("/api/lead", "POST", { ...inquiry, acceptedTerms: false }), 400);
+  const sameOrigin = await lead.request("/api/lead", "POST", { ...inquiry, ref: "same-origin-retry" }, { host: "smoke.fixture.invalid", "x-forwarded-host": "smoke.fixture.invalid", origin: "http://smoke.fixture.invalid" });
+  status(sameOrigin, 200); assert.equal(sameOrigin.json.reference, saved.json.reference);
+  const repeated = await lead.request("/api/lead", "POST", { ...inquiry, ref: "new-retry-ref" });
+  status(repeated, 200); assert.equal(repeated.json.reference, saved.json.reference);
+  for (const override of [{ website: "https://spam.invalid" }, { email: "fixture@example.invalid\r\nBcc: forged@example.invalid" }, { business: "<img src=x onerror=alert(1)>" }, { phoneNumberId: "foreign" }, { email: "" }]) {
+    status(await lead.request("/api/lead", "POST", { ...inquiry, ...override }), 400);
+  }
+  status(await lead.request("/api/lead", "POST", "{broken"), 400);
+  status(await lead.request("/api/lead", "POST", { ...inquiry, message: "x".repeat(20000) }), 413);
+  status(await lead.request("/api/lead", "POST", inquiry, { "content-type": "text/plain" }), 415);
+  status(await lead.request("/api/lead", "POST", inquiry, { origin: "https://other.fixture.invalid" }), 403);
+  status(await lead.request("/api/lead", "POST", { ...inquiry, message: "Second distinct request" }), 200);
+  status(await lead.request("/api/lead", "POST", { ...inquiry, message: "Third distinct request" }), 200);
+  const limited = await lead.request("/api/lead", "POST", { ...inquiry, message: "Fourth distinct request" });
+  status(limited, 429); assert.ok(Number(limited.headers["retry-after"]) > 0);
+  const legacy = await lead.request("/api/lead", "POST", { fullname: "Fixture", business: "Legacy fixture", phone: "0612345678", offer: "Standard", mode: "monthly", price: "400 MAD" });
+  status(legacy, 200); assert.equal(legacy.json.ok, true);
 } finally { await lead.close(); }
+const noLeadRedis = await start("api/lead.js", { UPSTASH_REDIS_REST_TOKEN: "" });
+try {
+  const unavailable = await noLeadRedis.request("/api/lead", "POST", { fullname: "Fixture", business: "Fixture", activity: "Yacht charter", phone: "+17875550123", email: "fixture@example.invalid", offer: "RepliQ Pro", acceptedTerms: true });
+  status(unavailable, 503); assert.deepEqual(unavailable.json, { error: "Service unavailable" });
+} finally { await noLeadRedis.close(); }
 console.log(`@vercel/node ${JSON.parse(readFileSync(nodePackage)).version}: ${assertions} real-runtime HTTP response checks passed, with external services mocked`);

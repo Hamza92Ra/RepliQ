@@ -20,7 +20,7 @@ const server = http.createServer(async (req, res) => {
 });
 await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
 const origin = `http://127.0.0.1:${server.address().port}`;
-const artifacts = "/tmp/repliq-us-final-cleanup-review"; await mkdir(artifacts, { recursive: true });
+const artifacts = "/tmp/repliq-us-lead-security-review"; await mkdir(artifacts, { recursive: true });
 let browser;
 try {
   browser = await chromium.launch({ headless: true });
@@ -31,7 +31,7 @@ try {
     if (url.origin === origin) {
       if (url.pathname === "/api/lead") {
         assert.equal(request.method(), "POST"); submissions.push(request.postDataJSON());
-        return route.fulfill({ status: failLead ? 500 : 200, contentType: "application/json", body: JSON.stringify(failLead ? { error: "synthetic failure" } : { ok: true }) });
+        return route.fulfill({ status: failLead ? 500 : 200, contentType: "application/json", body: JSON.stringify(failLead ? { error: "synthetic failure" } : { ok: true, reference: "RPLQ-confirmed-fixture" }) });
       }
       return route.continue();
     }
@@ -63,12 +63,16 @@ try {
     assert.ok(page.url().includes("formulaire.html"));
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), `${label} form overflows`);
     await page.screenshot({ path: `${artifacts}/${label}-form.png`, fullPage: true });
+    assert.equal(await page.locator("#website").getAttribute("tabindex"), "-1");
+    assert.equal(await page.locator("#website").inputValue(), "");
     await page.locator("#fullname").fill("Alex Fixture"); await page.locator("#business").fill('<img src=x onerror="window.fixtureXss=1">');
     await page.locator("#activity").selectOption({ label: "Yacht charter" }); await page.locator("#phone").fill("+1 787 555 0123");
     await page.locator("#email").fill("fixture@example.invalid"); await page.locator("#terms").check();
     await page.locator("#submitRequest").click(); await page.locator("#receiptWrap").waitFor({ state: "visible" });
     assert.equal(new URL(await page.locator("#waFollowUp").getAttribute("href")).pathname, "/212712614398");
-    const sent = submissions.at(-1); assert.equal(sent.offer, "RepliQ Pro"); assert.equal(sent.intent, intent);
+    assert.equal(await page.locator("#receiptRef").innerText(), "RPLQ-confirmed-fixture");
+    assert.ok((await page.locator("#waFollowUp").getAttribute("href")).includes("RPLQ-confirmed-fixture"));
+    const sent = submissions.at(-1); assert.equal(sent.website, ""); assert.equal(sent.offer, "RepliQ Pro"); assert.equal(sent.intent, intent);
     assert.equal(sent.monthly, 99); assert.equal(sent.setup, 99); assert.equal(sent.mode, "monthly"); assert.equal(sent.phone, "+17875550123");
     assert.equal(await page.locator("#receiptTable img").count(), 0); assert.equal(await page.evaluate(() => window.fixtureXss), undefined);
     assert.match(await page.locator("#receiptTable").innerText(), /\$99\/month/);
@@ -105,7 +109,7 @@ try {
     await page.close();
   }
   assert.deepEqual(errors, []);
-  console.log("Browser checks passed: desktop/mobile layout, both CTAs, keyboard FAQ, official contacts, draft English/French privacy, consent/phone, mocked submission, error handling, escaped receipt and real PDF downloads. No page errors.");
+  console.log("Browser checks passed: desktop/mobile layout, both CTAs, keyboard FAQ, official contacts, draft English/French privacy, honeypot, stable server reference, consent/phone, mocked submission, error handling, escaped receipt and real PDF downloads. No page errors.");
   console.log(`Screenshots and synthetic PDFs: ${artifacts}`);
 } finally {
   await browser?.close(); await new Promise(resolve => server.close(resolve));

@@ -1,7 +1,8 @@
+import { leadEval } from "./lead-service-fixtures.js";
 // Synthetic services shared by router and optional real-runtime tests.
 export function installAdminFixtures() {
   const state = {
-    calls: [],
+    calls: [], leadExpires: new Map(),
     conversation: { id: "fixture-conversation", wa_contact_phone: "15555550123", contact_name: "Fixture",
       human_takeover: false, unread_count: 1, last_inbound_at: new Date().toISOString(), last_message_at: new Date().toISOString() },
     redis: new Map(),
@@ -28,6 +29,8 @@ export function installAdminFixtures() {
     }
     if (url.hostname === "fixture.upstash.test" && url.pathname === "/pipeline") {
       return Response.json(JSON.parse(options.body).map(([command, key, ...args]) => {
+        if (command === "EVAL") return { result: leadEval([command,key,...args], state.redis, state.leadExpires) };
+        if (command === "LLEN") return { result: (state.redis.get(key) || []).length };
         if (command === "EXISTS") return { result: [key, ...args].filter(key => state.redis.has(key)).length };
         if (command === "GET") return { result: state.redis.get(key) ?? null };
         if (command === "SET") {
