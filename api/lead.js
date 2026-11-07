@@ -113,7 +113,7 @@ export default async function handler(req, res) {
         // we successfully send the congrats message from our own number.
         await saveMessage(cleanPhone, "lead", lines.join("\n"));
     } catch (err) {
-        console.error("Lead save failed:", err);
+        console.error("lead.js: Lead save failed:");
         return res.status(500).json({ error: "Failed to save lead" });
     }
 
@@ -144,12 +144,12 @@ export default async function handler(req, res) {
             // what lets a dashboard admin reply to this person later.
             await saveMessage(cleanPhone, "assistant", congratsText, phoneNumberId);
         } catch (waErr) {
-            console.error("Lead congrats WhatsApp message failed:", waErr);
+            console.error("lead.js: Lead congrats WhatsApp message failed:");
             whatsappError = { message: waErr.message, code: waErr.code || null, status: waErr.status || null };
         }
     } else {
         whatsappError = { message: "DEFAULT_PHONE_NUMBER_ID not set" };
-        console.warn("DEFAULT_PHONE_NUMBER_ID not set — skipping lead congrats WhatsApp message.");
+        console.warn("lead.js: DEFAULT_PHONE_NUMBER_ID not set — skipping lead congrats WhatsApp message.");
     }
 
     try {
@@ -158,7 +158,7 @@ export default async function handler(req, res) {
             message: `Nouvelle commande via le formulaire — ${fullname} (${business}) a choisi l'offre "${offer}" (${modeLabel}, ${price || "—"}). À contacter dès que possible.`,
         });
     } catch (notifyErr) {
-        console.error("Lead team notification failed:", notifyErr);
+        console.error("lead.js: Lead team notification failed:");
     }
 
     return res.status(200).json({ ok: true, whatsapp_error: whatsappError });

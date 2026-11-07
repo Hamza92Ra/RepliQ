@@ -31,7 +31,7 @@ export default async function handler(req, res) {
       human_takeover: updated.human_takeover,
     });
   } catch (err) {
-    console.error("POST /api/admin/takeover error:", err);
+    console.error("takeover.js: POST /api/admin/takeover error:");
     return res.status(500).json({ error: "Failed to update takeover state", details: err.message });
   }
 }

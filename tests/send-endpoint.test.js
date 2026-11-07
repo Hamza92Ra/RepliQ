@@ -1,3 +1,4 @@
+import { signedRequest } from "./signed-request.js";
 // tests/send-endpoint.test.js
 import { describe, it, beforeEach, afterEach } from "node:test";
 import assert from "node:assert/strict";
@@ -429,7 +430,7 @@ describe("Conversation API - 24-hour Window Enforcement & Template Behavior", ()
       get headersSent() { return true; },
     };
 
-    await handler(req, res);
+    await handler(signedRequest(req), res);
     assert.equal(resData, "EVENT_RECEIVED");
 
     // Wait a brief tick for async background processing

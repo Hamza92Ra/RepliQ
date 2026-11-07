@@ -31,7 +31,7 @@ export default async function handler(req, res) {
       unread_count: 0,
     });
   } catch (err) {
-    console.error("POST /api/admin/read error:", err);
+    console.error("read.js: POST /api/admin/read error:");
     return res.status(500).json({ error: "Failed to reset unread count", details: err.message });
   }
 }

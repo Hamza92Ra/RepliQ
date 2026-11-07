@@ -30,7 +30,7 @@ export default async function handler(req, res) {
       messages,
     });
   } catch (err) {
-    console.error("GET /api/admin/messages error:", err);
+    console.error("messages.js: GET /api/admin/messages error:");
     return res.status(500).json({ error: "Failed to load messages", details: err.message });
   }
 }

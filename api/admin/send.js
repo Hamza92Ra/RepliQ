@@ -83,7 +83,7 @@ export default async function handler(req, res) {
     try {
       providerResponse = await sendWhatsAppText(phoneNumberId, recipient, trimmedText);
     } catch (sendErr) {
-      console.error("WhatsApp send failed for human admin:", sendErr);
+      console.error("send.js: WhatsApp send failed for human admin:");
       const is131047 = isWindowExpiredError(sendErr?.message, sendErr?.code);
       const friendlyErr = formatFriendlyError(sendErr?.message, sendErr?.code);
 
@@ -96,7 +96,7 @@ export default async function handler(req, res) {
         body: trimmedText,
         status: "failed",
         error: friendlyErr,
-      }).catch((e) => console.error("Failed to store failed human message:", e));
+      }).catch((e) => console.error("send.js: Failed to store failed human message:"));
 
       const status = is131047 ? 409 : 502;
       return res.status(status).json({
@@ -121,7 +121,7 @@ export default async function handler(req, res) {
         await setTakeoverStatus(conversation.wa_contact_phone, true).catch(() => {});
       }
     } catch (takeoverErr) {
-      console.error("Failed to auto-enable human takeover on send:", takeoverErr);
+      console.error("send.js: Failed to auto-enable human takeover on send:");
     }
 
     // 4. Store outbound message with sender = 'human'
@@ -140,7 +140,7 @@ export default async function handler(req, res) {
       wamid,
     });
   } catch (err) {
-    console.error("POST /api/admin/send error:", err);
+    console.error("send.js: POST /api/admin/send error:");
     return res.status(500).json({ error: "Échec de l'envoi du message", details: err.message });
   }
 }
