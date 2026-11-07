@@ -61,3 +61,7 @@ Latest instruction is local completion: no push, hosted submission or deployment
 For rollback, prepare a reviewed artifact/revert; base `68f942d` is not a statement about the current production artifact. Keep the public-source AI filter and safe errors when reverting other changes: blindly restoring the base would re-enable untrusted lead context and remove abuse protections. Do not clear/reset customer data, rewrite old messages/configs, disable security, or execute SQL. New temporary limiter keys expire naturally; do not delete existing Redis namespaces to reset limits.
 
 **GO for local review and approved isolated testing only. NO-GO for claiming a production launch or verified live anti-abuse integration.**
+
+## Final local re-verification
+
+Repeated checks against implementation commit `c425f22e0145d9aab3d5dc69e30dff5a7997eb2f`: **336/336 tests across 16 files**, **94 local runtime HTTP checks**, **12 offline Lua-source checks**, and **7 functions**. Zero failures, cancellations or skipped tests. The branch was clean before this documentation-only update; no implementation changes or additional investigation were made. Browser and syntax evidence above remains from the unchanged implementation's prior run. No push, hosted submission or Production changes were performed.
