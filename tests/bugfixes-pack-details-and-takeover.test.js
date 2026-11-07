@@ -1,3 +1,4 @@
+import { signedRequest } from "./signed-request.js";
 import test, { describe, it, beforeEach, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import { normalizePhone } from "../lib/whatsapp.js";
@@ -296,7 +297,7 @@ describe("BUG 2 Fix: Human Takeover Guard & Phone Normalization", () => {
       };
 
       // Handler returns 200 immediately
-      await webhookHandler({ method: "POST", body: webhookPayload }, res);
+      await webhookHandler(signedRequest({ method: "POST", body: webhookPayload }), res);
       assert.equal(resStatusCode, 200);
       assert.equal(resBody, "EVENT_RECEIVED");
 

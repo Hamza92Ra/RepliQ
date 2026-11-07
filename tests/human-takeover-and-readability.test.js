@@ -1,3 +1,4 @@
+import { signedRequest } from "./signed-request.js";
 // tests/human-takeover-and-readability.test.js
 import { describe, it, beforeEach, afterEach } from "node:test";
 import assert from "node:assert/strict";
@@ -210,7 +211,7 @@ describe("Part 1: Human Takeover & Fail-Safe Silent Bot", () => {
       },
     };
 
-    await handler(webhookReq, res);
+    await handler(signedRequest(webhookReq), res);
     assert.equal(ackStatus, 200);
 
     // Wait for waitUntil background task to finish processing
@@ -290,7 +291,7 @@ describe("Part 1: Human Takeover & Fail-Safe Silent Bot", () => {
       },
     };
 
-    await handler(webhookReq, res);
+    await handler(signedRequest(webhookReq), res);
     await new Promise((r) => setTimeout(r, 50));
 
     // Fail-safe requirement: Bot must NOT auto-reply when lookup fails

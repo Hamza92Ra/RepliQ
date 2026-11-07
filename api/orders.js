@@ -34,7 +34,7 @@ export default async function handler(req, res) {
         res.setHeader("Allow", "GET, POST");
         return res.status(405).json({ error: `Method ${req.method} not allowed` });
     } catch (err) {
-        console.error("Orders fetch/update error:", err);
+        console.error("orders.js: Orders fetch/update error:");
         return res.status(500).json({ error: err.message || "Failed to process orders request" });
     }
 }

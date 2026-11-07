@@ -25,7 +25,7 @@ export default async function handler(req, res) {
       serverTime: Date.now(),
     });
   } catch (err) {
-    console.error("GET /api/admin/conversations error:", err);
+    console.error("conversations.js: GET /api/admin/conversations error:");
     return res.status(500).json({ error: "Failed to list conversations", details: err.message });
   }
 }

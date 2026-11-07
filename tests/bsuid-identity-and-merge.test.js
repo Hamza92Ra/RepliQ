@@ -104,14 +104,19 @@ describe("BSUID & Identity Resolution - Helper Functions", () => {
 describe("BSUID & Identity Resolution - Outbound Cloud API Dispatch", () => {
   const origFetch = globalThis.fetch;
   const origToken = process.env.WHATSAPP_TOKEN;
+  const origPhoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
 
   afterEach(() => {
     globalThis.fetch = origFetch;
-    process.env.WHATSAPP_TOKEN = origToken;
+    if (origToken === undefined) delete process.env.WHATSAPP_TOKEN;
+    else process.env.WHATSAPP_TOKEN = origToken;
+    if (origPhoneNumberId === undefined) delete process.env.WHATSAPP_PHONE_NUMBER_ID;
+    else process.env.WHATSAPP_PHONE_NUMBER_ID = origPhoneNumberId;
   });
 
   it("sends using recipient field for BSUID and to field for real phone", async () => {
     process.env.WHATSAPP_TOKEN = "mock_whatsapp_token";
+    process.env.WHATSAPP_PHONE_NUMBER_ID = "phone_id_test";
     const sentPayloads = [];
 
     globalThis.fetch = async (url, options) => {
