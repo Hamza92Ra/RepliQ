@@ -17,7 +17,9 @@ describe("Public US charter offer", () => {
     for (const html of [landing, form]) {
       assert.match(html, /<html lang="en">/); assert.match(html, /\$99.*\/month/);
       assert.match(html, /\$99 one-time setup fee/); assert.match(html, /English.*Spanish.*French/s);
-      assert.match(html, /data-choose-market="ma"/);\n       const usSalesContent = html.replace(/<div class="market-switch-bar"[\\s\\S]*?<\\/div>/, "");\n       assert.doesNotMatch(usSalesContent, /\\bMAD\\b|Essentielle|Standard|Premium|mois offerts|loyalty|annual payment/i);
+      assert.match(html, /data-choose-market="ma"/);
+      const usSalesContent = html.replace(/<div class="market-switch-bar"[\s\S]*?<\/div>/, "");
+      assert.doesNotMatch(usSalesContent, /\bMAD\b|Essentielle|Standard|Premium|mois offerts|loyalty|annual payment/i);
       assert.match(html, /1,000 outbound replies per billing period/); assert.match(html, /12 AI replies per customer per rolling 24 hours/);
       assert.match(html, /Usage caps are not enforced yet/);
     }
