@@ -58,7 +58,7 @@ it('provides a review-labelled English privacy draft while retaining the French 
   assert.match(policy, /<html lang="en">/); assert.match(policy, /name="robots" content="noindex"/);
   assert.match(policy, /pending business-owner review/); assert.match(policy, /not been approved for publication/);
   for (const provider of ['Meta', 'Vercel', 'Upstash', 'Supabase', 'Groq', 'Gemini', 'Resend', 'Google Fonts', 'cdnjs']) assert.ok(policy.includes(provider));
-  assert.match(policy, /No fixed retention duration/); assert.match(policy, /does not automatically erase/);
+  assert.match(policy, /proposed retention period of 90 days/); assert.match(policy, /does not automatically erase/);
   assert.match(policy, /must be confirmed with the business owner/);
   assert.match(policy, /href="privacy.html"/); assert.match(read('privacy.html'), /<html lang="fr">/);
   assert.doesNotMatch(policy, /GDPR compliant|CCPA compliant|SOC 2 certified|US office|deleted after \d+ days/i);
