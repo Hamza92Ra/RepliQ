@@ -39,6 +39,14 @@ Before publishing:
 
 Reference: https://www.cndp.ma/conformite-des-sites-web/ and https://www.cndp.ma/notifier-un-traitement/ (guidance, not legal advice).
 
+## Retention implementation progress (non-destructive)
+
+The new `lib/retention-policy.js` exports a **pure 90-day retention classifier**, and `tests/retention-policy.test.js` checks cutoff boundaries, malformed timestamps, epoch-seconds inputs, future dates, and aggregate-only reports. It performs **no queries, writes, expiry commands, or deletions** against any storage system. It is a safe foundation for later preview-only audits, **not a production deletion engine**.
+
+Redis `conv:<id>` message lists include a millisecond `ts` per entry. The conversation index, message-to-phone mapping, business configuration, owner/takeover metadata and identity aliases have different lifecycle semantics and cannot be removed using a blanket key TTL. Supabase `messages.created_at` exists, but conversation metadata and foreign keys require a reviewed and monitored cleanup order. Preserve legal exceptions and ownership checks. Do not claim automatic 90-day deletion in the public notice until all stores/processor copies, archival backups, and data subject request paths are actually covered.
+
+The new feature branch has no Upstash REST env vars scoped to it. Vercel currently lists isolated preview Redis vars specifically under `release/us-hosted-verification` and separate production vars, so hosted lead/retention tests on this branch must be treated as blocked until separately verified branch-scoped preview credentials exist. Never copy production credentials or enable destructive cron tasks as a shortcut.
+
 ## Production release gate
 
 - [ ] Run `npm test`, `npm run check:functions`, `npm run test:vercel-runtime` on this branch (GitHub workflows not observed, Vercel READY is not evidence of executing test suite). Expected function count is 8; verify rather than assume.
