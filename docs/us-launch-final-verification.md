@@ -1,11 +1,36 @@
 # US launch final verification
 
-**NO-GO for Production launch.** Required isolated hosted lead tests and privacy approvals remain blocked. This is a verification-only branch; application code/configuration is unchanged.
+**NO-GO for Production launch.** Five of six isolated hosted lead checks passed on the latest Preview. A hosted Redis outage exercise and privacy approvals remain open. This is a verification-only branch; application code/configuration is unchanged.
 
 - Branch/worktree: `release/us-hosted-verification`, `/tmp/repliq-us-hosted-verification`.
 - Verified application base: `12f2e10a7de0bfeeef8bfc68f2ab0cb6bd426dd7`.
-- Hosted application tested: https://repli-q7dn1efhj-hamza92ras-projects.vercel.app
+- Earlier hosted application tested: https://repli-q7dn1efhj-hamza92ras-projects.vercel.app
 - Access: existing authenticated Vercel CLI 65.12.1, team `hamza92ras-projects`, exact Preview URLs. Deployment Protection retained.
+
+## Latest hosted lead verification — 2026-11-09
+
+Deployment `dpl_CqZwyHkRAJJCyBzpJncZPdryaBdz` at https://repli-cnzt5qsjq-hamza92ras-projects.vercel.app is **READY** and identifies branch `release/us-hosted-verification`, commit `9c78ba38db226a9a628f630b8f1b1c17b592b6f4`. Vercel lists exactly three branch-scoped Preview variables: `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, and `WHATSAPP_PHONE_NUMBER_ID=1001`. The two Redis entries were updated before this deployment was created. `WHATSAPP_TOKEN`, `DEFAULT_PHONE_NUMBER_ID`, `RESEND_API_KEY`, `NOTIFY_EMAIL_TO`, and Supabase credentials are absent from the Preview variable list, so the application has no configured WhatsApp/email delivery or Production database path.
+
+The owner confirms that Vercel's separate Preview Redis value points to `helpful-caribou-169193.upstash.io`, while Production points to `destined-fly-102047.upstash.io`. Vercel masks both sensitive Preview values in the CLI and API, so the hostname itself could **not** be independently read from deployment configuration. Isolation evidence therefore consists of the owner's explicit resource identification, branch-scoped entries, and the deployment timestamp after their updates. No Production value or customer data was read. No secret value was printed or stored in this report.
+
+All POST requests below used only `Alex Synthetic`, `Synthetic Charter Fixture`, `alex.synthetic@example.invalid`, and the fictional `+1 305 555 0123`, against the exact protected Preview through the existing Vercel CLI session. No real provider delivery credentials were present.
+
+| Hosted case | Observed HTTP | Result |
+| --- | --- | --- |
+| Valid RepliQ Pro lead | **200** | **PASS**; `ok:true`, synthetic reference returned, WhatsApp acknowledgement reported unavailable as expected |
+| Exact duplicate | **200** | **PASS**; same reference returned; response is idempotent. Redis row count was not inspected |
+| Honeypot `website` filled | **400** | **PASS**; generic `Could not accept request` |
+| JSON body over 16 KiB | **413** | **PASS**; `Request too large` |
+| Rate limit, repeated exact synthetic lead | **200** for eight further repeats, then **429** | **PASS**; counting the initial valid and duplicate requests, the eleventh attempt was rejected with the generic rate-limit message |
+| Redis service unavailable | **No hosted request/status** | **BLOCKED**; safely inducing a real outage would require changing the Preview Redis binding or interrupting the isolated database. Neither was done. Four focused local mocked Redis outage/timeout tests passed (4/4) |
+
+These results cover live Upstash admission, storage completion, idempotency, honeypot, size limit, and rate enforcement. They do **not** prove behaviour during a live Redis network outage, nor independently reveal the secret Preview URL hostname. The earlier **336/336** local regression result and **7-function** check remain applicable; application code was unchanged and the full suite was not rerun. No SQL, customer data, Production settings, real emails, WhatsApp messages, or bot flags were touched.
+
+**Latest recommendation:** GO for reviewing the five hosted lead checks; **NO-GO for claiming all six hosted checks or final Production launch**. To close the remaining integration gate, authorize a reversible outage exercise restricted to the dedicated Preview Redis binding, with its restoration verified afterward. The privacy facts listed below still require owner approval.
+
+## Earlier verification and setup history
+
+The following sections document previous Preview deployments before the separate Redis values were configured. Their environment and hosted-lead blocker statements are historical; the latest results above supersede them.
 
 ## Environment metadata and exact blocker
 
