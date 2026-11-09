@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex">
+    <meta name="description" content="Draft English RepliQ privacy notice covering contact requests, WhatsApp messages and configured service providers. Pending owner review.">
+    <title>RepliQ — Privacy Notice (English Draft)</title>
+    <style>
+        body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;max-width:800px;margin:36px auto;padding:0 22px;line-height:1.7;color:#132019;background:#f5f8f5;overflow-wrap:anywhere;}
+        a{color:#176644;text-underline-offset:3px;} nav{display:flex;flex-wrap:wrap;gap:20px;margin-bottom:30px;}
+        h1{font-size:clamp(28px,6vw,38px);line-height:1.2;}h2{font-size:22px;margin-top:34px;}li{margin-bottom:10px;}
+        .draft{padding:18px 22px;border:1px solid #9d7020;border-radius:12px;background:#fff6e2;}
+        footer{border-top:1px solid #cedbd2;margin-top:40px;padding-top:20px;font-size:14px;}
+        :focus-visible{outline:3px solid #176644;outline-offset:4px;}
+    </style>
+</head>
+<body>
+    <nav aria-label="Privacy navigation"><a href="index.html">RepliQ home</a><a href="formulaire.html?offer=RepliQ%20Pro&amp;intent=demo">Request a demo</a><a href="privacy.html" lang="fr" hreflang="fr">French notice (pending review)</a></nav>
+    <main>
+        <h1>RepliQ privacy notice</h1>
+        <p class="draft"><strong>English draft — pending business-owner review.</strong> This version has not been approved for publication. No effective publication date has been assigned.</p>
+        <p>RepliQ provides an AI WhatsApp receptionist and a conversation dashboard for businesses. This draft describes the contact-request and messaging features supported by the application. Which optional services are used depends on the business's configuration.</p>
+                <h2>Who operates RepliQ</h2>
+        <p>RepliQ is currently offered by HAMZA RADDI in an individual capacity, not by an incorporated company. Any legally required address or registration details and the applicable data-protection roles still need to be confirmed before publication. RepliQ is a brand name, not the name of an incorporated legal entity.</p>
+        <p>Depending on the activity, Morocco's Law 09-08 may require filings with the CNDP and formalities concerning transfers of personal data abroad. Their status has not yet been verified. This draft must not be described as evidence of compliance.</p>
+        <h2>Regional website presentation</h2>
+        <p>The website can use the country associated with a web request to suggest Moroccan or US pricing pages. Visitors can choose either market manually; their choice can be stored in local browser storage. This selection is a display preference, not proof of residency, a currency conversion, or automatic eligibility for a plan. Hosting services may separately process request addresses.</p>\n        <h2>Contact and demo requests</h2>
+        <p>If you submit the RepliQ form, it requests your name, business name, business type, WhatsApp number, email address and agreement to be contacted about the request. You can also provide an estimated inquiry volume and a message. A request reference, selected offer and demo/setup intent are included.</p>
+        <p>The application records the inquiry in its conversation store so the team can follow up. It can attempt a WhatsApp acknowledgement and, when email notifications are configured, send inquiry details to the configured team recipient. A request does not take a payment, confirm a calendar appointment or activate a subscription.</p>
+        <p>The downloadable request summary is generated in your browser using jsPDF. The form does not request payment-card details. Please do not include card details or unnecessary sensitive information in free-text messages.</p>
+        <p>To limit abuse and repeated submissions, the application derives hashed technical identifiers from connection addresses and submitted contact/request details. Rate-limit and duplicate-request records are stored in Redis with short technical expirations. These controls do not verify ownership of a submitted phone number or define how long inquiry messages are retained.</p>
+        <h2>WhatsApp conversations</h2>
+        <p>When you contact a business using RepliQ, the application can process your WhatsApp phone number or business-scoped user identifier, profile/display name when provided, the receiving business number identifier, message identifiers, timestamps, message text and delivery/read/failure status.</p>
+        <p>Voice messages can be downloaded for transcription, and the transcript can appear in conversation history. Other supported message events can be recorded by type or description. Message history and business-provided context can be used to prepare an AI reply. The business's team can review history, reply manually and take over a conversation. Existing order features can also record items, quantities, amounts and order status where used.</p>
+        <h2>Services involved</h2>
+        <ul>
+            <li><strong>Meta / WhatsApp Business Platform:</strong> receiving messages and media events, sending replies and templates, retrieving media and processing delivery/read events.</li>
+            <li><strong>Vercel:</strong> hosting the website and application functions. The hosting platform handles web requests; its deployed logging and other platform settings require confirmation by the business owner.</li>
+            <li><strong>Upstash Redis:</strong> conversation/inquiry history, identity and business settings, takeover state and related message/order records.</li>
+            <li><strong>Supabase PostgreSQL, when configured:</strong> WhatsApp conversations, messages, identifiers and related dashboard state.</li>
+            <li><strong>Groq, when configured:</strong> AI replies using message text, selected history and business context; audio transcription; and optional extraction of order details.</li>
+            <li><strong>Google Gemini, when configured:</strong> AI replies as the selected provider or fallback, using message text, selected history and business context.</li>
+            <li><strong>Resend, when configured:</strong> email notifications to the configured team recipient. These notifications can contain contact identifiers and inquiry/conversation text.</li>
+        </ul>
+        <p>Public pages load fonts from Google Fonts and the form loads the jsPDF library from cdnjs. Requests for those resources go to their providers. Choosing a WhatsApp or Instagram link opens that service. Provider retention, account settings and any other uses of information need to be checked against the agreements and settings actually in place; this draft does not make guarantees about them.</p>
+        <h2>Browser storage and administration</h2>
+        <p>Administrator sign-in uses an authentication cookie and a token in local browser storage to access the dashboard. This is separate from the public inquiry form. Hosting and resource providers may have their own request-handling or storage settings; this draft does not assert that all cookies, analytics or platform logging are disabled.</p>
+        <h2>Retention and deletion requests</h2>
+        <p>The RepliQ operator has selected a proposed retention period of 90 days for conversation and contact-request records. This is a target policy, not an implemented or verified automatic deletion guarantee. Existing Redis history limits and short technical expirations do not by themselves enforce a 90-day period in every store. Before this notice is approved for publication, the operator must implement and verify the corresponding retention/deletion process for Redis, any configured Supabase database, notifications, logs, backups, and relevant provider copies or explain separately applicable retention exceptions.</p>
+        <p>You can request deletion or ask about a record by contacting RepliQ or the business you messaged. Include enough information to identify the relevant business and conversation. A request does not automatically erase records from WhatsApp, notification emails, backups or other provider systems. Retention periods, deletion scope and request handling must be confirmed with the business owner before this notice is published.</p>
+        <h2>Contact</h2>
+        <p>RepliQ's official contact email is <a href="mailto:7amzaraddi@gmail.com">7amzaraddi@gmail.com</a>. The official RepliQ WhatsApp AI bot number is <a href="https://wa.me/212712614398">+212712614398</a>. These contact details are owner-confirmed; privacy-request handling, identity verification and response procedures still require owner review before publication.</p>
+        <p>If you contacted a charter operator using RepliQ, that operator may also provide information about its own handling of your inquiry.</p>
+    </main>
+    <footer>RepliQ · <a href="privacy.html" lang="fr" hreflang="fr">French notice (pending review)</a> · This English draft does not claim a compliance certification or a guaranteed retention/deletion process.</footer>
+</body>
+</html>

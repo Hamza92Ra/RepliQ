@@ -1,13 +1,14 @@
+import { adminRoute } from "./admin-router-request.js";
 // tests/admin-inbox.test.js
 import { describe, it, beforeEach, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import { signAdminToken, verifyAdminToken, extractAdminToken } from "../lib/admin-auth.js";
-import loginHandler from "../api/admin/login.js";
-import sendHandler from "../api/admin/send.js";
-import takeoverHandler from "../api/admin/takeover.js";
-import readHandler from "../api/admin/read.js";
-import conversationsHandler from "../api/admin/conversations.js";
-import messagesHandler from "../api/admin/messages.js";
+const loginHandler = adminRoute("login");
+const sendHandler = adminRoute("send");
+const takeoverHandler = adminRoute("takeover");
+const readHandler = adminRoute("read");
+const conversationsHandler = adminRoute("conversations");
+const messagesHandler = adminRoute("messages");
 
 // Helper to create mock response object
 function createMockRes() {
@@ -270,17 +271,17 @@ describe("Admin Inbox - Missing Environment Variables Validation", () => {
     process.env = { ...originalEnv };
   });
 
-  it("fails login with 'Missing DASHBOARD_SECRET' when DASHBOARD_SECRET is unset", async () => {
+  it("denies login generically when no login secret is configured", async () => {
     delete process.env.DASHBOARD_SECRET;
     delete process.env.ADMIN_PASSWORD;
     const req = { method: "POST", body: { password: "123" }, headers: {} };
     const res = createMockRes();
     await loginHandler(req, res);
-    assert.equal(res.statusCode, 500);
-    assert.ok(res.body.error.includes("Missing DASHBOARD_SECRET"));
+    assert.equal(res.statusCode, 401);
+    assert.deepEqual(res.body, { error: "Unauthorized" });
   });
 
-  it("fails conversations with 'Missing SUPABASE_URL' when SUPABASE_URL is unset", async () => {
+  it("fails conversations safely when SUPABASE_URL is unset", async () => {
     process.env.ADMIN_PASSWORD = "test_password";
     const token = signAdminToken();
     delete process.env.SUPABASE_URL;
@@ -289,11 +290,11 @@ describe("Admin Inbox - Missing Environment Variables Validation", () => {
     const req = { method: "GET", headers: { authorization: `Bearer ${token}` } };
     const res = createMockRes();
     await conversationsHandler(req, res);
-    assert.equal(res.statusCode, 500);
-    assert.ok(res.body.error.includes("Missing SUPABASE_URL"));
+    assert.equal(res.statusCode, 503);
+    assert.deepEqual(res.body, { error: "Service unavailable" });
   });
 
-  it("fails conversations with 'Missing SUPABASE_SERVICE_ROLE_KEY' when unset", async () => {
+  it("fails conversations safely when SUPABASE_SERVICE_ROLE_KEY is unset", async () => {
     process.env.ADMIN_PASSWORD = "test_password";
     const token = signAdminToken();
     process.env.SUPABASE_URL = "https://mock.supabase.co";
@@ -302,11 +303,11 @@ describe("Admin Inbox - Missing Environment Variables Validation", () => {
     const req = { method: "GET", headers: { authorization: `Bearer ${token}` } };
     const res = createMockRes();
     await conversationsHandler(req, res);
-    assert.equal(res.statusCode, 500);
-    assert.ok(res.body.error.includes("Missing SUPABASE_SERVICE_ROLE_KEY"));
+    assert.equal(res.statusCode, 503);
+    assert.deepEqual(res.body, { error: "Service unavailable" });
   });
 
-  it("fails send with 'Missing WHATSAPP_TOKEN' when WHATSAPP_TOKEN is unset", async () => {
+  it("fails send safely when WHATSAPP_TOKEN is unset", async () => {
     process.env.ADMIN_PASSWORD = "test_password";
     const token = signAdminToken();
     process.env.SUPABASE_URL = "https://mock.supabase.co";
@@ -320,7 +321,7 @@ describe("Admin Inbox - Missing Environment Variables Validation", () => {
     };
     const res = createMockRes();
     await sendHandler(req, res);
-    assert.equal(res.statusCode, 500);
-    assert.ok(res.body.error.includes("Missing WHATSAPP_TOKEN"));
+    assert.equal(res.statusCode, 503);
+    assert.deepEqual(res.body, { error: "Service unavailable" });
   });
 });

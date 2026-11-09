@@ -1,24 +1,22 @@
+import { assertDemoInboundScope, assertDemoReceiptScope, resolveBusinessPrompt } from "../lib/business-prompt.js";
+import { authenticateMetaRequest } from "../lib/webhook-security.js";
+import { resolveWhatsAppCredentials } from "../lib/whatsapp-credentials.js";
+
+export const config = { api: { bodyParser: false } };
+
 import { waitUntil } from "@vercel/functions";
 import {
   sendWhatsAppText,
-  sendWhatsAppTemplate,
   sendSequentialWhatsAppTexts,
   markAsRead,
   getMediaUrl,
   downloadMedia,
-  normalizePhone,
-  normalizeRecipient,
   extractCustomerIdentity,
 } from "../lib/whatsapp.js";
 import {
-  isWithin24hWindow,
   isWindowExpiredError,
   formatFriendlyError,
 } from "../lib/window.js";
-import {
-  getApprovedTemplates,
-  buildTemplateComponents,
-} from "../lib/templates.js";
 import { generateReply, transcribeAudio, splitWhatsAppMessages } from "../lib/ai.js";
 import {
   notifyTeam,
@@ -29,7 +27,6 @@ import {
 } from "../lib/notify.js";
 import {
   isSupabaseConfigured,
-  getSupabaseAdmin,
   upsertInboundConversation,
   storeInboundMessage,
   storeOutboundMessage,
@@ -40,17 +37,9 @@ import {
 import {
   saveMessage as saveRedisMessage,
   getHistory as getRedisHistory,
-  getConversation as getRedisConversation,
-  getConversationMode as getRedisMode,
-  setConversationMode as setRedisMode,
   getTakeoverStatus as getRedisTakeoverStatus,
   setTakeoverStatus as setRedisTakeoverStatus,
-  getConversationOwner as getRedisOwner,
-  setConversationOwner as setRedisOwner,
-  getBusinessConfig,
   claimMessage as claimRedisMessage,
-  deleteConversation as deleteRedisConversation,
-  deleteMessage as deleteRedisMessage,
   updateMessageStatus as updateRedisMessageStatus,
 } from "../lib/db.js";
 
@@ -62,8 +51,6 @@ const VOICE_FAIL_REPLY =
 
 const UNSUPPORTED_REPLY =
   "Merci pour votre message ! Je sais lire les messages texte et vocaux 🙏 Pour les images et documents, un membre de l'équipe va vous répondre directement.";
-
-const VALID_MODES = new Set(["bot", "human", "completed"]);
 
 // In-memory fallback dedup set
 const seenMessageIds = new Set();
@@ -90,118 +77,7 @@ function runAsync(promise) {
   try {
     waitUntil(promise);
   } catch {
-    promise.catch((err) => console.error("Unhandled async error:", err));
-  }
-}
-
-/**
- * Handles legacy dashboard admin actions (for backwards compatibility).
- */
-async function handleAdminAction(req, res) {
-  const key = req.query.key;
-  if (!process.env.DASHBOARD_SECRET || key !== process.env.DASHBOARD_SECRET) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
-
-  const { phone, phoneNumberId: requestedPhoneNumberId, action, message, templateName, languageCode } = req.body;
-  if (!phone || !action) {
-    return res.status(400).json({ error: "Missing phone or action" });
-  }
-
-  try {
-    if (VALID_MODES.has(action)) {
-      if (action === "human") {
-        await setRedisTakeoverStatus(phone, true);
-        if (isSupabaseConfigured()) await setConversationTakeover(phone, true).catch(() => {});
-      } else if (action === "bot") {
-        await setRedisTakeoverStatus(phone, false);
-        if (isSupabaseConfigured()) await setConversationTakeover(phone, false).catch(() => {});
-      } else {
-        await setRedisMode(phone, action);
-      }
-      return res.status(200).json({ ok: true, mode: action });
-    }
-
-    if (action === "reply") {
-      const text = (message || "").trim();
-      if (!text) return res.status(400).json({ error: "Missing message" });
-
-      let phoneNumberId = String(requestedPhoneNumberId || "").trim() ||
-        (await getRedisOwner(phone)) ||
-        process.env.WHATSAPP_PHONE_NUMBER_ID ||
-        process.env.DEFAULT_PHONE_NUMBER_ID;
-
-      if (!phoneNumberId) {
-        return res.status(400).json({ error: "Aucun numéro WhatsApp Business associé" });
-      }
-
-      const recipient = normalizeRecipient(phone);
-      if (!recipient) return res.status(400).json({ error: "Numéro de destinataire invalide" });
-
-      const convo = await getRedisConversation(recipient);
-      if (!isWithin24hWindow(convo)) {
-        return res.status(409).json({
-          ok: false,
-          code: "WINDOW_EXPIRED",
-          error: "WINDOW_EXPIRED",
-          details: "Fenêtre de 24h Meta expirée.",
-        });
-      }
-
-      const providerResponse = await sendWhatsAppText(phoneNumberId, recipient, text);
-      const wamid = providerResponse?.messages?.[0]?.id || null;
-
-      // Automatically enable takeover on manual agent reply
-      await setRedisTakeoverStatus(recipient, true).catch(() => {});
-      if (isSupabaseConfigured()) {
-        await setConversationTakeover(recipient, true).catch(() => {});
-      }
-
-      await saveRedisMessage(recipient, "agent", text, phoneNumberId, { wamid, status: "sent" }).catch(() => {});
-      return res.status(200).json({ ok: true, wamid, status: "sent" });
-    }
-
-    if (action === "template") {
-      let phoneNumberId = String(requestedPhoneNumberId || "").trim() ||
-        (await getRedisOwner(phone)) ||
-        process.env.WHATSAPP_PHONE_NUMBER_ID ||
-        process.env.DEFAULT_PHONE_NUMBER_ID;
-
-      const recipient = normalizeRecipient(phone);
-      const chosenTemplate = templateName || process.env.WHATSAPP_TEMPLATE_NAME || "hello_world";
-      const chosenLang = languageCode || process.env.WHATSAPP_TEMPLATE_LANG || "en_US";
-
-      let templateComponents = req.body.components || null;
-      if (!templateComponents && Array.isArray(req.body.variables) && req.body.variables.length > 0) {
-        templateComponents = buildTemplateComponents(req.body.variables);
-      }
-
-      const providerResponse = await sendWhatsAppTemplate(phoneNumberId, recipient, chosenTemplate, chosenLang, templateComponents);
-      const wamid = providerResponse?.messages?.[0]?.id || null;
-      return res.status(200).json({ ok: true, wamid, status: "sent", template: chosenTemplate });
-    }
-
-    if (action === "get_templates" || action === "templates") {
-      const phoneNumberId = String(requestedPhoneNumberId || "").trim() || process.env.WHATSAPP_PHONE_NUMBER_ID || process.env.DEFAULT_PHONE_NUMBER_ID;
-      const templates = await getApprovedTemplates(phoneNumberId);
-      return res.status(200).json({ ok: true, templates });
-    }
-
-    if (action === "delete_message") {
-      const removed = await deleteRedisMessage(phone, req.body.messageId);
-      return res.status(200).json({ ok: true, removed });
-    }
-
-    if (action === "delete") {
-      const recipient = normalizeRecipient(phone);
-      await deleteRedisConversation(recipient);
-      return res.status(200).json({ ok: true });
-    }
-
-    return res.status(400).json({ error: `Unknown action: ${action}` });
-  } catch (err) {
-    console.error("Admin action failed:", err);
-    return res.status(500).json({ ok: false, error: err?.message || "Action failed" });
+    promise.catch((err) => console.error("webhook.js: Unhandled async error:"));
   }
 }
 
@@ -212,8 +88,8 @@ export default async function handler(req, res) {
     const token = req.query["hub.verify_token"];
     const challenge = req.query["hub.challenge"];
 
-    if (mode === "subscribe" && token === process.env.VERIFY_TOKEN) {
-      console.log("Webhook verified successfully.");
+    if (mode === "subscribe" && process.env.VERIFY_TOKEN && token === process.env.VERIFY_TOKEN) {
+      console.log("webhook.js: Webhook verified successfully.");
       return res.status(200).send(challenge);
     }
     return res.status(403).send("Forbidden");
@@ -221,15 +97,15 @@ export default async function handler(req, res) {
 
   // 2. Incoming Webhook Events from Meta (POST request)
   if (req.method === "POST") {
-    // Legacy dashboard actions
-    if (req.body && typeof req.body === "object" && req.body.action && req.body.phone) {
-      return handleAdminAction(req, res);
-    }
+    if (!(await authenticateMetaRequest(req, res))) return;
 
     try {
       const entry = req.body?.entry?.[0];
       const change = entry?.changes?.[0];
       const value = change?.value;
+      if (value?.metadata?.phone_number_id) {
+        resolveWhatsAppCredentials(value.metadata.phone_number_id, { requireToken: false });
+      }
       const message = value?.messages?.[0];
       const contact = value?.contacts?.[0];
 
@@ -239,6 +115,11 @@ export default async function handler(req, res) {
         const wamid = statusUpdate.id;
         const status = statusUpdate.status;
         const recipientId = statusUpdate.recipient_id;
+        await assertDemoReceiptScope({
+          phoneNumberId: value?.metadata?.phone_number_id,
+          authenticatedPhoneNumberId: value?.metadata?.phone_number_id,
+          recipientId, messageId: wamid,
+        });
 
         let errorDetail = null;
         if (statusUpdate.errors && statusUpdate.errors.length > 0) {
@@ -248,7 +129,7 @@ export default async function handler(req, res) {
             : formatFriendlyError(e.title ? `${e.title}: ${e.message || ""}` : e.message, e.code);
         }
 
-        console.log(`WhatsApp delivery status update: wamid=${wamid}, status=${status}, error=${errorDetail}`);
+        console.log("webhook.js: WhatsApp delivery status received");
 
         // Acknowledge receipt to Meta immediately
         res.status(200).send("EVENT_RECEIVED");
@@ -278,9 +159,9 @@ export default async function handler(req, res) {
       // Always return 200 quickly to Meta
       res.status(200).send("EVENT_RECEIVED");
 
-      runAsync(processIncomingMessage({ message, contact, phoneNumberId }));
+      runAsync(processIncomingMessage({ message, contact, phoneNumberId, authenticatedPhoneNumberId: value?.metadata?.phone_number_id }));
     } catch (err) {
-      console.error("Webhook handler error:", err);
+      console.error("webhook.js: Webhook handler error:");
       if (!res.headersSent) {
         return res.status(200).send("EVENT_RECEIVED");
       }
@@ -298,14 +179,16 @@ export default async function handler(req, res) {
  * - Check human_takeover flag: if true, bot stays silent
  * - Otherwise: load last ~10 messages as history, call generateReply(), and store bot reply
  */
-async function processIncomingMessage({ message, contact, phoneNumberId }) {
+async function processIncomingMessage({ message, contact, phoneNumberId, authenticatedPhoneNumberId }) {
   try {
     const identity = extractCustomerIdentity(message, contact);
     const from = identity.primaryId;
     if (!from) {
-      console.error("processIncomingMessage: message missing identifiable recipient ('from', 'from_user_id', or contact id)", JSON.stringify(message));
+      console.error("webhook.js: processIncomingMessage: message missing identifiable recipient ('from', 'from_user_id', or contact id)");
       return;
     }
+
+    await assertDemoInboundScope({ phoneNumberId, authenticatedPhoneNumberId, identity });
 
     const contactName = identity.profileName;
     const userId = identity.userId;
@@ -325,7 +208,7 @@ async function processIncomingMessage({ message, contact, phoneNumberId }) {
     }
 
     if (!claimed) {
-      console.log(`[takeover=unknown] [${from}] Duplicate delivery detected for message, skipping: ${message.id}`);
+      console.log("webhook.js: Duplicate inbound delivery skipped");
       return;
     }
 
@@ -336,7 +219,7 @@ async function processIncomingMessage({ message, contact, phoneNumberId }) {
       isHumanTakeover = Boolean(takeoverStatus?.human_takeover);
     } catch (lookupErr) {
       // FAIL SAFE: if the lookup fails, do not auto-reply, log the error
-      console.error(`[Fail-safe] [takeover=error] [${from}] Error checking takeover flag. Halting bot to prevent accidental reply:`, lookupErr);
+      console.error("webhook.js: Takeover state unavailable; bot stopped");
       return;
     }
 
@@ -346,7 +229,7 @@ async function processIncomingMessage({ message, contact, phoneNumberId }) {
     // Store message in database (Supabase + Redis) so dashboard sees it, and return immediately.
     // DO NOT call AI, do not transcribe voice, do not send any message.
     if (isHumanTakeover) {
-      console.log(`[takeover=true] [${from}] Bot silent (human takeover active)`);
+      console.log("webhook.js: Human takeover active");
 
       if (isSupabaseConfigured()) {
         try {
@@ -359,7 +242,7 @@ async function processIncomingMessage({ message, contact, phoneNumberId }) {
             createdAt: inboundTs,
           });
         } catch (dbErr) {
-          console.error(`[takeover=true] [${from}] Supabase store failed:`, dbErr);
+          console.error("webhook.js: Human takeover active");
         }
       }
 
@@ -374,14 +257,14 @@ async function processIncomingMessage({ message, contact, phoneNumberId }) {
             profileName: contactName,
           });
         } catch (redisErr) {
-          console.error(`[takeover=true] [${from}] Redis store failed:`, redisErr);
+          console.error("webhook.js: Human takeover active");
         }
       }
 
       return;
     }
 
-    console.log(`[takeover=false] [${from}] Bot auto-reply processing`);
+    console.log("webhook.js: Bot processing event");
 
     // Extract message content: transcribe audio or use text/interactive
     let text = message.text?.body?.trim();
@@ -390,12 +273,12 @@ async function processIncomingMessage({ message, contact, phoneNumberId }) {
     if (!text && message.type === "audio" && message.audio?.id) {
       try {
         await markAsRead(phoneNumberId, message.id);
-        const mediaUrl = await getMediaUrl(message.audio.id);
-        const audioBytes = await downloadMedia(mediaUrl);
+        const mediaUrl = await getMediaUrl(message.audio.id, phoneNumberId);
+        const audioBytes = await downloadMedia(mediaUrl, phoneNumberId);
         text = await transcribeAudio(audioBytes, "voice.ogg");
         voiceNote = true;
       } catch (audioErr) {
-        console.error("Voice message handling failed:", audioErr);
+        console.error("webhook.js: Voice message handling failed:");
         await sendWhatsAppText(phoneNumberId, from, VOICE_FAIL_REPLY);
         return;
       }
@@ -430,11 +313,11 @@ async function processIncomingMessage({ message, contact, phoneNumberId }) {
         });
 
         if (storeResult?.duplicate) {
-          console.log("Message already stored in database, skipping:", message.id);
+          console.log("webhook.js: Message already stored in database, skipping:");
           return;
         }
       } catch (dbErr) {
-        console.error("Supabase storage error for inbound message:", dbErr);
+        console.error("webhook.js: Supabase storage error for inbound message:");
       }
     }
 
@@ -449,7 +332,7 @@ async function processIncomingMessage({ message, contact, phoneNumberId }) {
           profileName: contactName,
         });
       } catch (redisErr) {
-        console.error("Redis mirror error:", redisErr);
+        console.error("webhook.js: Redis mirror error:");
       }
     }
 
@@ -457,13 +340,13 @@ async function processIncomingMessage({ message, contact, phoneNumberId }) {
 
     // 2. Check if client explicitly asks for a human / advisor
     if (looksLikeHumanRequest(text)) {
-      console.log(`[takeover=false] [${from}] Customer requested human advisor -> handoff triggered`);
+      console.log("webhook.js: Bot processing event");
       const handoffMsg = getHandoffMessage(text);
       let sendRes = null;
       try {
         sendRes = await sendWhatsAppText(phoneNumberId, from, handoffMsg);
       } catch (sendErr) {
-        console.error("Failed to send handoff message:", sendErr);
+        console.error("webhook.js: Failed to send handoff message:");
       }
       const handoffWamid = sendRes?.messages?.[0]?.id || null;
 
@@ -491,7 +374,7 @@ async function processIncomingMessage({ message, contact, phoneNumberId }) {
         from,
         message: text,
         reason: "Le client a demandé à parler à un conseiller humain",
-      }).catch((e) => console.error("notifyHandoff error:", e));
+      }).catch((e) => console.error("webhook.js: notifyHandoff error:"));
 
       return;
     }
@@ -504,37 +387,26 @@ async function processIncomingMessage({ message, contact, phoneNumberId }) {
         // Exclude the current message we just stored so generateReply doesn't duplicate it
         history = fullHistory.slice(0, -1);
       } catch (histErr) {
-        console.error("Error loading history from Supabase:", histErr);
+        console.error("webhook.js: Error loading history from Supabase:");
       }
     } else if (process.env.UPSTASH_REDIS_REST_URL) {
       try {
         const fullHistory = await getRedisHistory(from, 10);
         history = fullHistory.slice(0, -1);
       } catch (histErr) {
-        console.error("Error loading history from Redis:", histErr);
+        console.error("webhook.js: Error loading history from Redis:");
       }
     }
 
     // Team notification if intent detected
     if (looksLikeFinalizeIntent(text)) {
       notifyTeam({ from, message: text }).catch((e) =>
-        console.error("notifyTeam failed:", e)
+        console.error("webhook.js: notifyTeam failed:")
       );
     }
 
-    // 4. Per-business prompt configuration (if configured)
-    let systemPrompt;
-    try {
-      const config = await getBusinessConfig(phoneNumberId);
-      if (config?.systemPrompt) {
-        systemPrompt = config.systemPrompt;
-        if (config.notes) {
-          systemPrompt += `\n\nNotes / idées spécifiques du projet :\n${config.notes}`;
-        }
-      }
-    } catch (cfgErr) {
-      console.error("Business config load failed:", cfgErr);
-    }
+    // Shared server-controlled selection; enabled lookup errors stop processing.
+    const systemPrompt = await resolveBusinessPrompt({ phoneNumberId, authenticatedPhoneNumberId });
 
     // 5. Generate AI Reply with Handoff Detection
     let reply;
@@ -550,7 +422,7 @@ async function processIncomingMessage({ message, contact, phoneNumberId }) {
         if (!reply) reply = getHandoffMessage(text);
       }
     } catch (aiErr) {
-      console.error("generateReply failed, triggering handoff:", aiErr);
+      console.error("webhook.js: generateReply failed, triggering handoff:");
       handoffRequired = true;
       handoffReason = `Erreur IA : ${aiErr.message}`;
       reply = getHandoffMessage(text);
@@ -561,7 +433,7 @@ async function processIncomingMessage({ message, contact, phoneNumberId }) {
       try {
         sendRes = await sendWhatsAppText(phoneNumberId, from, reply);
       } catch (sendErr) {
-        console.error("Failed to send handoff message:", sendErr);
+        console.error("webhook.js: Failed to send handoff message:");
       }
       const wamid = sendRes?.messages?.[0]?.id || null;
 
@@ -585,12 +457,12 @@ async function processIncomingMessage({ message, contact, phoneNumberId }) {
         }).catch(() => {});
       }
 
-      console.log(`[takeover=false] [${from}] Handoff triggered by AI response -> takeover enabled (${handoffReason})`);
+      console.log("webhook.js: Bot processing event");
       notifyHandoff({
         from,
         message: text,
         reason: handoffReason || "Conseiller requis",
-      }).catch((e) => console.error("notifyHandoff error:", e));
+      }).catch((e) => console.error("webhook.js: notifyHandoff error:"));
 
       return;
     }
@@ -600,13 +472,13 @@ async function processIncomingMessage({ message, contact, phoneNumberId }) {
     let providerResponse = null;
     try {
       providerResponse = await sendSequentialWhatsAppTexts(phoneNumberId, from, messageParts, 1000);
-      console.log(`[takeover=false] [${from}] Bot replied successfully (${messageParts.length} message(s))`);
+      console.log("webhook.js: Bot processing event");
     } catch (sendErr) {
       if (isWindowExpiredError(sendErr?.message, sendErr?.code)) {
-        console.warn(`[Bot] Send failed with 131047 (window expired) for ${from}`);
+        console.warn("webhook.js: [Bot] Send failed with 131047 (window expired) for ");
         return;
       }
-      console.error("Final WhatsApp send failed for", from, ":", sendErr);
+      console.error("webhook.js: Final WhatsApp send failed for");
       return;
     }
 
@@ -624,7 +496,7 @@ async function processIncomingMessage({ message, contact, phoneNumberId }) {
           status: "sent",
         });
       } catch (dbErr) {
-        console.error("Failed to store bot outbound reply in Supabase:", dbErr);
+        console.error("webhook.js: Failed to store bot outbound reply in Supabase:");
       }
     }
 
@@ -632,9 +504,9 @@ async function processIncomingMessage({ message, contact, phoneNumberId }) {
       saveRedisMessage(from, "assistant", reply, phoneNumberId, {
         wamid: botWamid,
         status: "sent",
-      }).catch((e) => console.error("Redis save assistant reply failed:", e));
+      }).catch((e) => console.error("webhook.js: Redis save assistant reply failed:"));
     }
   } catch (err) {
-    console.error("processIncomingMessage background error:", err);
+    console.error("webhook.js: processIncomingMessage background error:");
   }
 }

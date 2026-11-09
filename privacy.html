@@ -1,100 +1,57 @@
 <!DOCTYPE html>
 <html lang="fr">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RepliQ — Politique de confidentialité</title>
+    <meta name="robots" content="noindex">
+    <meta name="description" content="Notice de confidentialité RepliQ révisée, en attente de validation. Coordonnées officielles, demandes de contact et fonctionnalités WhatsApp.">
+    <title>RepliQ — Confidentialité (révision à valider)</title>
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            max-width: 760px;
-            margin: 40px auto;
-            padding: 0 20px;
-            line-height: 1.6;
-            color: #222;
-        }
-
-        h1 {
-            font-size: 28px;
-        }
-
-        h2 {
-            font-size: 20px;
-            margin-top: 32px;
-        }
-
-        footer {
-            margin-top: 48px;
-            font-size: 13px;
-            color: #666;
-        }
-
-        a {
-            color: #1a5a3a;
-        }
+        body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;max-width:800px;margin:36px auto;padding:0 22px;line-height:1.7;color:#132019;background:#f5f8f5;overflow-wrap:anywhere;}
+        a{color:#176644;text-underline-offset:3px;}nav{display:flex;flex-wrap:wrap;gap:20px;margin-bottom:30px;}
+        h1{font-size:clamp(28px,6vw,38px);line-height:1.2;}h2{font-size:22px;margin-top:34px;}li{margin-bottom:10px;}
+        .draft{padding:18px 22px;border:1px solid #9d7020;border-radius:12px;background:#fff6e2;}
+        footer{border-top:1px solid #cedbd2;margin-top:40px;padding-top:20px;font-size:14px;}
+        :focus-visible{outline:3px solid #176644;outline-offset:4px;}
     </style>
 </head>
-
 <body>
-
-    <h1>Politique de confidentialité — RepliQ</h1>
-    <p><em>Dernière mise à jour : 11 septembre 2026</em></p>
-
-    <p>RepliQ est un service qui connecte le numéro WhatsApp Business d'une
-        entreprise à une intelligence artificielle afin d'automatiser les réponses
-        aux clients, la confirmation de commandes/rendez-vous, et de centraliser les
-        conversations dans un tableau de bord destiné à l'entreprise cliente.</p>
-
-    <h2>Quelles données nous collectons</h2>
-    <p>Lorsqu'un client écrit à une entreprise utilisant RepliQ sur WhatsApp,
-        nous collectons :</p>
-    <ul>
-        <li>Le numéro de téléphone WhatsApp du client</li>
-        <li>Le contenu des messages échangés (texte, ou transcription d'un message vocal)</li>
-        <li>La date et l'heure de chaque message</li>
-        <li>Le numéro WhatsApp Business de l'entreprise concernée</li>
-    </ul>
-
-    <h2>Comment nous utilisons ces données</h2>
-    <p>Ces données sont utilisées uniquement pour :</p>
-    <ul>
-        <li>Générer une réponse automatique pertinente via un modèle d'IA (fourni par Groq)</li>
-        <li>Transcrire les messages vocaux en texte (via Groq / Whisper) afin de pouvoir y répondre</li>
-        <li>Afficher l'historique de conversation à l'entreprise cliente dans son tableau de bord</li>
-        <li>Permettre à un membre de l'équipe de l'entreprise de reprendre la conversation manuellement si nécessaire
-        </li>
-    </ul>
-    <p>Nous ne vendons pas ces données et ne les partageons pas à des fins publicitaires.</p>
-
-    <h2>Où les données sont stockées</h2>
-    <p>Les conversations sont stockées de façon sécurisée dans une base de
-        données Redis (hébergée par Upstash) et les traitements applicatifs
-        s'exécutent sur l'infrastructure de Vercel. Les messages sont conservés le
-        temps nécessaire au fonctionnement du service et peuvent être supprimés sur
-        demande de l'entreprise cliente ou du client final.</p>
-
-    <h2>Partage avec des tiers</h2>
-    <p>Pour fonctionner, RepliQ transmet le contenu des messages aux services
-        suivants, uniquement dans le but de générer une réponse ou une transcription :</p>
-    <ul>
-        <li><strong>Meta / WhatsApp Business Platform</strong> — pour l'envoi et la réception des messages</li>
-        <li><strong>Groq</strong> — pour la génération de réponses par IA et la transcription vocale</li>
-    </ul>
-
-    <h2>Vos droits</h2>
-    <p>Un client final ou une entreprise utilisant RepliQ peut demander la
-        suppression de ses données de conversation à tout moment en contactant
-        l'adresse ci-dessous.</p>
-
-    <h2>Contact</h2>
-    <p>Pour toute question concernant cette politique de confidentialité ou vos
-        données, contactez-nous à :
-        <a href="mailto:hamzaraddi92@gmail.com">hamzaraddi92@gmail.com</a>
-    </p>
-
-    <footer>RepliQ — Automatisation WhatsApp par IA</footer>
-
+    <nav aria-label="Navigation confidentialité"><a href="index.html">Accueil RepliQ</a><a href="privacy-en.html" lang="en" hreflang="en">English draft</a></nav>
+    <main>
+        <h1>Confidentialité — RepliQ</h1>
+        <p class="draft"><strong>Version révisée — en attente de validation par le responsable.</strong> Ce texte corrigé n'est pas une nouvelle politique approuvée. Sa date d'entrée en vigueur sera définie après validation. La version anglaise reste également un brouillon non approuvé.</p>
+        <p>RepliQ propose un assistant IA WhatsApp et un tableau de bord de conversation pour les entreprises. Ce texte décrit les fonctionnalités présentes dans l'application ; les services optionnels dépendent de la configuration. Une demande de démo ou d'installation ne confirme pas un rendez-vous, une réservation de bateau, un paiement ou une activation d'abonnement.</p>
+                <h2>Identité de l'exploitant</h2>
+        <p>RepliQ est actuellement proposé par HAMZA RADDI en nom propre, en qualité de personne physique et non de société constituée. Les éventuelles mentions obligatoires concernant l'adresse, l'immatriculation et les rôles en matière de données personnelles restent à confirmer avant publication. RepliQ est un nom de marque, et non la dénomination d'une société constituée.</p>
+        <p>Selon les traitements effectivement réalisés, la loi marocaine 09-08 peut exiger des formalités auprès de la CNDP, notamment concernant les transferts de données à l'étranger. Leur accomplissement n'a pas encore été vérifié. Cette révision ne constitue pas une attestation de conformité.</p>
+        <h2>Présentation du site selon le marché</h2>
+        <p>Le site peut utiliser le pays associé à une requête pour suggérer des pages d'offres au Maroc ou aux États-Unis. Chaque visiteur peut choisir son marché ; son choix peut être mémorisé dans le stockage local du navigateur. Ce choix d'affichage ne prouve pas la résidence, ne convertit pas les devises et ne garantit pas l'éligibilité commerciale. L'hébergeur peut traiter séparément les adresses de connexion.</p>\n        <h2>Demandes de contact et de démonstration</h2>
+        <p>Le formulaire demande le nom, le nom et le type d'entreprise, le numéro WhatsApp, l'adresse email et l'accord pour être contacté au sujet de la demande. Un volume estimé de demandes et un message peuvent être ajoutés. La référence, l'offre et le type de demande sont inclus.</p>
+        <p>La demande est enregistrée dans l'historique pour le suivi par l'équipe. L'application peut tenter un accusé de réception WhatsApp et, si les notifications email sont configurées, envoyer les détails au destinataire défini. Le récapitulatif PDF est généré dans le navigateur avec jsPDF ; le formulaire ne demande pas de carte bancaire. Évitez les informations sensibles inutiles dans le message libre.</p>
+        <p>Pour limiter les abus et les envois répétés, l'application dérive des identifiants techniques hachés à partir des adresses de connexion et des coordonnées/détails de demande. Les compteurs et données de détection des doublons sont conservés dans Redis avec des expirations techniques courtes. Ces contrôles ne vérifient pas la propriété du numéro soumis et ne définissent pas la durée de conservation des messages de demande.</p>
+        <h2>Conversations WhatsApp</h2>
+        <p>L'application peut traiter le numéro de téléphone ou l'identifiant utilisateur WhatsApp propre à l'entreprise, le nom de profil lorsqu'il est transmis, l'identifiant du numéro destinataire, les identifiants et horaires des messages, leur texte et les statuts d'envoi, de livraison, de lecture ou d'échec.</p>
+        <p>Les messages vocaux peuvent être téléchargés et transcrits ; la transcription peut figurer dans l'historique. D'autres événements peuvent être décrits par leur type. L'historique et les informations fournies par l'entreprise peuvent servir à préparer une réponse IA. L'équipe peut consulter l'historique, répondre manuellement et reprendre la conversation. Les fonctionnalités de commandes existantes peuvent enregistrer des articles, quantités, montants et statuts lorsqu'elles sont utilisées.</p>
+        <h2>Services concernés</h2>
+        <ul>
+            <li><strong>Meta / WhatsApp Business Platform :</strong> réception et envoi de messages et modèles, accès aux médias et événements de livraison ou de lecture.</li>
+            <li><strong>Vercel :</strong> hébergement du site et des fonctions. Les paramètres déployés de journalisation et de plateforme restent à vérifier par le responsable.</li>
+            <li><strong>Upstash Redis :</strong> historique des conversations et demandes, identités, configuration, reprise humaine et données associées aux messages et commandes.</li>
+            <li><strong>Supabase PostgreSQL, si configuré :</strong> conversations, messages, identifiants et état du tableau de bord.</li>
+            <li><strong>Groq, si configuré :</strong> réponses IA utilisant texte, historique et contexte ; transcription vocale et extraction optionnelle de détails de commande.</li>
+            <li><strong>Google Gemini, si configuré :</strong> réponses IA comme fournisseur sélectionné ou de secours, avec texte, historique et contexte.</li>
+            <li><strong>Resend, si configuré :</strong> notifications email à l'équipe, pouvant contenir des identifiants de contact et du texte de conversation.</li>
+        </ul>
+        <p>Les pages publiques chargent des polices Google Fonts et le formulaire charge jsPDF depuis cdnjs, ce qui adresse des requêtes à ces fournisseurs. Les liens WhatsApp et Instagram ouvrent ces services. Les accords, paramètres et pratiques effectives des fournisseurs doivent être vérifiés ; ce texte ne garantit pas leurs durées de conservation ou leurs autres usages.</p>
+        <h2>Navigateur et administration</h2>
+        <p>La connexion au tableau de bord utilise un cookie d'authentification et un jeton dans le stockage local du navigateur. Elle est distincte du formulaire public. Les paramètres des prestataires doivent être vérifiés ; cette version ne garantit pas l'absence de cookies, de mesures d'audience ou de journaux de plateforme.</p>
+        <h2>Conservation et demandes de suppression</h2>
+        <p>L'exploitant de RepliQ a choisi une durée cible de conservation de 90 jours pour les conversations et demandes de contact. Il s'agit d'une politique envisagée, et non d'une garantie de suppression automatique déjà mise en œuvre ou vérifiée. Les limites actuelles de l'historique Redis et l'expiration de certaines données techniques ne suffisent pas à appliquer cette durée dans tous les systèmes. Avant publication, il faudra mettre en place et vérifier la conservation et la suppression dans Redis, toute base Supabase configurée, les notifications, journaux, sauvegardes et copies pertinentes chez les prestataires, ou préciser les exceptions applicables.</p>
+        <p>Vous pouvez adresser une question ou une demande de suppression à RepliQ ou à l'entreprise contactée, en précisant l'entreprise et la conversation concernées. Une demande n'efface pas automatiquement les copies WhatsApp, emails, sauvegardes ou données des fournisseurs. La portée des suppressions, la vérification d'identité, le traitement des demandes et les durées applicables restent à valider avant publication.</p>
+        <h2>Contact officiel</h2>
+        <p>Email officiel RepliQ : <a href="mailto:7amzaraddi@gmail.com">7amzaraddi@gmail.com</a>. Numéro officiel du bot IA WhatsApp RepliQ : <a href="https://wa.me/212712614398">+212712614398</a>. Ces coordonnées sont confirmées par le responsable ; les procédures de traitement des demandes de confidentialité restent à valider.</p>
+        <p>L'entreprise à laquelle vous écrivez peut également communiquer ses propres informations sur le traitement de votre demande.</p>
+    </main>
+    <footer>RepliQ · <a href="privacy-en.html" lang="en" hreflang="en">English draft</a> · Cette révision ne revendique aucune certification de conformité ni garantie de suppression.</footer>
 </body>
-
 </html>
