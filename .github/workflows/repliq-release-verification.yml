@@ -3,6 +3,9 @@ on:
   push:
     branches:
       - feature/ma-us-market-privacy-review
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 permissions:
   contents: read
