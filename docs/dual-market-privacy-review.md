@@ -47,6 +47,10 @@ Redis `conv:<id>` message lists include a millisecond `ts` per entry. The conver
 
 The new feature branch has no Upstash REST env vars scoped to it. Vercel currently lists isolated preview Redis vars specifically under `release/us-hosted-verification` and separate production vars, so hosted lead/retention tests on this branch must be treated as blocked until separately verified branch-scoped preview credentials exist. Never copy production credentials or enable destructive cron tasks as a shortcut.
 
+## Read-only preview retention audit
+
+`lib/retention-audit.js` now provides a **bounded, read-only Redis inventory** using only `SMEMBERS` and `LRANGE`, with strict input limits (500 indexed conversations by default, 20 per batch). `tests/retention-audit.test.js` exercises aggregate-only output, old/recent/uncertain timestamps, incomplete batches, and confirms no writes are issued. A returned count of `fullyPastTargetConversations` is **not approval to delete**: other active records, identity aliases, Supabase, logs, backups and legal holds remain out of scope. No scheduled job or production API route invokes the audit yet, and no live dataset has been queried by it.
+
 ## Production release gate
 
 - [ ] Run `npm test`, `npm run check:functions`, `npm run test:vercel-runtime` on this branch (GitHub workflows not observed, Vercel READY is not evidence of executing test suite). Expected function count is 8; verify rather than assume.
