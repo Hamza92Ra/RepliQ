@@ -2477,7 +2477,6 @@
             document.getElementById("headerActions").classList.remove("mobile-visible");
             document.getElementById("actionsToggle").setAttribute("aria-expanded", "false");
 
-            const convo = conversations.find(c => c.phone === phone);
             const isHuman = Boolean(convo?.human_takeover || convo?.mode === "human");
             const badge = document.getElementById("modeBadge");
             const mode = convo?.mode || "bot";
