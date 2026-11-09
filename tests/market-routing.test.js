@@ -89,3 +89,14 @@ test("root honours explicit US override or saved Morocco preference", () => {
   const saved = runMarketScript("/", "ma");
   assert.deepEqual(saved.navigations, ["/maroc.html"]);
 });
+
+test("Moroccan form never confirms a lead without API success", () => {
+  const form = read("formulaire-maroc.html");
+  assert.match(form, /addEventListener\('submit', async function/);
+  assert.match(form, /const response = await fetch\('\/api\/lead'/);
+  assert.match(form, /if \(!response\.ok \|\| !result \|\| result\.ok !== true\)/);
+  assert.match(form, /formError\.hidden = false/);
+  assert.match(form, /submitButton\.disabled = false/);
+  assert.match(form, /href="privacy\.html"/);
+  assert.doesNotMatch(form, /fire-and-forget:/);
+});
