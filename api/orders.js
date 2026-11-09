@@ -8,6 +8,7 @@
 //   POST /api/orders?key=...  { orderId, status } -> { order: {...} }
 
 import { listAllOrders, updateOrderStatus } from "../lib/orders.js";
+import { storageErrorCategory } from "../lib/storage-error-category.js";
 
 export default async function handler(req, res) {
     const key = req.query.key;
@@ -34,7 +35,7 @@ export default async function handler(req, res) {
         res.setHeader("Allow", "GET, POST");
         return res.status(405).json({ error: `Method ${req.method} not allowed` });
     } catch (err) {
-        console.error("orders.js: Orders fetch/update error:");
-        return res.status(500).json({ error: "Failed to process orders request" });
+        console.error("orders.js: Redis order storage failure:", storageErrorCategory(err));
+        return res.status(503).json({ error: "Order storage unavailable", code: "STORAGE_UNAVAILABLE" });
     }
 }
