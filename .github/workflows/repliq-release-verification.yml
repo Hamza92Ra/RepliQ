@@ -29,5 +29,9 @@ jobs:
         run: npm test
       - name: Vercel function count
         run: npm run check:functions
+      - name: Install isolated Vercel runtime test dependencies
+        run: |
+          mkdir -p "$RUNNER_TEMP/repliq-vercel-runtime"
+          npm install --prefix "$RUNNER_TEMP/repliq-vercel-runtime" --no-save --ignore-scripts --no-audit --no-fund @vercel/node @vercel/routing-utils
       - name: Serverless runtime checks
-        run: npm run test:vercel-runtime
+        run: node scripts/verify-vercel-runtime.mjs "$RUNNER_TEMP/repliq-vercel-runtime"
