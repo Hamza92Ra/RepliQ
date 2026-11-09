@@ -49,8 +49,8 @@ test("privacy notices remain drafts while describing individual operator and loc
     assert.match(page, /name="robots" content="noindex"/);
     assert.match(page, /7amzaraddi@gmail\.com/);
   }
-  assert.match(read("privacy-en.html"), /individual in a personal capacity/);
-  assert.match(read("privacy.html"), /personne physique en son nom propre/);
+  assert.match(read("privacy-en.html"), /HAMZA RADDI in an individual capacity/);
+  assert.match(read("privacy.html"), /HAMZA RADDI en nom propre/);
 });
 
 function runMarketScript(pathname, initialChoice = null, search = "", country = "MA") {
