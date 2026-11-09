@@ -25,6 +25,16 @@ test("dashboard rejects a wrong password before any storage access", async () =>
 });
 
 test("dashboard keeps normal Redis mode when Redis is healthy", async () => {
+  // The shared synthetic Redis fixture does not implement SMEMBERS; add a
+  // read-only index response for this dedicated dashboard-path test.
+  const original = globalThis.fetch;
+  globalThis.fetch = async (url, options = {}) => {
+    if (String(url).includes("fixture.upstash.test") &&
+        JSON.parse(options.body || "[]")[0]?.[0] === "SMEMBERS") {
+      return Response.json([{ result: [] }]);
+    }
+    return original(url, options);
+  };
   const res = result();
   await dashboard({ method: "GET", query: { key: "dashboard-fixture" } }, res);
   assert.equal(res.statusCode, 200);
