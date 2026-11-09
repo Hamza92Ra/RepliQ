@@ -141,8 +141,8 @@
                         </div>
 
                         <button type="submit" class="form-submit">Envoyer ma demande</button>
-                        <p class="form-note">En envoyant ce formulaire, vous acceptez d'être contacté par RepliQ pour
-                            finaliser votre inscription.</p>
+                        <p class="form-note">En envoyant cette demande, vous acceptez d'être contacté par RepliQ à propos de votre demande. Consultez notre <a href="privacy.html" target="_blank" rel="noopener">notice de confidentialité (brouillon en attente de validation)</a>.</p>
+                        <p id="formError" class="form-error" role="alert" hidden></p>
                     </form>
                 </div>
 
@@ -364,8 +364,13 @@
         // download button can build a real file without re-reading the DOM.
         let currentReceipt = null;
 
-        document.getElementById('signupForm').addEventListener('submit', function (e) {
+        document.getElementById('signupForm').addEventListener('submit', async function (e) {
             e.preventDefault();
+            const submitButton = e.currentTarget.querySelector('button[type="submit"]');
+            const formError = document.getElementById('formError');
+            if (submitButton.disabled) return;
+            formError.hidden = true;
+            submitButton.disabled = true;
 
             const fullname = document.getElementById('fullname').value.trim();
             const business = document.getElementById('business').value.trim();
@@ -419,11 +424,10 @@
             // Keep the raw data around for the PDF download button.
             currentReceipt = { fullname, ref, today, rows };
 
-            // Register this submission in the dashboard (fire-and-forget:
-            // the receipt still shows to the client even if this fails, so
-            // a network hiccup here never blocks their confirmation).
+            // Show a success receipt only after the API confirms durable storage.
             // "mode" is 'monthly' or 'annual' (handled in api/lead.js).
-            fetch('/api/lead', {
+            try {
+              const response = await fetch('/api/lead', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -443,11 +447,28 @@
                     acceptedTerms: document.getElementById('terms').checked,
                     ref
                 })
-            }).catch(err => console.error('Lead submission failed:', err));
-
-            document.getElementById('formLayout').classList.add('hidden');
-            document.getElementById('receiptWrap').classList.add('show');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+              });
+              const result = await response.json().catch(() => null);
+              if (!response.ok || !result || result.ok !== true) {
+                  throw new Error('Lead not confirmed');
+              }
+              const acceptedReference = result.reference || ref;
+              document.getElementById('receiptRef').textContent = 'RÉF. ' + acceptedReference + ' · ' + today;
+              currentReceipt.ref = acceptedReference;
+              document.getElementById('waFollowUp').href =
+                  'https://wa.me/212712614398?text=' + encodeURIComponent(
+                      'Bonjour RepliQ, je viens de faire une demande (réf. ' + acceptedReference +
+                      ') pour l’offre ' + offerName + ' (' + billingLabel.toLowerCase() + ').'
+                  );
+              document.getElementById('formLayout').classList.add('hidden');
+              document.getElementById('receiptWrap').classList.add('show');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            } catch (_) {
+              formError.textContent = 'Nous n’avons pas pu confirmer votre demande. Réessayez ou contactez-nous sur WhatsApp.';
+              formError.hidden = false;
+            } finally {
+              submitButton.disabled = false;
+            }
         });
 
         // ---- Real PDF download (replaces window.print()) ----
