@@ -47,7 +47,7 @@ it('keeps both notices clearly pending, with verified contacts and no invented p
     assert.doesNotMatch(html, /GDPR compliant|CCPA compliant|SOC 2 certified|US office|stockées de façon sécurisée|Nous ne vendons pas|uniquement dans le but/i);
   }
   assert.match(en, /not been approved for publication/); assert.match(en, /owner-confirmed/);
-  assert.match(en, /No fixed retention duration/); assert.match(en, /does not automatically erase/);
-  assert.match(fr, /en attente de validation/); assert.match(fr, /Aucune durée fixe/); assert.match(fr, /n'efface pas automatiquement/);
+  assert.match(en, /proposed retention period of 90 days/); assert.match(en, /does not automatically erase/);
+  assert.match(fr, /en attente de validation/); assert.match(fr, /durée cible de conservation de 90 jours/); assert.match(fr, /n'efface pas automatiquement/);
   assert.match(fr, /href="privacy-en.html"/); assert.match(en, /href="privacy.html"/);
 });
