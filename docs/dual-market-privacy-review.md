@@ -12,12 +12,12 @@ The original Morocco landing and registration pages from production `main` were 
 | Standard | 400 MAD/month | 600 MAD |
 | Premium | 800 MAD/month | 1,000 MAD |
 
-The original conditional three-month introductory promotion, annual calculations, payment summaries and relevant legacy content remain in the Morocco copies. The existing US pages still advertise `RepliQ Pro` at **$99/month plus a $99 one-time setup**. No currency conversion, geo-specific billing charge or subscription automation is introduced. Original Moroccan server-side lead offers are unchanged.
+The original conditional three-month introductory promotion, annual calculations, payment summaries and relevant legacy content remain in the Morocco copies. The Moroccan form now waits for a successful `/api/lead` HTTP response and `ok: true` before displaying its acceptance receipt; failures display an actionable error, with no false confirmation. The existing US pages still advertise `RepliQ Pro` at **$99/month plus a $99 one-time setup**. No currency conversion, geo-specific billing charge or subscription automation is introduced. Original Moroccan server-side lead offers are unchanged.
 
 ## Market selection (candidate implementation)
 
 - `GET /api/market` returns the user's country hint from Vercel's `x-vercel-ip-country` header, normalized to `ma` (MA only) or `us` (default). No IP address is stored by this code; the endpoint is not a geolocation guarantee.
-- The US homepage and signup form use `market-switch.js` to redirect Moroccan visitors to the copied Moroccan pages when there is no explicit override.
+- Only the unqualified homepage `/` uses `market-switch.js` to suggest the Moroccan page based on region or a saved override. Explicit `/index.html` and `/formulaire.html` always stay US, while `/maroc.html` and `/formulaire-maroc.html` always stay Morocco, regardless of IP, cookies, or previous preference.
 - Each market has a visible manual link to the other; the override is stored under the `repliq-market` local-storage key and takes precedence. Users can always open the Moroccan pages directly.
 - The new serverless endpoint raises the Node function count from **7 to 8** (Hobby budget noted by the repository: 12). Verify at build/runtime. No code changes to the WhatsApp webhook, admin dashboard, Redis bindings, plan quota logic, or AI bot.
 - **Review requirement:** test actual Moroccan IP behavior and mobile/desktop language-independent manual switching on a new preview. If browser or network blocks the country hint, the manual market switch remains available. Do not represent geography inference as exact customer nationality.
@@ -39,10 +39,10 @@ Reference: https://www.cndp.ma/conformite-des-sites-web/ and https://www.cndp.ma
 
 ## Production release gate
 
-- [ ] Run new market tests, 8-function count check and all applicable regression tests on this new branch.
-- [ ] Verify new Preview and explicitly check Moroccan price and form navigation, US pricing, market toggle, region hint, and mobile handling.
+- [ ] Run `npm test`, `npm run check:functions`, `npm run test:vercel-runtime` on this branch (GitHub workflows not observed, Vercel READY is not evidence of executing test suite). Expected function count is 8; verify rather than assume.
+- [x] Read-only hosted GET checks: Morocco & US landings and forms, regional API, both privacy drafts; GET statuses 200 on latest preview. Source and published form confirm the API-success guard.\n- [ ] Real browser/Moroccan-IP test of actual region hint, manual switch, mobile behavior, and failed-vs-successful form submission on branch-isolated Preview Redis.
 - [ ] Confirm release behavior for `/maroc.html` and `/formulaire-maroc.html` with old inbound links.
-- [ ] Reconfirm deployed Preview Redis isolation and synthetic lead security checks (five previously passed; Redis outage still untested live).
+- [ ] Configure and reconfirm dedicated isolated Redis for THIS feature branch (existing Redis credentials are scoped to `release/us-hosted-verification`, not this feature branch). Never copy or reveal production credentials. The prior 5/6 hosted lead checks were on the earlier release branch, not this deployment. Redis outage is still untested live.
 - [ ] Approve privacy identity/retention/provider/legal facts before publishing.
 - [ ] Review the **full stacked branch diff vs `main`**; avoid accidentally enabling inactive bot/tenant functionality.
 - [ ] Explicit owner approval before Production merge or promotion. No automatic merge.
