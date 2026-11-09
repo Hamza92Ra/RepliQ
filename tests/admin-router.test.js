@@ -96,13 +96,13 @@ describe("Consolidated admin Node router", () => {
       const response = res(); await router(request, response); assert.equal(response.statusCode, 404);
     }
   });
-  it("uses seven exact rewrites and seven deployable function entry points", () => {
+  it("uses seven exact admin rewrites and eight deployable function entry points", () => {
     const config = JSON.parse(readFileSync(new URL("../vercel.json", import.meta.url)));
     const sources = ["login", ...Object.keys(methods)].map(name => `/api/admin/${name}`).sort();
     assert.deepEqual(config.rewrites.map(rule => rule.source).sort(), sources);
     assert.ok(config.rewrites.every(rule => rule.destination === "/api/admin" && !rule.methods));
     const files = nodeFunctionFiles();
-    assert.equal(files.length, 7); assert.ok(files.length <= 12);
-    assert.deepEqual(files, ["api/admin.js", "api/business-config.js", "api/conversation.js", "api/dashboard.js", "api/lead.js", "api/orders.js", "api/webhook.js"]);
+    assert.equal(files.length, 8); assert.ok(files.length <= 12);
+    assert.deepEqual(files, ["api/admin.js", "api/business-config.js", "api/conversation.js", "api/dashboard.js", "api/lead.js", "api/market.js", "api/orders.js", "api/webhook.js"]);
   });
 });
