@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { supabasePrimaryEnabled, shouldUseRedisMirror } from "../lib/storage-backend.js";
 import { getSupabaseTakeoverStatus } from "../lib/supabase.js";
 import dashboard from "../api/dashboard.js";
+import { listAllOrders, createOrder, updateOrderStatus } from "../lib/orders.js";
 import { fixtureEnvironment, installAdminFixtures } from "./admin-service-fixtures.js";
 
 const response = () => ({
@@ -65,4 +66,36 @@ test("webhook cutover removes Redis calls and requires durable inbound storage",
   assert.match(src, /getSupabaseTakeoverStatus\(\{ primaryId: from, phone, userId \}\)/);
   assert.match(src, /if \(supabasePrimaryEnabled\(\)\) return;/);
   assert.match(src, /if \(shouldUseRedisMirror\(\)\)/);
+});
+
+test("orders in Supabase-primary mode do not attempt Redis access", async () => {
+  const original = globalThis.fetch;
+  const requests = [];
+  globalThis.fetch = async (url, options = {}) => {
+    const target = String(url);
+    requests.push(target);
+    if (target.includes("upstash")) throw new Error("Unexpected Redis order access");
+    if (target.includes("fixture.supabase.test") && target.includes("/rest/v1/orders")) {
+      if ((options.method || "GET") === "POST") {
+        const input = JSON.parse(options.body);
+        return Response.json({ id: "a1111111-1111-4111-8111-111111111111", phone: input.phone,
+          phone_number_id: input.phone_number_id, items: input.items, amount: input.amount,
+          status: "pending", created_at: new Date().toISOString(), updated_at: new Date().toISOString() });
+      }
+      if ((options.method || "GET") === "PATCH") {
+        return Response.json({ id: "a1111111-1111-4111-8111-111111111111", phone: "15550000001",
+          phone_number_id: "1001", items: [], amount: 5, status: "confirmed",
+          created_at: new Date().toISOString(), updated_at: new Date().toISOString() });
+      }
+      return Response.json([]);
+    }
+    return original(url, options);
+  };
+  const created = await createOrder({phone:"15550000001",phoneNumberId:"1001",items:[],amount:5});
+  assert.equal(created.status, "pending");
+  const orders = await listAllOrders();
+  assert.deepEqual(orders, []);
+  const changed = await updateOrderStatus(created.id, "confirmed");
+  assert.equal(changed.status, "confirmed");
+  assert.equal(requests.some(x=>x.includes("upstash")), false);
 });
