@@ -1,3 +1,4 @@
+import { supabasePrimaryEnabled } from "../lib/storage-backend.js";
 import { randomUUID } from "node:crypto";
 import { readLeadBody, validateLead } from "../lib/lead-validation.js";
 import { admitLead } from "../lib/lead-abuse.js";
@@ -142,7 +143,7 @@ async function processLead(req, res) {
         // number — that gets attached automatically (setConversationOwner)
         // the first time they actually message in on WhatsApp, or below if
         // we successfully send the congrats message from our own number.
-        await saveMessage(cleanPhone, "lead", lines.join("\n"), undefined, { source: "public-lead", signal: AbortSignal.timeout(3000) });
+        if (!supabasePrimaryEnabled()) await saveMessage(cleanPhone, "lead", lines.join("\n"), undefined, { source: "public-lead", signal: AbortSignal.timeout(3000) });
         await req.leadSecurity.complete();
     } catch (err) {
         console.error("lead.js: Lead save failed:");
@@ -168,7 +169,7 @@ async function processLead(req, res) {
             // Record it in the same conversation, and set phoneNumberId so
             // this becomes the recognized owner of the thread — this is
             // what lets a dashboard admin reply to this person later.
-            await saveMessage(cleanPhone, "assistant", congratsText, phoneNumberId, { source: "public-lead", signal: AbortSignal.timeout(3000) });
+            if (!supabasePrimaryEnabled()) await saveMessage(cleanPhone, "assistant", congratsText, phoneNumberId, { source: "public-lead", signal: AbortSignal.timeout(3000) });
         } catch (waErr) {
             console.error("lead.js: Lead congrats WhatsApp message failed:");
             whatsappError = { message: "WhatsApp acknowledgement unavailable; request saved" };

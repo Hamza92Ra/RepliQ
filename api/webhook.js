@@ -1,5 +1,6 @@
 import { assertDemoInboundScope, assertDemoReceiptScope, resolveBusinessPrompt } from "../lib/business-prompt.js";
 import { authenticateMetaRequest } from "../lib/webhook-security.js";
+import { supabasePrimaryEnabled, shouldUseRedisMirror } from "../lib/storage-backend.js";
 import { resolveWhatsAppCredentials } from "../lib/whatsapp-credentials.js";
 
 export const config = { api: { bodyParser: false } };
@@ -33,6 +34,7 @@ import {
   updateMessageStatusByWamid,
   getConversationHistoryForAI,
   setConversationTakeover,
+  getSupabaseTakeoverStatus,
 } from "../lib/supabase.js";
 import {
   saveMessage as saveRedisMessage,
@@ -139,7 +141,7 @@ export default async function handler(req, res) {
             if (isSupabaseConfigured()) {
               await updateMessageStatusByWamid(wamid, status, errorDetail);
             }
-            if (process.env.UPSTASH_REDIS_REST_URL) {
+            if (shouldUseRedisMirror()) {
               await updateRedisMessageStatus(recipientId, wamid, status, errorDetail).catch(() => {});
             }
           })()
@@ -195,9 +197,15 @@ async function processIncomingMessage({ message, contact, phoneNumberId, authent
     const phone = identity.phone;
     const inboundTs = message.timestamp ? Number(message.timestamp) * 1000 : Date.now();
 
-    // Deduplication check via local cache & Redis if available
+    // In Supabase-primary mode durable wa_message_id dedup happens when the
+    // inbound row is stored. The local claim is only a short-lived optimization.
+    // Redis remains the dedup source in legacy compatibility mode.
     let claimed = false;
-    if (process.env.UPSTASH_REDIS_REST_URL) {
+    if (supabasePrimaryEnabled() && !isSupabaseConfigured()) {
+      console.error("webhook.js: Supabase-primary storage unavailable; bot stopped");
+      return;
+    }
+    if (shouldUseRedisMirror()) {
       try {
         claimed = await claimRedisMessage(message.id);
       } catch (redisErr) {
@@ -215,7 +223,9 @@ async function processIncomingMessage({ message, contact, phoneNumberId, authent
     // 1. Human Takeover Check FIRST: Fail-Safe read BEFORE any AI call, voice transcription, or markAsRead
     let isHumanTakeover = false;
     try {
-      const takeoverStatus = await getRedisTakeoverStatus(from);
+      const takeoverStatus = supabasePrimaryEnabled()
+        ? await getSupabaseTakeoverStatus({ primaryId: from, phone, userId })
+        : await getRedisTakeoverStatus(from);
       isHumanTakeover = Boolean(takeoverStatus?.human_takeover);
     } catch (lookupErr) {
       // FAIL SAFE: if the lookup fails, do not auto-reply, log the error
@@ -242,11 +252,11 @@ async function processIncomingMessage({ message, contact, phoneNumberId, authent
             createdAt: inboundTs,
           });
         } catch (dbErr) {
-          console.error("webhook.js: Human takeover active");
+          console.error("webhook.js: Human takeover storage failed");
         }
       }
 
-      if (process.env.UPSTASH_REDIS_REST_URL) {
+      if (shouldUseRedisMirror()) {
         try {
           await saveRedisMessage(from, "user", initialDisplayBody, phoneNumberId, {
             id: message.id,
@@ -318,10 +328,12 @@ async function processIncomingMessage({ message, contact, phoneNumberId, authent
         }
       } catch (dbErr) {
         console.error("webhook.js: Supabase storage error for inbound message:");
+        // No AI reply without a durable inbound record during the cutover.
+        if (supabasePrimaryEnabled()) return;
       }
     }
 
-    if (process.env.UPSTASH_REDIS_REST_URL) {
+    if (shouldUseRedisMirror()) {
       try {
         await saveRedisMessage(from, "user", displayBody, phoneNumberId, {
           id: message.id,
@@ -352,7 +364,7 @@ async function processIncomingMessage({ message, contact, phoneNumberId, authent
 
       // Enable human takeover so bot stays silent
       if (isSupabaseConfigured() && conversation?.id) {
-        await setConversationTakeover(conversation.id, true).catch(() => {});
+        await setConversationTakeover(conversation.id, true, { syncRedis: shouldUseRedisMirror() }).catch(() => {});
         await storeOutboundMessage({
           conversationId: conversation.id,
           waMessageId: handoffWamid,
@@ -362,7 +374,7 @@ async function processIncomingMessage({ message, contact, phoneNumberId, authent
           status: "sent",
         }).catch(() => {});
       }
-      if (process.env.UPSTASH_REDIS_REST_URL) {
+      if (shouldUseRedisMirror()) {
         await setRedisTakeoverStatus(from, true).catch(() => {});
         await saveRedisMessage(from, "assistant", handoffMsg, phoneNumberId, {
           wamid: handoffWamid,
@@ -389,7 +401,7 @@ async function processIncomingMessage({ message, contact, phoneNumberId, authent
       } catch (histErr) {
         console.error("webhook.js: Error loading history from Supabase:");
       }
-    } else if (process.env.UPSTASH_REDIS_REST_URL) {
+    } else if (shouldUseRedisMirror()) {
       try {
         const fullHistory = await getRedisHistory(from, 10);
         history = fullHistory.slice(0, -1);
@@ -439,7 +451,7 @@ async function processIncomingMessage({ message, contact, phoneNumberId, authent
 
       // Enable takeover and notify
       if (isSupabaseConfigured() && conversation?.id) {
-        await setConversationTakeover(conversation.id, true).catch(() => {});
+        await setConversationTakeover(conversation.id, true, { syncRedis: shouldUseRedisMirror() }).catch(() => {});
         await storeOutboundMessage({
           conversationId: conversation.id,
           waMessageId: wamid,
@@ -449,7 +461,7 @@ async function processIncomingMessage({ message, contact, phoneNumberId, authent
           status: "sent",
         }).catch(() => {});
       }
-      if (process.env.UPSTASH_REDIS_REST_URL) {
+      if (shouldUseRedisMirror()) {
         await setRedisTakeoverStatus(from, true).catch(() => {});
         await saveRedisMessage(from, "assistant", reply, phoneNumberId, {
           wamid,
@@ -500,7 +512,7 @@ async function processIncomingMessage({ message, contact, phoneNumberId, authent
       }
     }
 
-    if (process.env.UPSTASH_REDIS_REST_URL) {
+    if (shouldUseRedisMirror()) {
       saveRedisMessage(from, "assistant", reply, phoneNumberId, {
         wamid: botWamid,
         status: "sent",
