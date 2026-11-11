@@ -364,7 +364,7 @@ async function processIncomingMessage({ message, contact, phoneNumberId, authent
 
       // Enable human takeover so bot stays silent
       if (isSupabaseConfigured() && conversation?.id) {
-        await setConversationTakeover(conversation.id, true).catch(() => {});
+        await setConversationTakeover(conversation.id, true, { syncRedis: shouldUseRedisMirror() }).catch(() => {});
         await storeOutboundMessage({
           conversationId: conversation.id,
           waMessageId: handoffWamid,
@@ -451,7 +451,7 @@ async function processIncomingMessage({ message, contact, phoneNumberId, authent
 
       // Enable takeover and notify
       if (isSupabaseConfigured() && conversation?.id) {
-        await setConversationTakeover(conversation.id, true).catch(() => {});
+        await setConversationTakeover(conversation.id, true, { syncRedis: shouldUseRedisMirror() }).catch(() => {});
         await storeOutboundMessage({
           conversationId: conversation.id,
           waMessageId: wamid,
