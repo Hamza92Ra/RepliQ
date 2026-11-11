@@ -4,6 +4,7 @@
 - `REPLIQ_STORAGE_BACKEND=supabase` opts the legacy dashboard into Supabase primary reads, without the Redis-first behavior or a misleading degraded warning.
 - The WhatsApp webhook checks `human_takeover` against Supabase before AI processing, fails closed on lookup errors, uses existing Supabase message-ID deduplication, stores message history in Supabase, and skips Redis mirroring in this mode.
 - Admin Supabase takeover changes no longer attempt Redis synchronization in this mode.
+- Added `public.orders` with RLS enabled and no client-role grants, plus a server-only Supabase orders adapter for create/read/list/update in primary mode. The new table starts empty; existing Redis orders are NOT migrated.
 - In absence of the opt-in flag, production behavior remains unchanged. No schema changes, deletions, or secret rotations.
 
 ## DO NOT enable in Production yet
