@@ -1,5 +1,6 @@
 import { listConversations } from "../lib/db.js";
 import { storageErrorCategory } from "../lib/storage-error-category.js";
+import { supabasePrimaryEnabled } from "../lib/storage-backend.js";
 
 // Keep legacy single-password authentication untouched for existing operators.
 export default async function handler(req, res) {
@@ -12,7 +13,16 @@ export default async function handler(req, res) {
     try {
         let conversations = [];
         const supabaseReady = Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
-        if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+        if (supabasePrimaryEnabled()) {
+            if (!supabaseReady) {
+                console.error("dashboard.js: Supabase-primary configuration missing");
+                return res.status(503).json({ error: "Conversation storage unavailable", code: "STORAGE_UNAVAILABLE" });
+            }
+            const { listAdminConversations } = await import("../lib/supabase.js");
+            conversations = await listAdminConversations();
+            source = "supabase";
+            // Primary store: NOT degraded. There is no Redis dependency in this mode.
+        } else if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
             try {
                 conversations = await listConversations();
             } catch (error) {
