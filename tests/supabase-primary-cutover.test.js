@@ -39,7 +39,8 @@ test("dashboard reads Supabase directly without contacting Redis", async () => {
   await dashboard({ method: "GET", query: { key: "dashboard-fixture" } }, res);
   assert.equal(res.statusCode, 200);
   assert.equal(res.body.source, "supabase");
-  assert.equal(res.body.degraded, false);
+  assert.equal(res.body.degraded, true); // Legacy dashboard actions remain safely disabled until migrated
+  assert.match(res.body.storageNotice, /Migration Supabase/);
   assert.equal(res.body.conversations.length, 1);
   assert.equal(requests.some(x => x.includes("upstash")), false);
 });
