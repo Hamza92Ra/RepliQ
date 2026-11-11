@@ -5,6 +5,7 @@ import { supabasePrimaryEnabled, shouldUseRedisMirror } from "../lib/storage-bac
 import { getSupabaseTakeoverStatus } from "../lib/supabase.js";
 import dashboard from "../api/dashboard.js";
 import { listAllOrders, createOrder, updateOrderStatus } from "../lib/orders.js";
+import { admitLead } from "../lib/lead-abuse.js";
 import { fixtureEnvironment, installAdminFixtures } from "./admin-service-fixtures.js";
 
 const response = () => ({
@@ -98,4 +99,45 @@ test("orders in Supabase-primary mode do not attempt Redis access", async () => 
   const changed = await updateOrderStatus(created.id, "confirmed");
   assert.equal(changed.status, "confirmed");
   assert.equal(requests.some(x=>x.includes("upstash")), false);
+});
+
+test("public leads use atomic Supabase RPC, not Redis, in primary mode", async () => {
+  const calls = [];
+  globalThis.fetch = async (url, options={}) => {
+    calls.push(String(url));
+    assert.equal(String(url).includes("upstash"), false);
+    if (String(url).includes("/rest/v1/rpc/admit_repliq_lead")) {
+      const args = JSON.parse(options.body);
+      assert.equal(args.p_business_phone_number_id, "1001");
+      assert.match(args.p_fingerprint, /^[0-9a-f]{64}$/);
+      assert.equal(args.p_payload.business, "Fixture Boats");
+      return Response.json({status:201,reference:"RPLQ-fixture",acknowledge:false});
+    }
+    throw new Error("Unexpected external call");
+  };
+  const body={ fullname:"Fixture User",business:"Fixture Boats",activity:"Boat charter",
+    phone:"+15555550123",email:"test@example.com",offer:"RepliQ Pro",intent:"demo",
+    message:"I want a demo",volume:"50",acceptedTerms:true,ref:"RPLQ-fixture" };
+  const req={headers:{"x-forwarded-for":"192.0.2.10"},socket:{remoteAddress:"192.0.2.10"}};
+  const result=await admitLead(req,body);
+  assert.equal(result.duplicate,false);
+  assert.equal(result.reference,"RPLQ-fixture");
+  assert.equal(result.acknowledge,false);
+  await result.complete();
+  assert.equal(calls.length,1);
+});
+
+test("public lead RPC outage fails closed and does not fallback to Redis", async () => {
+  globalThis.fetch = async () => { throw new Error("Database unavailable"); };
+  const body={fullname:"Fixture User",business:"Fixture Boats",activity:"Boat charter",
+    phone:"+15555550123",email:"test@example.com",offer:"RepliQ Pro",intent:"demo",
+    message:"I want a demo",volume:"50",acceptedTerms:true,ref:"RPLQ-fixture"};
+  await assert.rejects(admitLead({headers:{},socket:{}},body), {status:503});
+});
+
+test("public lead and order writers skip Redis in Supabase-primary mode", () => {
+  const publicLead = readFileSync(new URL("../lib/public-pro-lead.js",import.meta.url),"utf8");
+  const lead = readFileSync(new URL("../api/lead.js",import.meta.url),"utf8");
+  assert.match(publicLead,/!supabasePrimaryEnabled\(\).*saveMessage/);
+  assert.match(lead,/!supabasePrimaryEnabled\(\).*saveMessage/);
 });
