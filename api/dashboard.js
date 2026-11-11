@@ -21,7 +21,9 @@ export default async function handler(req, res) {
             const { listAdminConversations } = await import("../lib/supabase.js");
             conversations = await listAdminConversations();
             source = "supabase";
-            // Primary store: NOT degraded. There is no Redis dependency in this mode.
+            // Redis-backed legacy agent actions and historic leads are not fully migrated.
+            // Keep the original dashboard read-only until the migration is complete.
+            degraded = true;
         } else if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
             try {
                 conversations = await listConversations();
@@ -51,7 +53,8 @@ export default async function handler(req, res) {
             const lastB = (b.messages && b.messages[b.messages.length - 1]?.ts) || (b.last_message_at ? new Date(b.last_message_at).getTime() : 0);
             return lastB - lastA;
         });
-        return res.status(200).json({ conversations, serverTime: Date.now(), source, degraded });
+        const storageNotice = supabasePrimaryEnabled() ? "Migration Supabase en cours : conversations consultables ; certaines actions et données historiques restent indisponibles." : undefined;
+        return res.status(200).json({ conversations, serverTime: Date.now(), source, degraded, storageNotice });
     } catch (error) {
         console.error("dashboard.js: Conversation storage unavailable:", storageErrorCategory(error));
         return res.status(503).json({ error: "Conversation storage unavailable", code: "STORAGE_UNAVAILABLE" });
