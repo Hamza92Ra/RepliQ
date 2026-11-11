@@ -2143,7 +2143,9 @@
                 // Explicit partial read-only fallback if Redis is unavailable.
                 const appElement = document.getElementById("app");
                 appElement.classList.toggle("storage-degraded", data.degraded === true);
-                document.getElementById("storageWarning").style.display = data.degraded === true ? "block" : "none";
+                const storageWarning = document.getElementById("storageWarning");
+                storageWarning.style.display = data.degraded === true ? "block" : "none";
+                storageWarning.textContent = data.storageNotice || "Mode dégradé : Redis indisponible. Vue partielle depuis Supabase ; messages historiques et commandes peuvent manquer. Les actions sont désactivées.";
                 const newConversations = data.conversations || [];
                 const snapshot = JSON.stringify(newConversations);
 
